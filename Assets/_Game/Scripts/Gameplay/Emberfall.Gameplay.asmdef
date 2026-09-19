@@ -1,0 +1,17 @@
+{
+    "name": "Emberfall.Gameplay",
+    "rootNamespace": "Emberfall.Gameplay",
+    "references": [
+        "Emberfall.Core",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

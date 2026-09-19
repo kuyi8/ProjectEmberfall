@@ -1,0 +1,21 @@
+{
+    "name": "Emberfall.Networking",
+    "rootNamespace": "Emberfall.Networking",
+    "references": [
+        "Emberfall.Core",
+        "Emberfall.Gameplay",
+        "Emberfall.AI",
+        "Emberfall.Quests",
+        "Unity.Netcode.Runtime",
+        "Unity.Networking.Transport"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b831ea00c19107147b0ca71550410712, type: 3}
+  m_Name: CombatTuning_M1
+  m_EditorClassIdentifier: 
+  _maxHealth: 120
+  _maxStamina: 100
+  _staminaRegenPerSecond: 28
+  _staminaRegenDelay: 0.7
+  _inputBufferSeconds: 0.15
+  _lightDamage:
+  - 22
+  - 26
+  - 34
+  _lightStaminaCost: 10
+  _lightDuration:
+  - 0.58
+  - 0.62
+  - 0.72
+  _lightDamageOpen:
+  - 0.15
+  - 0.17
+  - 0.21
+  _lightDamageClose:
+  - 0.29
+  - 0.32
+  - 0.4
+  _lightComboOpen:
+  - 0.28
+  - 0.3
+  - 0.34
+  _lightComboClose:
+  - 0.5
+  - 0.54
+  - 0.62
+  _lightDodgeCancelOpen:
+  - 0.36
+  - 0.39
+  - 0.46
+  _heavyDamage: 55
+  _heavyStaminaCost: 28
+  _heavyFullChargeSeconds: 0.55
+  _heavyDuration: 0.82
+  _heavyDamageOpen: 0.28
+  _heavyDamageClose: 0.52
+  _rangedDamage: 30
+  _rangedPostureDamage: 14
+  _rangedCooldown: 3.5
+  _rangedDuration: 0.56
+  _rangedReleaseTime: 0.22
+  _rangedProjectileSpeed: 19
+  _rangedMaximumDistance: 16
+  _dodgeStaminaCost: 24
+  _dodgeDuration: 0.52
+  _dodgeInvulnerabilitySeconds: 0.43
+  _dodgeDistance: 4.5
+  _perfectDodgeWindow: 0.18
+  _perfectDodgeStaminaRestore: 20
+  _perfectDodgeDamageBonus: 12
+  _perfectDodgePostureBonus: 18
+  _hitReactDuration: 0.42
+  _maxPosture: 100
+  _postureRegenPerSecond: 34
+  _postureRegenDelay: 1.2
+  _guardDamageReduction: 0.72
+  _perfectGuardWindow: 0.2
+  _perfectGuardPostureMultiplier: 0.15
+  _perfectGuardCounterPostureDamage: 60
+  _guardBreakDuration: 0.78
+  _healingFlaskCharges: 2
+  _healDuration: 1.05
+  _healResolveTime: 0.78
+  _healHealthFraction: 0.45
+  _sprintWarmupSeconds: 0.5
+  _sprintStaminaPerSecond: 12
+  _executionStaminaCost: 22
+  _executionDuration: 0.72
+  _executionResolveTime: 0.32

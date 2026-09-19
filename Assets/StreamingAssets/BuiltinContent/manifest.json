@@ -1,0 +1,41 @@
+{
+    "schemaVersion": 1,
+    "packageId": "package:emberfall.builtin",
+    "contentVersion": "0.5.4",
+    "minClientVersion": "0.5.0",
+    "maxClientVersion": "0.8.999",
+    "signatureAlgorithm": "builtin",
+    "signature": "embedded-trusted-content",
+    "files": [
+        {
+            "path": "Data/enemies.v1.json",
+            "kind": "json",
+            "size": 8081,
+            "sha256": "a398587820972ec243c0ad8fdecd8719161856ec68cbc8de03f4a2a4a9895c15"
+        },
+        {
+            "path": "Data/quests.v1.json",
+            "kind": "json",
+            "size": 290,
+            "sha256": "0d27a030bacd8d28b7e191810e9fa7f1f73c975fd01d05c9394f5afb5a88b3f2"
+        },
+        {
+            "path": "Data/texts.zh-CN.v1.json",
+            "kind": "json",
+            "size": 9195,
+            "sha256": "e118b23c68de6b4f584224f3c388b9d004acdcd9c44e0028f11d1989f12e224d"
+        },
+        {
+            "path": "Scripts/quest_forest_condition.lua",
+            "kind": "lua",
+            "size": 389,
+            "sha256": "917d9b3efcb1e832286bf26c8d46ea527fbe4bf5786f3002c037a81036e6d836"
+        },
+        {
+            "path": "Scripts/encounter_forest_orchestration.lua",
+            "kind": "lua",
+            "size": 524,
+            "sha256": "9d0b1c69b43bb784c2a00472fc5635a9db1409da45832a0fa7eb2d83176851ab"
+        }
+    ]
+}

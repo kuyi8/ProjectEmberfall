@@ -1,0 +1,11 @@
+# Set line endings
+* text=auto eol=lf
+
+# Only include the addons folder when downloading from the Asset Library.
+/**        export-ignore
+/addons    !export-ignore
+/addons/** !export-ignore
+/addons/kaykit_dungeon_remastered/** export-ignore
+/addons/kaykit_dungeon_remastered/Assets !export-ignore
+/addons/kaykit_dungeon_remastered/Assets/** !export-ignore
+/addons/kaykit_dungeon_remastered/Assets/fbx export-ignore

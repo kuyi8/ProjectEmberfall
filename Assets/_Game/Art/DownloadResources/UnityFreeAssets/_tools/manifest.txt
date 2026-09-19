@@ -1,0 +1,31 @@
+# Warden Boss (01)
+https://opengameart.org/sites/default/files/Knight%20Character%20by%20%40Quaternius.zip	01_Warden_Boss
+# Animation libraries (02)
+https://opengameart.org/sites/default/files/universal_animation_library_2standard.zip	02_Warden_Animations
+https://opengameart.org/sites/default/files/universal_animation_librarystandard.zip	02_Warden_Animations
+# Character kit (03)
+https://opengameart.org/sites/default/files/rpg_characters_-_nov_2020.zip	03_Character_Kit
+https://opengameart.org/sites/default/files/Animated%20Human%20by%20%40Quaternius_0.zip	03_Character_Kit
+https://opengameart.org/sites/default/files/Animated%20Monster%20Pack%20by%20%40Quaternius.zip	03_Character_Kit
+# Weapons (04)
+https://opengameart.org/sites/default/files/MedievalPack.zip	04_Weapons
+https://opengameart.org/sites/default/files/RPG%20Pack.zip	04_Weapons
+# Environment (07)
+https://opengameart.org/sites/default/files/Updated%20Modular%20Dungeon%20-%20May%202019.zip	07_Environment_Ruins
+https://opengameart.org/sites/default/files/medieval_village_megakitstandard.zip	07_Environment_Ruins
+# HUD/UI (08)
+https://kenney.nl/media/pages/assets/ui-pack/f651646eab-1718203990/kenney_ui-pack.zip	08_HUD_UI
+https://kenney.nl/media/pages/assets/pixel-ui-pack/821e760f21-1677661508/kenney_pixel-ui-pack.zip	08_HUD_UI
+https://kenney.nl/media/pages/assets/fantasy-ui-borders/ab29cd0165-1701602367/kenney_fantasy-ui-borders.zip	08_HUD_UI
+# Nature & props (09)
+https://opengameart.org/sites/default/files/stylized_nature_megakitstandard.zip	09_Nature_Props
+https://opengameart.org/sites/default/files/survival_pack_-_sept_2020.zip	09_Nature_Props
+https://opengameart.org/sites/default/files/fantasy_props_megakitstandard.zip	09_Nature_Props
+https://opengameart.org/sites/default/files/Nature%20model%20pack_1.zip	09_Nature_Props
+https://opengameart.org/sites/default/files/ultimate_nature_pack_by_quaternius_1.zip	09_Nature_Props
+https://opengameart.org/sites/default/files/ultimate_rpg_items_pack_by_quaternius_0.zip	09_Nature_Props
+https://kenney.nl/media/pages/assets/nature-kit/37ac38a37b-1677698939/kenney_nature-kit.zip	09_Nature_Props
+# Audio (10)
+https://kenney.nl/media/pages/assets/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip	10_Audio
+https://kenney.nl/media/pages/assets/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip	10_Audio
+https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip	10_Audio

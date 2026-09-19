@@ -1,0 +1,27 @@
+{
+    "name": "Emberfall.Tests.PlayMode",
+    "rootNamespace": "Emberfall.Tests.PlayMode",
+    "references": [
+        "Emberfall.Core",
+        "Emberfall.Gameplay",
+        "Emberfall.AI",
+        "Emberfall.Application",
+        "Emberfall.Quests",
+        "Emberfall.Infrastructure",
+        "Emberfall.UI",
+        "Emberfall.Networking",
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

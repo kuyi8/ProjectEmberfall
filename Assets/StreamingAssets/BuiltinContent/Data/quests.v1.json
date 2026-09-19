@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "quests": [
+    {
+      "id": "quest:emberfall.main",
+      "titleTextId": "text:quest.main.title",
+      "requiredSealCount": 3
+    },
+    {
+      "id": "quest:forest-seal",
+      "titleTextId": "text:quest.forest.title",
+      "requiredSealCount": 1
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+    "name": "Emberfall.UI",
+    "rootNamespace": "Emberfall.UI",
+    "references": [
+        "Emberfall.Core",
+        "Emberfall.Gameplay",
+        "Emberfall.Infrastructure",
+        "Emberfall.Application",
+        "Emberfall.AI",
+        "Emberfall.Networking",
+        "Unity.Netcode.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

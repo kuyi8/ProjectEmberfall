@@ -1,0 +1,68 @@
+# Unity generated folders
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE and generated project files
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity/OS temporary files
+*.tmp
+*.bak
+*.swp
+*.user
+sysinfo.txt
+crashlytics-build.properties
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Rider
+ExportedObj/
+.consulo/
+
+# Test and coverage output
+TestResults/
+CodeCoverage/
+
+# Local hot-update staging and release output
+ContentServer/
+ContentStaging/
+
+# Local recordings (10 GB class; single files exceed GitHub's 100 MB limit)
+vedios/
+
+# Codex / agent workflow, review artifacts and project process files (not part of the runnable project)
+.codex/
+AGENTS.md
+HarnessInput/
+HarnessSkill/
+CodexOutput/
+
+# Design docs, verification records and dev tooling (not needed to open or run the project)
+Docs/
+Tools/
+
+# Redundant downloaded asset archives (already imported; several exceed 100 MB)
+Assets/_Game/Art/DownloadResources/**/*.zip
+

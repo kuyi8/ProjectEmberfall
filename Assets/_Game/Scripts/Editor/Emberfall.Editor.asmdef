@@ -1,0 +1,29 @@
+{
+    "name": "Emberfall.Editor",
+    "rootNamespace": "Emberfall.Editor",
+    "references": [
+        "Emberfall.Core",
+        "Emberfall.Gameplay",
+        "Emberfall.AI",
+        "Emberfall.Application",
+        "Emberfall.Quests",
+        "Emberfall.Infrastructure",
+        "Emberfall.Networking",
+        "Emberfall.UI",
+        "Unity.InputSystem",
+        "Unity.AI.Navigation",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

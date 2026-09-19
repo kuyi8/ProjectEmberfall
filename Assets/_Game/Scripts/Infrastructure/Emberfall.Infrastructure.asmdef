@@ -1,0 +1,17 @@
+{
+    "name": "Emberfall.Infrastructure",
+    "rootNamespace": "Emberfall.Infrastructure",
+    "references": [
+        "Emberfall.Core",
+        "Emberfall.Quests"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
