@@ -1,10 +1,32 @@
 using System;
+using Emberfall.Gameplay.Combat.Domain;
 
 namespace Emberfall.Networking
 {
     /// <summary>Pure server-side planar range and facing check for authoritative melee hits.</summary>
     public static class NetworkCombatSpatialValidator
     {
+        /// <summary>
+        /// Uses the same authored player melee sector as offline combat. The server supplies
+        /// all positions and facing; clients never submit a target or hit collection.
+        /// </summary>
+        public static bool IsValidPlayerMeleeHit(
+            float sourceX,
+            float sourceZ,
+            float forwardX,
+            float forwardZ,
+            float targetX,
+            float targetZ) =>
+            MeleeSectorRules.Contains(
+                sourceX,
+                sourceZ,
+                forwardX,
+                forwardZ,
+                targetX,
+                targetZ,
+                MeleeSectorRules.DefaultRadius,
+                MeleeSectorRules.DefaultFullAngleDegrees);
+
         public static bool IsValidMeleeHit(
             float sourceX,
             float sourceZ,

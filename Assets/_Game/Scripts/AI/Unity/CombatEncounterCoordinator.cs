@@ -308,11 +308,19 @@ namespace Emberfall.AI.Unity
 
         private void OnPlayerDied(PlayerCombatActor _)
         {
-            // Every coordinator observes the same player death. Settle a same-frame clear first,
-            // then reset only the encounter that is actually in progress. Otherwise a death in a
-            // later arena resurrects already-cleared members in earlier arenas.
+            // Every coordinator observes the same player death. Settle a same-frame clear first.
+            // An unfinished encounter is abandoned without respawning its members once the player
+            // has left its authored arena; only the arena containing the death may reset members.
             UpdatePacingTelemetry();
             if (!IsTelemetryActive) return;
+
+            if (!IsPlayerPositionInsideTelemetryArena())
+            {
+                ResetPacingTelemetry();
+                _quota?.Reset();
+                _supportAnchors.Clear();
+                return;
+            }
 
             if (_resetMembersOnPlayerDeath) ResetEncounter();
             else
@@ -368,6 +376,12 @@ namespace Emberfall.AI.Unity
                 return false;
             }
 
+            return IsPlayerPositionInsideTelemetryArena();
+        }
+
+        private bool IsPlayerPositionInsideTelemetryArena()
+        {
+            if (_player == null) return false;
             Vector3 offset = Vector3.ProjectOnPlane(_player.transform.position - _arenaCenter, Vector3.up);
             float margin = _telemetryActivationMargin;
             return Mathf.Abs(offset.x) <= _arenaHalfExtents.x + margin &&

@@ -4,6 +4,9 @@ namespace Emberfall.Gameplay.Combat.Domain
 {
     public static class MeleeSectorRules
     {
+        public const float DefaultRadius = 2.45f;
+        public const float DefaultFullAngleDegrees = 170f;
+
         public static bool Contains(
             float originX,
             float originZ,

@@ -16,8 +16,6 @@ namespace Emberfall.Networking
     {
         private const string DefaultWardenId = "boss:ember-warden";
         private const float TwoPlayerHealthMultiplier = 1.65f;
-        private const float PlayerMeleeRange = 2.6f;
-        private const float PlayerFacingDot = 0.05f;
         private const float EnemyFacingDot = -0.15f;
 
         [SerializeField] private TextAsset _enemyDefinitions;
@@ -181,11 +179,10 @@ namespace Emberfall.Networking
         {
             if (!IsServer || _brain == null || !IsAlive || sourcePlayer == null || combat == null ||
                 !combat.IsDamageWindowOpen) return false;
-            if (!NetworkCombatSpatialValidator.IsValidMeleeHit(
+            if (!NetworkCombatSpatialValidator.IsValidPlayerMeleeHit(
                     sourcePlayer.transform.position.x, sourcePlayer.transform.position.z,
                     sourcePlayer.transform.forward.x, sourcePlayer.transform.forward.z,
-                    transform.position.x, transform.position.z,
-                    PlayerMeleeRange, PlayerFacingDot)) return false;
+                    transform.position.x, transform.position.z)) return false;
 
             float posture = combat.CurrentAttackTag == AttackTag.Heavy ? 60f :
                 combat.State == CombatState.LightAttack3 ? 38f : 18f;

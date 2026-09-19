@@ -27,7 +27,7 @@ namespace Emberfall.Editor.Setup
     public static class M5NetworkingProjectSetup
     {
         public const string Version = "0.8.9";
-        public const string ReleaseLabel = "0.8.9";
+        public const string ReleaseLabel = "0.8.9b";
         private const string ScenePath = "Assets/_Game/Scenes/91_NetworkGym.unity";
         private const string EmberValleyScenePath = "Assets/_Game/Scenes/10_EmberValley.unity";
         private const string SanctumScenePath = "Assets/_Game/Scenes/20_Sanctum.unity";
@@ -110,6 +110,7 @@ namespace Emberfall.Editor.Setup
             if (report.summary.result != BuildResult.Succeeded)
                 throw new System.InvalidOperationException($"M5 matrix Development Build failed: {report.summary.result}");
 
+            LogBuildWarningDetails(report);
             Debug.Log(
                 $"EMBERFALL_M5_MATRIX_DEVELOPMENT_BUILD_COMPLETE version={ReleaseLabel} " +
                 $"bytes={report.summary.totalSize} warnings={report.summary.totalWarnings}");
@@ -139,6 +140,7 @@ namespace Emberfall.Editor.Setup
             if (report.summary.result != BuildResult.Succeeded)
                 throw new System.InvalidOperationException($"M5 Release Build failed: {report.summary.result}");
 
+            LogBuildWarningDetails(report);
             string outputDirectory = Path.GetDirectoryName(outputPath);
             BuildArtifactCleanupResult cleanup = BuildArtifactCleaner.RemoveDoNotShipDirectories(outputDirectory);
             long executableBytes = new FileInfo(outputPath).Length;
@@ -148,6 +150,25 @@ namespace Emberfall.Editor.Setup
                 $"exeBytes={executableBytes} directoryBeforeCleanupBytes={cleanup.BytesBefore} " +
                 $"deliverableBytes={cleanup.BytesAfter} doNotShipDirectoriesRemoved={cleanup.RemovedDirectories} " +
                 $"warnings={report.summary.totalWarnings}");
+        }
+
+        private static void LogBuildWarningDetails(BuildReport report)
+        {
+            int detailedWarnings = 0;
+            foreach (BuildStep step in report.steps)
+            {
+                foreach (BuildStepMessage message in step.messages)
+                {
+                    if (message.type != LogType.Warning) continue;
+                    detailedWarnings++;
+                    Debug.LogWarning(
+                        $"[EMBERFALL_BUILD_WARNING] step={step.name} content={message.content}");
+                }
+            }
+
+            Debug.Log(
+                $"[EMBERFALL_BUILD_WARNING_DETAILS] summary={report.summary.totalWarnings} " +
+                $"detailed={detailedWarnings}");
         }
 
         private static void EnsureDirectories()

@@ -7,6 +7,37 @@ namespace Emberfall.Tests.EditMode
     public sealed class NetworkCombatValidationTests
     {
         [Test]
+        public void NetworkPlayerMeleeSectorMatchesOfflineForZeroAndMultiTargetSets()
+        {
+            var targetSets = new[]
+            {
+                new[] { (x: 0f, z: -1f), (x: 2.46f, z: 0f) },
+                new[] { (x: -1.5f, z: 1.5f), (x: 0f, z: 2.4f), (x: 1.5f, z: 1.5f), (x: 0f, z: -1f) }
+            };
+            var expectedCounts = new[] { 0, 3 };
+
+            for (int setIndex = 0; setIndex < targetSets.Length; setIndex++)
+            {
+                int offlineCount = 0;
+                int networkCount = 0;
+                foreach (var target in targetSets[setIndex])
+                {
+                    if (MeleeSectorRules.Contains(
+                            0f, 0f, 0f, 1f, target.x, target.z,
+                            MeleeSectorRules.DefaultRadius,
+                            MeleeSectorRules.DefaultFullAngleDegrees))
+                        offlineCount++;
+                    if (NetworkCombatSpatialValidator.IsValidPlayerMeleeHit(
+                            0f, 0f, 0f, 1f, target.x, target.z))
+                        networkCount++;
+                }
+
+                Assert.That(networkCount, Is.EqualTo(offlineCount));
+                Assert.That(networkCount, Is.EqualTo(expectedCounts[setIndex]));
+            }
+        }
+
+        [Test]
         public void IntentValidatorAcceptsIncreasingLightAttackSequence()
         {
             var validator = new NetworkCombatIntentValidator();

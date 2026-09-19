@@ -650,14 +650,28 @@ namespace Emberfall.Networking
             return position;
         }
 
-        internal bool ServerTryResolvePlayerAttack(NetworkGymPlayer player, Emberfall.Gameplay.Combat.Domain.CombatStateMachine combat)
+        internal int ServerResolvePlayerAttack(NetworkGymPlayer player, Emberfall.Gameplay.Combat.Domain.CombatStateMachine combat)
         {
-            foreach (NetworkGymEnemy enemy in GetEnemiesNearestFirst(player != null ? player.transform.position : Vector3.zero))
+            int hitCount = ResolveAllMeleeTargets(
+                GetEnemiesNearestFirst(player != null ? player.transform.position : Vector3.zero),
+                enemy => enemy.ServerReceivePlayerAttack(player, combat));
+            if (_warden != null && _warden.ServerReceivePlayerAttack(player, combat)) hitCount++;
+            return hitCount;
+        }
+
+        public static int ResolveAllMeleeTargets<T>(
+            IEnumerable<T> serverTargets,
+            System.Func<T, bool> tryResolve)
+        {
+            if (serverTargets == null) throw new System.ArgumentNullException(nameof(serverTargets));
+            if (tryResolve == null) throw new System.ArgumentNullException(nameof(tryResolve));
+
+            int hitCount = 0;
+            foreach (T target in serverTargets)
             {
-                if (enemy.ServerReceivePlayerAttack(player, combat)) return true;
+                if (tryResolve(target)) hitCount++;
             }
-            if (_warden != null && _warden.ServerReceivePlayerAttack(player, combat)) return true;
-            return false;
+            return hitCount;
         }
 
         internal bool ServerTryResolvePlayerProjectile(

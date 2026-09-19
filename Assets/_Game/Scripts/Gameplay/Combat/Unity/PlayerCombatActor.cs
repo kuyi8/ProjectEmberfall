@@ -17,8 +17,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField] private Transform _aimPoint;
         [SerializeField] private CharacterController _characterController;
         [SerializeField] private Renderer _bodyRenderer;
-        [SerializeField, Min(0.1f)] private float _attackRadius = 2.45f;
-        [SerializeField, Range(1f, 360f)] private float _attackAngle = 170f;
+        [SerializeField, Min(0.1f)] private float _attackRadius = MeleeSectorRules.DefaultRadius;
+        [SerializeField, Range(1f, 360f)] private float _attackAngle = MeleeSectorRules.DefaultFullAngleDegrees;
         [SerializeField, Min(0f)] private float _armor = 4f;
         [SerializeField, Min(0.1f)] private float _respawnDelay = 2.2f;
 

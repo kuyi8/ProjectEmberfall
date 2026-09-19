@@ -21,8 +21,6 @@ namespace Emberfall.Networking
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkGymEnemy : NetworkBehaviour
     {
-        private const float PlayerMeleeRange = 2.45f;
-        private const float PlayerFacingDot = 0.1f;
         private const float EnemyFacingDot = -0.1f;
         private const float ProjectileHitRadius = 0.56f;
         private const float ProjectileCastRadius = 0.08f;
@@ -615,9 +613,9 @@ namespace Emberfall.Networking
             Vector3 source = sourcePlayer.transform.position;
             Vector3 forward = sourcePlayer.transform.forward;
             Vector3 target = transform.position;
-            if (!NetworkCombatSpatialValidator.IsValidMeleeHit(
+            if (!NetworkCombatSpatialValidator.IsValidPlayerMeleeHit(
                     source.x, source.z, forward.x, forward.z,
-                    target.x, target.z, PlayerMeleeRange, PlayerFacingDot)) return false;
+                    target.x, target.z)) return false;
 
             DamageResult result = ReceivePlayerDamage(new DamageRequest(
                 sourcePlayer.ServerCombatantId,

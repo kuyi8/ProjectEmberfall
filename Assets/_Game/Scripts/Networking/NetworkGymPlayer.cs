@@ -803,12 +803,14 @@ namespace Emberfall.Networking
             if (!_matchStarted.Value || !_combat.IsDamageWindowOpen ||
                 _combat.AttackSequence == _lastResolvedAttackSequence) return;
 
-            if (NetworkGymSceneController.Find()?.ServerTryResolvePlayerAttack(this, _combat) == true)
+            _lastResolvedAttackSequence = _combat.AttackSequence;
+            NetworkGymSceneController controller = NetworkGymSceneController.Find();
+            int hitCount = controller != null ? controller.ServerResolvePlayerAttack(this, _combat) : 0;
+            Debug.Log(
+                $"[M5C_FEEL] event=attack-hit-count value={hitCount} " +
+                $"sequence={_combat.AttackSequence} source={OwnerClientId}");
+            if (hitCount > 0)
             {
-                _lastResolvedAttackSequence = _combat.AttackSequence;
-                Debug.Log(
-                    $"[M5C_FEEL] event=attack-hit-count value=1 " +
-                    $"sequence={_combat.AttackSequence} source={OwnerClientId}");
                 if (_combat.CurrentAttackTag == AttackTag.Heavy)
                 {
                     _heavyHitCount.Value++;

@@ -16,6 +16,35 @@ namespace Emberfall.Tests.PlayMode
     public sealed class NetworkGymSceneTests
     {
         [Test]
+        public void NetworkPlayerMeleeSweep_CountsEveryServerSideTargetInSharedSector()
+        {
+            Vector3 source = new Vector3(10f, 0f, 10f);
+            Vector3 forward = Vector3.forward;
+            Vector3[] serverTargetPositions =
+            {
+                source + new Vector3(-1.5f, 0f, 1.5f),
+                source + new Vector3(0f, 0f, 2.4f),
+                source + new Vector3(1.5f, 0f, 1.5f),
+                source + new Vector3(0f, 0f, -1f)
+            };
+
+            int attemptedTargets = 0;
+            int hitCount = NetworkGymSceneController.ResolveAllMeleeTargets(
+                serverTargetPositions,
+                target =>
+                {
+                    attemptedTargets++;
+                    return NetworkCombatSpatialValidator.IsValidPlayerMeleeHit(
+                        source.x, source.z, forward.x, forward.z, target.x, target.z);
+                });
+
+            Assert.That(hitCount, Is.EqualTo(3),
+                "The server-authored sweep must keep every in-sector target, not stop after the first hit.");
+            Assert.That(attemptedTargets, Is.EqualTo(4),
+                "The production sweep iterator must evaluate all Server targets even after a successful hit.");
+        }
+
+        [Test]
         public void ForestSealInteractionBuildsVisibleInRangePrompt()
         {
             string label = NetworkLocalizedText.Resolve(

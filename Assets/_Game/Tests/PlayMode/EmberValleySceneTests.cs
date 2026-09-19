@@ -894,6 +894,63 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DeathAfterLeavingUnclearedBridge_DoesNotRespawnItsDefeatedMember()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley", LoadSceneMode.Single);
+            yield return null;
+            yield return null;
+
+            PlayerCombatActor player = Object.FindObjectOfType<PlayerCombatActor>();
+            foreach (MeleeEnemyActor enemy in Object.FindObjectsOfType<MeleeEnemyActor>()) enemy.enabled = false;
+            foreach (RangedEnemyActor enemy in Object.FindObjectsOfType<RangedEnemyActor>()) enemy.enabled = false;
+            foreach (ShieldEnemyActor enemy in Object.FindObjectsOfType<ShieldEnemyActor>()) enemy.enabled = false;
+
+            RangedEnemyActor bridgeLeft = GameObject.Find("Enemy_RunePriest_Bridge_Left")
+                .GetComponent<RangedEnemyActor>();
+            RangedEnemyActor bridgeRight = GameObject.Find("Enemy_RunePriest_Bridge_Right")
+                .GetComponent<RangedEnemyActor>();
+            CombatEncounterCoordinator bridge = Object.FindObjectsOfType<CombatEncounterCoordinator>()
+                .Single(item => item.TelemetrySegment == "bridge-encounter");
+            CombatEncounterCoordinator courtyard = Object.FindObjectsOfType<CombatEncounterCoordinator>()
+                .Single(item => item.TelemetrySegment == "courtyard-encounter");
+            CharacterController controller = player.GetComponent<CharacterController>();
+
+            controller.enabled = false;
+            player.transform.position = bridge.ArenaCenter + Vector3.up * 0.3f;
+            controller.enabled = true;
+            Physics.SyncTransforms();
+            yield return null;
+            yield return null;
+            Assert.That(bridge.IsTelemetryActive, Is.True);
+
+            Assert.That(bridgeLeft.ReceiveDamage(
+                new DamageRequest(player.CombatantId, 8911, 9999f, 0f, AttackTag.Heavy)).Killed, Is.True);
+            Assert.That(bridgeRight.IsAvailable, Is.True,
+                "The bridge encounter must remain unfinished for this regression case.");
+
+            controller.enabled = false;
+            player.transform.position = courtyard.ArenaCenter + Vector3.up * 0.3f;
+            controller.enabled = true;
+            Physics.SyncTransforms();
+            yield return null;
+            yield return null;
+            Assert.That(courtyard.IsTelemetryActive, Is.True);
+
+            DamageResult death = player.ReceiveDamage(
+                new DamageRequest(8910, 1, 9999f, 0f, AttackTag.Hazard));
+            Assert.That(death.Killed, Is.True);
+            yield return null;
+
+            Assert.That(bridge.IsTelemetryActive, Is.False,
+                "Leaving an unfinished arena must abandon its active telemetry interval on a later death.");
+            Assert.That(bridgeLeft.IsAvailable, Is.False,
+                "A defeated member of an abandoned earlier encounter must not respawn after a remote death.");
+            Assert.That(bridgeRight.IsAvailable, Is.True,
+                "An undefeated member must keep its existing state rather than receive a remote reset.");
+        }
+
+        [UnityTest]
         public IEnumerator EmberValley_NewOfflineEncounters_EnterAndClearAlongNavMeshRoute()
         {
             M2LaunchIntent.RequestNewGame();
