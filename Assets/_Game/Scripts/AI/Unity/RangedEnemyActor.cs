@@ -11,7 +11,7 @@ using UnityEngine.AI;
 namespace Emberfall.AI.Unity
 {
     [DefaultExecutionOrder(-120)]
-    public sealed class RangedEnemyActor : CombatTarget, IExecutionTarget
+    public sealed class RangedEnemyActor : CombatTarget, IExecutionTarget, ISweepReactive
     {
         [SerializeField] private TextAsset _definitionJson;
         [SerializeField] private string _enemyId = "enemy:rune-priest";
@@ -28,6 +28,7 @@ namespace Emberfall.AI.Unity
 
         private RangedEnemyDefinition _definition;
         private RangedEnemyBrain _brain;
+        private EncounterLeash _leash;
         private RangedEnemyPerception _perception;
         private Vector3 _spawnPosition;
         private Quaternion _spawnRotation;
@@ -99,6 +100,7 @@ namespace Emberfall.AI.Unity
 
         private void Awake()
         {
+            _leash = GetComponent<EncounterLeash>();
             if (_target == null || _agent == null ||
                 _castOrigin == null || _bodyCollider == null || _projectileMaterial == null ||
                 !ContentId.TryCreate(_enemyId, out ContentId enemyId))
@@ -157,6 +159,8 @@ namespace Emberfall.AI.Unity
             }
 
             _perceptionRemaining -= Time.deltaTime;
+            if (_leash != null && _target != null && !_leash.AllowsTarget(_target.transform.position))
+                _perceptionRemaining = 0f;
             if (_perceptionRemaining <= 0f)
             {
                 RefreshPerception();
@@ -216,6 +220,19 @@ namespace Emberfall.AI.Unity
             return before - _brain.Posture.Current;
         }
 
+        public void ApplySweepImpulse(Vector3 sourcePosition, float distance)
+        {
+            if (!HasSimulationAuthority || !IsAvailable || _agent == null) return;
+            Vector3 direction = Vector3.ProjectOnPlane(transform.position - sourcePosition, Vector3.up);
+            if (direction.sqrMagnitude < 0.001f) direction = -transform.forward;
+            Vector3 destination = transform.position + direction.normalized * Mathf.Max(0f, distance);
+            if (_leash != null) _leash.ApplyDisplacement(destination);
+            else if (_agent.isOnNavMesh) _agent.Warp(destination);
+            else transform.position = destination;
+            StopAgent();
+            LastAiEvent = "Wide sweep stagger";
+        }
+
         public void ResetToSpawn()
         {
             if (_brain == null)
@@ -246,7 +263,8 @@ namespace Emberfall.AI.Unity
 
         private void RefreshPerception()
         {
-            bool targetAvailable = _target != null && _target.IsAvailable;
+            bool targetAvailable = _target != null && _target.IsAvailable &&
+                (_leash == null || _leash.AllowsTarget(_target.transform.position));
             float distanceToTarget = targetAvailable
                 ? Vector3.Distance(transform.position, _target.transform.position)
                 : float.PositiveInfinity;
@@ -290,14 +308,18 @@ namespace Emberfall.AI.Unity
             {
                 _agent.stoppingDistance = _definition.PreferredMaximumRange * 0.9f;
                 _agent.isStopped = false;
-                _agent.SetDestination(_target.transform.position);
+                SetDestination(_target.transform.position);
             }
             else if (_agent.isOnNavMesh && _brain.WantsRetreatMovement && _target != null)
             {
                 Vector3 away = Vector3.ProjectOnPlane(transform.position - _target.transform.position, Vector3.up);
                 Vector3 desired = transform.position + (away.sqrMagnitude > 0.001f ? away.normalized : -transform.forward) * 3f;
                 _agent.stoppingDistance = 0.1f;
-                if (NavMesh.SamplePosition(desired, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
+                if (_leash != null)
+                {
+                    _leash.SetDestination(desired);
+                }
+                else if (NavMesh.SamplePosition(desired, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
                 {
                     _agent.isStopped = false;
                     _agent.SetDestination(hit.position);
@@ -311,7 +333,7 @@ namespace Emberfall.AI.Unity
             {
                 _agent.stoppingDistance = 0.15f;
                 _agent.isStopped = false;
-                _agent.SetDestination(_spawnPosition);
+                SetDestination(_spawnPosition);
             }
             else
             {
@@ -335,7 +357,8 @@ namespace Emberfall.AI.Unity
         private void ReleaseAttack()
         {
             _releasedAttackSequence = _brain.AttackSequence;
-            if (_target == null || !_target.IsAvailable)
+            if (_target == null || !_target.IsAvailable ||
+                (_leash != null && !_leash.AllowsTarget(_target.transform.position)))
             {
                 LastAiEvent = "Projectile cancelled";
                 return;
@@ -480,6 +503,12 @@ namespace Emberfall.AI.Unity
                 _agent.isStopped = true;
                 _agent.ResetPath();
             }
+        }
+
+        private void SetDestination(Vector3 position)
+        {
+            if (_leash != null) _leash.SetDestination(position);
+            else _agent.SetDestination(position);
         }
 
         private void UpdatePresentation()

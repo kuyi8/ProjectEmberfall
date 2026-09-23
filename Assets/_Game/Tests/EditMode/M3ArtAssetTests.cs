@@ -72,6 +72,53 @@ namespace Emberfall.Tests.EditMode
         }
 
         [Test]
+        public void ArenaRepair_RemovesHiddenProxiesAndOpensCentralCombatLane()
+        {
+            EditorSceneManager.OpenScene("Assets/_Game/Scenes/10_EmberValley.unity", OpenSceneMode.Single);
+            Transform[] transforms = UnityEngine.Object.FindObjectsOfType<Transform>(true);
+            Assert.That(transforms.Any(t => t.name.StartsWith("Tree_East_") || t.name.StartsWith("Tree_West_") ||
+                t.name.StartsWith("CourtyardPillar_") || t.name.StartsWith("BridgeFence_")), Is.False);
+            foreach (string side in new[] { "West", "East" })
+            {
+                var cover = GameObject.Find("CoverProxy_Forest_" + side).GetComponent<BoxCollider>();
+                var rock = GameObject.Find("ForestCoverRock_" + side).GetComponentsInChildren<Renderer>();
+                Bounds rendered = rock[0].bounds;
+                foreach (Renderer r in rock) rendered.Encapsulate(r.bounds);
+                Assert.That(Vector3.Distance(rendered.center, cover.bounds.center), Is.LessThan(0.02f));
+                Assert.That(Vector3.Distance(rendered.size, cover.bounds.size), Is.LessThan(0.02f));
+                Assert.That(Mathf.Abs(cover.bounds.center.x) - cover.bounds.extents.x, Is.GreaterThan(3.8f),
+                    "Keep the central combat lane free of cover, not just a larger telemetry rectangle.");
+                var obstacle = cover.GetComponent<UnityEngine.AI.NavMeshObstacle>();
+                Assert.That(obstacle.center, Is.EqualTo(cover.center));
+                Assert.That(obstacle.size, Is.EqualTo(cover.size));
+            }
+            foreach (Transform t in transforms.Where(t => t.name.StartsWith("GateBlocker_") && t.GetComponent<Collider>() != null))
+            {
+                Renderer r = t.GetComponent<Renderer>();
+                Assert.That(r, Is.Not.Null, t.name);
+                Assert.That(r.enabled, Is.True, t.name);
+                Assert.That(r.sharedMaterial.GetColor("_BaseColor").a, Is.GreaterThanOrEqualTo(0.5f));
+            }
+        }
+
+        [TestCase("10_EmberValley")]
+        [TestCase("20_Sanctum")]
+        [TestCase("90_CombatGym")]
+        [TestCase("91_NetworkGym")]
+        public void SceneSolids_HaveVisibleGeometryOrExplicitTerrainSupport(string scene)
+        {
+            EditorSceneManager.OpenScene($"Assets/_Game/Scenes/{scene}.unity", OpenSceneMode.Single);
+            foreach (Collider c in UnityEngine.Object.FindObjectsOfType<Collider>())
+            {
+                if (!c.enabled || c.isTrigger || c is CharacterController) continue;
+                if (c.transform.parent != null && c.transform.parent.name == "[Gameplay] Terrain Support Proxies") continue;
+                if (c.name.StartsWith("CoverProxy_Forest_")) continue; // Exact external rock bounds checked above.
+                Assert.That(c.GetComponentsInChildren<Renderer>().Any(r => r.enabled && r.bounds.size.sqrMagnitude > 0.01f),
+                    Is.True, "Invisible blocking collider: " + scene + "/" + c.name);
+            }
+        }
+
+        [Test]
         public void EmberValley_ReadabilityPass_UsesDistinctCharactersAndClearTreeLine()
         {
             EditorSceneManager.OpenScene("Assets/_Game/Scenes/10_EmberValley.unity", OpenSceneMode.Single);
@@ -110,7 +157,8 @@ namespace Emberfall.Tests.EditMode
                     Bounds b = routeSurfaces[j].bounds;
                     float overlapX = Mathf.Min(a.max.x, b.max.x) - Mathf.Max(a.min.x, b.min.x);
                     float overlapZ = Mathf.Min(a.max.z, b.max.z) - Mathf.Max(a.min.z, b.min.z);
-                    Assert.That(overlapX > 0.01f && overlapZ > 0.01f, Is.False,
+                    bool coplanar = Mathf.Abs(a.max.y - b.max.y) < 0.005f;
+                    Assert.That(coplanar && overlapX > 0.01f && overlapZ > 0.01f, Is.False,
                         $"Coplanar route surfaces overlap and may flicker: {routeSurfaces[i].name} / {routeSurfaces[j].name}");
                 }
             }

@@ -11,7 +11,7 @@ using UnityEngine.AI;
 namespace Emberfall.AI.Unity
 {
     [DefaultExecutionOrder(-120)]
-    public sealed class MeleeEnemyActor : CombatTarget, IExecutionTarget
+    public sealed class MeleeEnemyActor : CombatTarget, IExecutionTarget, ISweepReactive
     {
         private const int HitBufferSize = 12;
 
@@ -31,6 +31,7 @@ namespace Emberfall.AI.Unity
         private readonly HitRegistry _hitRegistry = new HitRegistry();
         private MeleeEnemyDefinition _definition;
         private MeleeEnemyBrain _brain;
+        private EncounterLeash _leash;
         private MeleeEnemyPerception _perception;
         private Vector3 _spawnPosition;
         private Quaternion _spawnRotation;
@@ -104,6 +105,7 @@ namespace Emberfall.AI.Unity
 
         private void Awake()
         {
+            _leash = GetComponent<EncounterLeash>();
             if (_target == null || _agent == null ||
                 _attackOrigin == null || _bodyCollider == null ||
                 !ContentId.TryCreate(_enemyId, out ContentId enemyId))
@@ -228,6 +230,19 @@ namespace Emberfall.AI.Unity
             return before - _brain.Posture.Current;
         }
 
+        public void ApplySweepImpulse(Vector3 sourcePosition, float distance)
+        {
+            if (!HasSimulationAuthority || !IsAvailable || _agent == null) return;
+            Vector3 direction = Vector3.ProjectOnPlane(transform.position - sourcePosition, Vector3.up);
+            if (direction.sqrMagnitude < 0.001f) direction = -transform.forward;
+            Vector3 destination = transform.position + direction.normalized * Mathf.Max(0f, distance);
+            if (_leash != null) _leash.ApplyDisplacement(destination);
+            else if (_agent.isOnNavMesh) _agent.Warp(destination);
+            else transform.position = destination;
+            StopAgent();
+            LastAiEvent = "Wide sweep stagger";
+        }
+
         public void SetGroupDirective(
             bool attackAllowed,
             bool hasSupportDestination,
@@ -274,7 +289,8 @@ namespace Emberfall.AI.Unity
 
         private void RefreshPerception()
         {
-            bool targetAvailable = _target != null && _target.IsAvailable;
+            bool targetAvailable = _target != null && _target.IsAvailable &&
+                (_leash == null || _leash.AllowsTarget(_target.transform.position));
             float distanceToTarget = targetAvailable
                 ? Vector3.ProjectOnPlane(
                     _target.transform.position - transform.position,
@@ -328,14 +344,14 @@ namespace Emberfall.AI.Unity
                     ? _supportArrivalDistance
                     : Mathf.Max(0.2f, _definition.AttackRange * 0.94f);
                 _agent.isStopped = false;
-                _agent.SetDestination(_hasSupportDestination && !_attackAllowed
+                SetDestination(_hasSupportDestination && !_attackAllowed
                     ? _supportDestination
                     : _target.transform.position);
             }
             else if (_agent.isOnNavMesh && _brain.WantsReturnMovement)
             {
                 _agent.isStopped = false;
-                _agent.SetDestination(_spawnPosition);
+                SetDestination(_spawnPosition);
             }
             else
             {
@@ -358,6 +374,7 @@ namespace Emberfall.AI.Unity
 
         private void QueryAttackHits()
         {
+            if (_leash != null && _target != null && !_leash.AllowsTarget(_target.transform.position)) return;
             int count = Physics.OverlapSphereNonAlloc(
                 _attackOrigin.position,
                 _attackRadius * _brain.CurrentHitRadiusMultiplier,
@@ -410,6 +427,12 @@ namespace Emberfall.AI.Unity
             {
                 RestoreBodyAtSpawn();
             }
+        }
+
+        private void SetDestination(Vector3 position)
+        {
+            if (_leash != null) _leash.SetDestination(position);
+            else _agent.SetDestination(position);
         }
 
         public void SetAutoResetAfterDelay(bool enabled)

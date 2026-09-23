@@ -399,6 +399,31 @@ namespace Emberfall.Editor.Setup
             Debug.Log($"EMBERFALL_M6_INTEGRATED_REVIEW_COMPLETE scene={scene.path} output={absoluteOutput}");
         }
 
+        [MenuItem("Emberfall/Review/Capture 0.8.10 Arena Expansion")]
+        public static void CaptureM5dArenaExpansion()
+        {
+            M5dArenaRepair.Apply();
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                throw new InvalidOperationException("0.8.10 arena review requires a graphics device.");
+
+            string absoluteOutput = Path.GetFullPath("Builds/ArtReview/0.8.10a");
+            Directory.CreateDirectory(absoluteOutput);
+            Scene scene = EditorSceneManager.OpenScene(EmberValleyScenePath, OpenSceneMode.Single);
+            CaptureLoadedScene(Path.Combine(absoluteOutput, "01-forest-boundaries.png"),
+                new Vector3(-10f, 9f, 22f), new Vector3(0f, 0.8f, 35f), 52f);
+            CaptureLoadedScene(Path.Combine(absoluteOutput, "02-bridge-boundaries.png"),
+                new Vector3(1f, 10f, 55f), new Vector3(13f, 0.8f, 44.8f), 50f);
+            CaptureLoadedScene(Path.Combine(absoluteOutput, "03-courtyard-boundaries.png"),
+                new Vector3(15f, 11f, 60f), new Vector3(29f, 0.8f, 45f), 52f);
+            CaptureLoadedScene(Path.Combine(absoluteOutput, "04-pre-sanctum-boundaries.png"),
+                new Vector3(27f, 9f, 42f), new Vector3(39f, 0.8f, 31f), 48f);
+            CaptureLoadedScene(Path.Combine(absoluteOutput, "05-forest-player-height.png"),
+                new Vector3(0f, 3.7f, 25f), new Vector3(1f, 1f, 36f), 62f);
+            CaptureLoadedScene(Path.Combine(absoluteOutput, "06-bridge-player-height.png"),
+                new Vector3(6.8f, 3.7f, 44.5f), new Vector3(15f, 1f, 45f), 62f);
+            Debug.Log($"EMBERFALL_M5D_ARENA_REVIEW_COMPLETE scene={scene.path} output={absoluteOutput}");
+        }
+
         [MenuItem("Emberfall/Review/Capture M5c Scorched Elite Integrated")]
         public static void CaptureM5cScorchedEliteIntegrated()
         {

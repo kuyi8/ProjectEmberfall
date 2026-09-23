@@ -34,6 +34,7 @@ namespace Emberfall.AI.Unity
         private readonly HitRegistry _hitRegistry = new HitRegistry();
         private ShieldEnemyDefinition _definition;
         private ShieldEnemyBrain _brain;
+        private EncounterLeash _leash;
         private MeleeEnemyPerception _perception;
         private Vector3 _spawnPosition;
         private Quaternion _spawnRotation;
@@ -123,6 +124,7 @@ namespace Emberfall.AI.Unity
 
         private void Awake()
         {
+            _leash = GetComponent<EncounterLeash>();
             if (_target == null || _agent == null ||
                 _attackOrigin == null || _bodyCollider == null ||
                 !ContentId.TryCreate(_enemyId, out ContentId enemyId))
@@ -270,7 +272,8 @@ namespace Emberfall.AI.Unity
 
         private void RefreshPerception()
         {
-            bool targetAvailable = _target != null && _target.IsAvailable;
+            bool targetAvailable = _target != null && _target.IsAvailable &&
+                (_leash == null || _leash.AllowsTarget(_target.transform.position));
             float distanceToTarget = targetAvailable
                 ? Vector3.ProjectOnPlane(_target.transform.position - transform.position, Vector3.up).magnitude
                 : float.PositiveInfinity;
@@ -315,14 +318,14 @@ namespace Emberfall.AI.Unity
                     ? _supportArrivalDistance
                     : Mathf.Max(0.2f, _definition.AttackRange * 0.94f);
                 _agent.isStopped = false;
-                _agent.SetDestination(_hasSupportDestination && !_attackAllowed
+                SetDestination(_hasSupportDestination && !_attackAllowed
                     ? _supportDestination
                     : _target.transform.position);
             }
             else if (_agent.isOnNavMesh && _brain.WantsReturnMovement)
             {
                 _agent.isStopped = false;
-                _agent.SetDestination(_spawnPosition);
+                SetDestination(_spawnPosition);
             }
             else
             {
@@ -341,6 +344,7 @@ namespace Emberfall.AI.Unity
 
         private void QueryAttackHits()
         {
+            if (_leash != null && _target != null && !_leash.AllowsTarget(_target.transform.position)) return;
             int count = Physics.OverlapSphereNonAlloc(
                 _attackOrigin.position, _attackRadius * _brain.CurrentHitRadiusMultiplier,
                 _hitBuffer, ~0, QueryTriggerInteraction.Collide);
@@ -405,6 +409,7 @@ namespace Emberfall.AI.Unity
 
         private void ReleaseScorchedBurst()
         {
+            if (_leash != null && _target != null && !_leash.AllowsTarget(_target.transform.position)) return;
             Vector3 center = ProjectToGround(transform.position);
             var runeObject = new GameObject($"ScorchedBurst_{_brain.AttackSequence:000}");
             runeObject.transform.position = center;
@@ -473,6 +478,12 @@ namespace Emberfall.AI.Unity
                 _agent.isStopped = true;
                 _agent.ResetPath();
             }
+        }
+
+        private void SetDestination(Vector3 position)
+        {
+            if (_leash != null) _leash.SetDestination(position);
+            else _agent.SetDestination(position);
         }
 
         private void UpdatePresentationTint()

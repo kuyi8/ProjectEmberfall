@@ -26,8 +26,8 @@ namespace Emberfall.Editor.Setup
 {
     public static class M5NetworkingProjectSetup
     {
-        public const string Version = "0.8.9";
-        public const string ReleaseLabel = "0.8.9b";
+        public const string Version = "0.8.10";
+        public const string ReleaseLabel = "0.8.10a";
         private const string ScenePath = "Assets/_Game/Scenes/91_NetworkGym.unity";
         private const string EmberValleyScenePath = "Assets/_Game/Scenes/10_EmberValley.unity";
         private const string SanctumScenePath = "Assets/_Game/Scenes/20_Sanctum.unity";
@@ -879,7 +879,7 @@ namespace Emberfall.Editor.Setup
                     }),
                 new NetworkEncounterPlan(
                     "encounter:broken-bridge",
-                    bridgeAnchor.position,
+                    new Vector3(10f, 1f, 44f), // Offline seal dressing must not move the existing co-op activation zone.
                     7f,
                     new[]
                     {
@@ -936,6 +936,7 @@ namespace Emberfall.Editor.Setup
             offlineBehaviours.AddRange(Object.FindObjectsOfType<BridgeMechanismGuidancePresenter>(true));
             offlineBehaviours.AddRange(Object.FindObjectsOfType<RouteChoiceEncounterModifier>(true));
             offlineBehaviours.AddRange(Object.FindObjectsOfType<CombatEncounterCoordinator>(true));
+            offlineBehaviours.AddRange(Object.FindObjectsOfType<EncounterLeash>(true));
             AddIfPresent(offlineBehaviours, Object.FindObjectOfType<TacticalPostureShrine>(true));
             for (int i = 0; i < offlineBehaviours.Count; i++)
             {

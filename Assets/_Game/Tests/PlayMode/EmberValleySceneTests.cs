@@ -836,6 +836,135 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator EmberValley_ArenasAreExpandedSeparatedAndHaveVisibleFaces()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley", LoadSceneMode.Single);
+            yield return null;
+            yield return null;
+
+            var baselineAreas = new Dictionary<string, float>
+            {
+                { "forest-encounter", 12.6f * 12f },
+                { "bridge-encounter", 6.4f * 8.4f },
+                { "courtyard-encounter", 15f * 12.4f },
+                { "pre-sanctum-encounter", 8f * 6f }
+            };
+            CombatEncounterCoordinator[] arenas = Object.FindObjectsOfType<CombatEncounterCoordinator>();
+            foreach (CombatEncounterCoordinator arena in arenas)
+            {
+                float authoredArea = arena.ArenaHalfExtents.x * 2f * arena.ArenaHalfExtents.y * 2f;
+                Assert.That(authoredArea / baselineAreas[arena.TelemetrySegment],
+                    Is.InRange(1.49f, 1.51f), arena.TelemetrySegment);
+            }
+
+            for (int left = 0; left < arenas.Length; left++)
+            for (int right = left + 1; right < arenas.Length; right++)
+            {
+                Assert.That(ArenasOverlap(arenas[left], arenas[right]), Is.False,
+                    $"{arenas[left].TelemetrySegment} overlaps {arenas[right].TelemetrySegment}");
+            }
+
+            EncounterBoundaryVisualMarker[] markers = Object.FindObjectsOfType<EncounterBoundaryVisualMarker>();
+            Assert.That(markers.Length, Is.EqualTo(16));
+            foreach (CombatEncounterCoordinator arena in arenas)
+            {
+                EncounterBoundaryVisualMarker[] faces = markers
+                    .Where(marker => marker.Segment == arena.TelemetrySegment).ToArray();
+                Assert.That(faces.Select(marker => marker.Face).Distinct().Count(), Is.EqualTo(4));
+                foreach (EncounterBoundaryVisualMarker marker in faces)
+                {
+                    Assert.That(marker.VisibleRenderer, Is.Not.Null);
+                    Assert.That(marker.VisibleRenderer.enabled, Is.True);
+                    Bounds solid = marker.GetComponent<BoxCollider>().bounds;
+                    Bounds visible = marker.VisibleRenderer.bounds;
+                    Assert.That(Vector3.Distance(solid.center, visible.center), Is.LessThan(0.02f), marker.name);
+                    Assert.That(Vector3.Distance(solid.size, visible.size), Is.LessThan(0.02f),
+                        "A named renderer alone cannot prove that a wall is visible at collider scale: " + marker.name);
+                    float faceDistance = marker.Face == EncounterBoundaryFace.North || marker.Face == EncounterBoundaryFace.South
+                        ? Mathf.Abs(Mathf.Abs(marker.transform.position.z - arena.ArenaCenter.z) - arena.ArenaHalfExtents.y)
+                        : Mathf.Abs(Mathf.Abs(marker.transform.position.x - arena.ArenaCenter.x) - arena.ArenaHalfExtents.x);
+                    Assert.That(faceDistance, Is.LessThan(0.12f), $"{arena.TelemetrySegment}/{marker.Face}");
+                }
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator RangedEncounters_DoNotAcquireAcrossZones_AndRetreatStaysInside()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley", LoadSceneMode.Single);
+            yield return null;
+            yield return null;
+            PlayerCombatActor player = Object.FindObjectOfType<PlayerCombatActor>();
+            player.GetComponent<ThirdPersonMotor>().enabled = false;
+            player.GetComponent<CharacterController>().enabled = false;
+            foreach (MeleeEnemyActor enemy in Object.FindObjectsOfType<MeleeEnemyActor>())
+            {
+                enemy.enabled = false;
+                enemy.GetComponent<Collider>().enabled = false;
+            }
+            foreach (ShieldEnemyActor enemy in Object.FindObjectsOfType<ShieldEnemyActor>())
+            {
+                enemy.enabled = false;
+                enemy.GetComponent<Collider>().enabled = false;
+            }
+            RangedEnemyActor[] priests = Object.FindObjectsOfType<RangedEnemyActor>()
+                .Where(e => e.name.Contains("Forest") || e.name.Contains("Bridge")).ToArray();
+            Assert.That(priests.Length, Is.EqualTo(3));
+            RangedEnemyActor forest = priests.Single(e => e.name.Contains("Forest"));
+            RangedEnemyActor[] bridge = priests.Where(e => e.name.Contains("Bridge")).ToArray();
+            Vector3[] bridgeSpawns = bridge.Select(e => e.transform.position).ToArray();
+            // Arrange an unobstructed close-range encounter, not a target hidden behind the east cover.
+            forest.GetComponent<NavMeshAgent>().Warp(new Vector3(2f, 0f, 35f));
+            player.transform.position = new Vector3(0f, 0.1f, 35f);
+            forest.transform.rotation = Quaternion.LookRotation(
+                Vector3.ProjectOnPlane(player.transform.position - forest.transform.position, Vector3.up));
+            Vector3 forestStart = forest.transform.position;
+            Physics.SyncTransforms();
+            bool sawRetreat = false;
+            for (float elapsed = 0f; elapsed < 3f; elapsed += Time.deltaTime)
+            {
+                yield return null;
+                sawRetreat |= forest.State == RangedEnemyState.Retreat;
+                foreach (RangedEnemyActor priest in priests)
+                    Assert.That(priest.GetComponent<EncounterLeash>().Contains(priest.transform.position), Is.True, priest.name);
+                for (int i = 0; i < bridge.Length; i++)
+                {
+                    Assert.That(bridge[i].Brain.AttackSequence, Is.Zero, "Bridge must not cast into the forest.");
+                    Assert.That(Vector3.Distance(bridgeSpawns[i], bridge[i].transform.position), Is.LessThan(0.2f));
+                }
+            }
+            Vector3 sight = player.AimPoint.position - forest.AimPoint.position;
+            bool blocked = Physics.Raycast(forest.AimPoint.position, sight.normalized, out RaycastHit sightHit,
+                sight.magnitude, ~0, QueryTriggerInteraction.Ignore);
+            Assert.That(sawRetreat, Is.True,
+                $"Exercise real close-range retreat. State={forest.State} authority={forest.HasSimulationAuthority} " +
+                $"enemy={forest.transform.position} player={player.transform.position} available={player.IsAvailable} " +
+                $"scale={Time.timeScale} facing={forest.transform.forward} blocked={(blocked ? sightHit.collider.name : "none")}");
+            Assert.That(Vector3.Distance(forestStart, forest.transform.position), Is.GreaterThan(0.2f),
+                $"The leash must permit real retreat: state={forest.State}, destination={forest.GetComponent<NavMeshAgent>().destination}, " +
+                $"path={forest.GetComponent<NavMeshAgent>().pathStatus}, velocity={forest.GetComponent<NavMeshAgent>().velocity}");
+            forest.ReceiveDamage(new DamageRequest(player.CombatantId, 9411, 10f, 0f, AttackTag.Light));
+            float health = forest.Brain.Health.Current;
+            player.transform.position = new Vector3(13f, 0.1f, 44.8f);
+            Physics.SyncTransforms();
+            int sequence = forest.Brain.AttackSequence;
+            for (float elapsed = 0f; elapsed < 3f; elapsed += Time.deltaTime)
+            {
+                yield return null;
+                Assert.That(forest.GetComponent<EncounterLeash>().Contains(forest.transform.position), Is.True);
+                Assert.That(forest.Brain.AttackSequence, Is.EqualTo(sequence), "Forest must disengage across zones.");
+                Assert.That(forest.Brain.Health.Current, Is.EqualTo(health), "Returning must not heal or respawn.");
+            }
+            Assert.That(forest.State == RangedEnemyState.Return || forest.State == RangedEnemyState.Idle, Is.True);
+            EncounterLeash leash = forest.GetComponent<EncounterLeash>();
+            forest.ApplySweepImpulse(forest.transform.position + Vector3.left, 100f);
+            Assert.That(leash.Contains(forest.transform.position), Is.True, "Sweep must not push an enemy out of its encounter.");
+            new JsonSaveGameStore(Object.FindObjectOfType<M2RouteFlowController>().SavePath).DeleteAllRevisions();
+        }
+
+        [UnityTest]
         public IEnumerator DeathInActiveCourtyard_DoesNotRespawnClearedBridgeEnemies()
         {
             M2LaunchIntent.RequestNewGame();
@@ -1133,6 +1262,16 @@ namespace Emberfall.Tests.PlayMode
             if (motor != null) motor.enabled = motorWasEnabled;
             Physics.SyncTransforms();
             yield return null;
+        }
+
+        private static bool ArenasOverlap(CombatEncounterCoordinator left, CombatEncounterCoordinator right)
+        {
+            float leftX = left.ArenaHalfExtents.x + left.TelemetryActivationMargin;
+            float leftZ = left.ArenaHalfExtents.y + left.TelemetryActivationMargin;
+            float rightX = right.ArenaHalfExtents.x + right.TelemetryActivationMargin;
+            float rightZ = right.ArenaHalfExtents.y + right.TelemetryActivationMargin;
+            return Mathf.Abs(left.ArenaCenter.x - right.ArenaCenter.x) < leftX + rightX &&
+                   Mathf.Abs(left.ArenaCenter.z - right.ArenaCenter.z) < leftZ + rightZ;
         }
 
         private static void KillMelee(PlayerCombatActor player, string name, int sequence)
