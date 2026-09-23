@@ -664,11 +664,11 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(enemy, Is.Not.Null);
             enemy.enabled = false;
 
-            float damage = enemy.Brain.Health.Maximum * 0.8f;
+            float damage = enemy.Brain.Health.Maximum * 0.92f + enemy.Definition.Armor;
             DamageResult result = enemy.ReceiveDamage(
                 new DamageRequest(player.CombatantId, 8801, damage, 0f, AttackTag.Light));
             Assert.That(result.Accepted, Is.True);
-            Assert.That(enemy.HealthNormalized, Is.LessThanOrEqualTo(0.25f));
+            Assert.That(enemy.HealthNormalized, Is.LessThanOrEqualTo(ExecutionRules.OrdinaryHealthThreshold));
 
             CharacterController controller = player.GetComponent<CharacterController>();
             controller.enabled = false;

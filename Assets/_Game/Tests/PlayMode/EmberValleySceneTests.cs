@@ -563,6 +563,8 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(playerKilled.Killed, Is.True);
             Assert.That(flow.Stage, Is.EqualTo(MainQuestStage.DefeatWarden));
             Assert.That(flow.IsWardenEncounterActive, Is.False);
+            Assert.That(GameObject.Find("GateBlocker_WardenEncounter").GetComponent<Collider>().enabled, Is.False);
+            yield return new WaitForSeconds(0.6f);
             Assert.That(GameObject.Find("GateBlocker_WardenEncounter"), Is.Null);
             Assert.That(warden.Brain.Health.Current, Is.EqualTo(warden.Brain.Health.Maximum));
             yield return new WaitForSeconds(2.2f);

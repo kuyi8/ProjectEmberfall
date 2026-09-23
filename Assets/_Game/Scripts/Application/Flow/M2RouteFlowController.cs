@@ -35,6 +35,7 @@ namespace Emberfall.Application.Flow
         [SerializeField] private Transform _defaultCheckpoint;
         [SerializeField] private WardenActor _warden;
         [SerializeField] private GameObject _wardenEntranceBarrier;
+        private M2StageBarrier _wardenBarrierPresentation;
         [SerializeField] private ForestSealTemplateCoordinator _forestTemplate;
         [SerializeField] private string _saveFileName = "emberfall-save-v1.json";
 
@@ -691,7 +692,13 @@ namespace Emberfall.Application.Flow
         private void SetWardenEncounterActive(bool active)
         {
             IsWardenEncounterActive = active;
-            if (_wardenEntranceBarrier != null) _wardenEntranceBarrier.SetActive(active);
+            if (_wardenEntranceBarrier == null) return;
+            if (_wardenBarrierPresentation == null)
+            {
+                _wardenBarrierPresentation = M2StageBarrier.CreateManual(gameObject, _wardenEntranceBarrier);
+                _wardenBarrierPresentation.SetOpen(!active, true);
+            }
+            else _wardenBarrierPresentation.SetOpen(!active);
         }
 
         private void SubscribeEncounterTelemetry()

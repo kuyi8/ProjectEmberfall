@@ -9,6 +9,7 @@ namespace Emberfall.AI.Domain
         private readonly MeleeEnemyDefinition _definition;
         private readonly HealthModel _health;
         private float _comboCooldownRemaining;
+        private float _postureWindowRemaining;
 
         public MeleeEnemyBrain(MeleeEnemyDefinition definition)
         {
@@ -26,8 +27,7 @@ namespace Emberfall.AI.Domain
         public MeleeAttackKind CurrentAttack { get; private set; } = MeleeAttackKind.QuickSlash;
         public HealthModel Health => _health;
         public PostureModel Posture { get; }
-        public bool IsPostureExecutionWindow => State == MeleeEnemyState.HitReact &&
-            StateElapsed < ExecutionRules.PostureWindowSeconds && Posture.IsBroken;
+        public bool IsPostureExecutionWindow => !_health.IsDead && _postureWindowRemaining > 0f;
         public bool WantsTargetMovement => State == MeleeEnemyState.Chase;
         public bool WantsReturnMovement => State == MeleeEnemyState.Return;
         public bool WantsFaceTarget =>
@@ -74,9 +74,15 @@ namespace Emberfall.AI.Domain
             }
 
             StateElapsed += deltaTime;
+            if (_postureWindowRemaining > 0f)
+            {
+                _postureWindowRemaining = Math.Max(0f, _postureWindowRemaining - deltaTime);
+                if (_postureWindowRemaining == 0f) Posture.RestoreFull();
+            }
             _comboCooldownRemaining = Math.Max(0f, _comboCooldownRemaining - deltaTime);
             Posture.Tick(deltaTime,
-                State == MeleeEnemyState.Idle || State == MeleeEnemyState.Chase || State == MeleeEnemyState.Return);
+                !IsPostureExecutionWindow && (State == MeleeEnemyState.Idle ||
+                State == MeleeEnemyState.Chase || State == MeleeEnemyState.Return));
             switch (State)
             {
                 case MeleeEnemyState.Idle:
@@ -122,9 +128,8 @@ namespace Emberfall.AI.Domain
                     }
                     break;
                 case MeleeEnemyState.HitReact:
-                    if (StateElapsed >= ExecutionRules.PostureWindowSeconds)
+                    if (StateElapsed >= _definition.HitReactDuration)
                     {
-                        Posture.RestoreFull();
                         TransitionTo(ShouldDisengage(perception)
                             ? MeleeEnemyState.Return
                             : MeleeEnemyState.Chase);
@@ -155,9 +160,9 @@ namespace Emberfall.AI.Domain
             float applied = _health.ApplyDamage(request.RawDamage, _definition.Armor);
             bool killed = _health.IsDead;
             float postureApplied = killed ? 0f : Posture.ApplyDamage(request.PostureDamage);
-            bool staggered = !killed && Posture.IsBroken;
+            bool staggered = !killed && Posture.IsBroken && !IsPostureExecutionWindow;
             if (killed) TransitionTo(MeleeEnemyState.Dead);
-            else if (staggered) TransitionTo(MeleeEnemyState.HitReact);
+            else if (staggered) BeginPostureBreak();
             return new DamageResult(
                 true, false, applied, killed,
                 false, false, false, false, staggered, postureApplied);
@@ -165,11 +170,17 @@ namespace Emberfall.AI.Domain
 
         public bool ApplyCounterPosture(float postureDamage)
         {
-            if (State == MeleeEnemyState.Dead) return false;
+            if (State == MeleeEnemyState.Dead || IsPostureExecutionWindow) return false;
             Posture.ApplyDamage(postureDamage);
             if (!Posture.IsBroken) return false;
-            TransitionTo(MeleeEnemyState.HitReact);
+            BeginPostureBreak();
             return true;
+        }
+
+        private void BeginPostureBreak()
+        {
+            _postureWindowRemaining = ExecutionRules.PostureWindowSeconds;
+            TransitionTo(MeleeEnemyState.HitReact);
         }
 
         public void Reset()
@@ -181,6 +192,7 @@ namespace Emberfall.AI.Domain
             AttackSequence = 0;
             CurrentAttack = MeleeAttackKind.QuickSlash;
             _comboCooldownRemaining = 0f;
+            _postureWindowRemaining = 0f;
         }
 
         private void SelectAttack(MeleeEnemyPerception perception)
@@ -221,6 +233,7 @@ namespace Emberfall.AI.Domain
             }
 
             State = state;
+            if (state == MeleeEnemyState.Dead) _postureWindowRemaining = 0f;
             StateElapsed = 0f;
             if (state == MeleeEnemyState.Attack)
             {

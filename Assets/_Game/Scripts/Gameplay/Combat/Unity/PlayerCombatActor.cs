@@ -1,6 +1,7 @@
 using System;
 using Emberfall.Gameplay.Combat.Domain;
 using Emberfall.Gameplay.Input;
+using Emberfall.Gameplay.Interaction;
 using Emberfall.Core.Identifiers;
 using UnityEngine;
 
@@ -41,6 +42,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         private IExecutionTarget _executionPromptTarget;
         private float _executionPromptRefreshRemaining;
         private float _nextVoidRecoveryTime;
+        private PlayerInteractor _interactor;
         public string FeedbackTextId { get; private set; }
         public float FeedbackUntil { get; private set; }
 
@@ -606,7 +608,12 @@ namespace Emberfall.Gameplay.Combat.Unity
         {
             if (_model == null || _model.IsDead) return false;
             IExecutionTarget best = FindNearestExecutionTarget();
-            best ??= FindNearestExecutionTarget(false);
+            if (best == null)
+            {
+                _interactor ??= GetComponent<PlayerInteractor>();
+                bool hasInteraction = _interactor != null && _interactor.CurrentCandidate != null;
+                best = FindNearestExecutionTarget(false, hasInteraction);
+            }
             if (best == null) return false;
             string failure = ExecutionRules.FailureTextId(best.ExecutionKind,
                 best.CombatTarget.HealthNormalized, best.IsPostureExecutionWindow,
@@ -637,7 +644,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             return true;
         }
 
-        private IExecutionTarget FindNearestExecutionTarget(bool eligibleOnly = true)
+        private IExecutionTarget FindNearestExecutionTarget(bool eligibleOnly = true, bool nearOnly = false)
         {
             if (_model == null) return null;
             int count = Physics.OverlapSphereNonAlloc(
@@ -655,6 +662,9 @@ namespace Emberfall.Gameplay.Combat.Unity
                 if (candidate == null || (eligibleOnly && !candidate.IsExecutionEligible) ||
                     candidate.CombatTarget == null || !candidate.CombatTarget.IsAvailable)
                     continue;
+                if (nearOnly && (candidate.IsExecutionClaimed || !ExecutionRules.IsNearEligible(
+                    candidate.ExecutionKind, candidate.CombatTarget.HealthNormalized,
+                    candidate.CombatTarget.SecondaryResourceNormalized))) continue;
                 Vector3 offset = Vector3.ProjectOnPlane(
                     candidate.CombatTarget.transform.position - transform.position,
                     Vector3.up);

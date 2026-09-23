@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "packageId": "package:emberfall.builtin",
-    "contentVersion": "0.8.10",
+    "contentVersion": "0.8.11",
     "minClientVersion": "0.5.0",
     "maxClientVersion": "0.8.999",
     "signatureAlgorithm": "builtin",
@@ -10,8 +10,8 @@
         {
             "path": "Data/enemies.v1.json",
             "kind": "json",
-            "size": 8082,
-            "sha256": "8b8dcbd60db1585584843475bbdc6f8b7393fb39954ee4530f1a0920370f7232"
+            "size": 8081,
+            "sha256": "f58b9a6e0b7fad73c1a85e4a202d2d1aef559347cc369f48968992e022773a21"
         },
         {
             "path": "Data/quests.v1.json",
@@ -22,8 +22,8 @@
         {
             "path": "Data/texts.zh-CN.v1.json",
             "kind": "json",
-            "size": 10510,
-            "sha256": "c1503afe365404780510d74c17b0181bc7a5b403f305576ac7f6120085c2ac0d"
+            "size": 10655,
+            "sha256": "2d2f5e8d8bbbefdcc64b9a181aefe7664f0b9d63eed863107612d39fcd4bef97"
         },
         {
             "path": "Scripts/quest_forest_condition.lua",

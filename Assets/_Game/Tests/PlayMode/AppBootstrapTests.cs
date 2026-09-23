@@ -19,7 +19,7 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(AppBootstrap.IsInitialized, Is.True);
             Assert.That(ContentPackageRuntime.IsInitialized, Is.True);
             Assert.That(
-                ContentPackageRuntime.Current.Snapshot.Manifest.ContentVersion == new SemanticVersion(0, 8, 10),
+                ContentPackageRuntime.Current.Snapshot.Manifest.ContentVersion == new SemanticVersion(0, 8, 11),
                 Is.True);
 
             Object.Destroy(appRoot);

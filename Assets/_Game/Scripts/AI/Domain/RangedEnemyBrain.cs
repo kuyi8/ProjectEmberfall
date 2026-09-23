@@ -9,6 +9,7 @@ namespace Emberfall.AI.Domain
         private readonly RangedEnemyDefinition _definition;
         private readonly HealthModel _health;
         private float _groundRuneCooldownRemaining;
+        private float _postureWindowRemaining;
 
         public RangedEnemyBrain(RangedEnemyDefinition definition)
         {
@@ -26,8 +27,7 @@ namespace Emberfall.AI.Domain
         public RangedAttackKind CurrentAttack { get; private set; } = RangedAttackKind.Projectile;
         public HealthModel Health => _health;
         public PostureModel Posture { get; }
-        public bool IsPostureExecutionWindow => State == RangedEnemyState.HitReact &&
-            StateElapsed < ExecutionRules.PostureWindowSeconds && Posture.IsBroken;
+        public bool IsPostureExecutionWindow => !_health.IsDead && _postureWindowRemaining > 0f;
         public bool WantsTargetMovement => State == RangedEnemyState.Approach;
         public bool WantsRetreatMovement => State == RangedEnemyState.Retreat;
         public bool WantsReturnMovement => State == RangedEnemyState.Return;
@@ -53,10 +53,15 @@ namespace Emberfall.AI.Domain
             }
 
             StateElapsed += deltaTime;
+            if (_postureWindowRemaining > 0f)
+            {
+                _postureWindowRemaining = Math.Max(0f, _postureWindowRemaining - deltaTime);
+                if (_postureWindowRemaining == 0f) Posture.RestoreFull();
+            }
             _groundRuneCooldownRemaining = Math.Max(0f, _groundRuneCooldownRemaining - deltaTime);
             Posture.Tick(deltaTime,
-                State == RangedEnemyState.Idle || State == RangedEnemyState.Approach ||
-                State == RangedEnemyState.Retreat || State == RangedEnemyState.Return);
+                !IsPostureExecutionWindow && (State == RangedEnemyState.Idle || State == RangedEnemyState.Approach ||
+                State == RangedEnemyState.Retreat || State == RangedEnemyState.Return));
             switch (State)
             {
                 case RangedEnemyState.Idle:
@@ -114,9 +119,8 @@ namespace Emberfall.AI.Domain
                     }
                     break;
                 case RangedEnemyState.HitReact:
-                    if (StateElapsed >= ExecutionRules.PostureWindowSeconds)
+                    if (StateElapsed >= _definition.HitReactDuration)
                     {
-                        Posture.RestoreFull();
                         if (ShouldDisengage(perception))
                         {
                             TransitionTo(RangedEnemyState.Return);
@@ -152,9 +156,9 @@ namespace Emberfall.AI.Domain
             float applied = _health.ApplyDamage(request.RawDamage, _definition.Armor);
             bool killed = _health.IsDead;
             float postureApplied = killed ? 0f : Posture.ApplyDamage(request.PostureDamage);
-            bool staggered = !killed && Posture.IsBroken;
+            bool staggered = !killed && Posture.IsBroken && !IsPostureExecutionWindow;
             if (killed) TransitionTo(RangedEnemyState.Dead);
-            else if (staggered) TransitionTo(RangedEnemyState.HitReact);
+            else if (staggered) BeginPostureBreak();
             return new DamageResult(
                 true, false, applied, killed,
                 false, false, false, false, staggered, postureApplied);
@@ -162,11 +166,17 @@ namespace Emberfall.AI.Domain
 
         public bool ApplyCounterPosture(float postureDamage)
         {
-            if (State == RangedEnemyState.Dead) return false;
+            if (State == RangedEnemyState.Dead || IsPostureExecutionWindow) return false;
             Posture.ApplyDamage(postureDamage);
             if (!Posture.IsBroken) return false;
-            TransitionTo(RangedEnemyState.HitReact);
+            BeginPostureBreak();
             return true;
+        }
+
+        private void BeginPostureBreak()
+        {
+            _postureWindowRemaining = ExecutionRules.PostureWindowSeconds;
+            TransitionTo(RangedEnemyState.HitReact);
         }
 
         public void Reset()
@@ -178,6 +188,7 @@ namespace Emberfall.AI.Domain
             AttackSequence = 0;
             CurrentAttack = RangedAttackKind.Projectile;
             _groundRuneCooldownRemaining = 0f;
+            _postureWindowRemaining = 0f;
         }
 
         private void SelectCombatState(RangedEnemyPerception perception)
@@ -234,6 +245,7 @@ namespace Emberfall.AI.Domain
             }
 
             State = state;
+            if (state == RangedEnemyState.Dead) _postureWindowRemaining = 0f;
             StateElapsed = 0f;
             if (state == RangedEnemyState.Release)
             {

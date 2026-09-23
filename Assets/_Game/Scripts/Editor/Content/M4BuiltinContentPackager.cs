@@ -63,7 +63,7 @@ namespace Emberfall.Editor.Content
             var manifest = new ContentPackageManifest(
                 ContentPackageValidator.SupportedSchemaVersion,
                 new ContentId("package:emberfall.builtin"),
-                new SemanticVersion(0, 8, 10),
+                new SemanticVersion(0, 8, 11),
                 new SemanticVersion(0, 5, 0),
                 new SemanticVersion(0, 8, 999),
                 "builtin",

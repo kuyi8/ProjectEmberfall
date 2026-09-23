@@ -339,11 +339,11 @@ namespace Emberfall.UI
 
         private static Color ExecutionColor(IExecutionTarget target)
         {
-            if (target.IsExecutionClaimed) return Color.gray;
+            if (target.IsExecutionClaimed) return new Color(0.76f, 0.76f, 0.76f);
             if (target.IsPostureExecutionWindow)
                 return Color.Lerp(new Color(1f, 0.58f, 0.05f), new Color(1f, 0.92f, 0.4f),
                     0.5f + 0.5f * Mathf.Sin(Time.time * 12f));
-            return target.IsExecutionEligible ? new Color(0.82f, 0.22f, 0.25f) : new Color(0.2f, 0.68f, 0.92f);
+            return target.IsExecutionEligible ? new Color(0.95f, 0.38f, 0.4f) : new Color(0.2f, 0.68f, 0.92f);
         }
 
         private void DrawExecutionMarkers()
@@ -353,16 +353,18 @@ namespace Emberfall.UI
             foreach (CombatTarget target in _combatTargets)
             {
                 if (target == null || !target.IsAvailable || !(target is IExecutionTarget execution) ||
-                    execution.IsExecutionClaimed ||
                     (target.transform.position - _player.transform.position).sqrMagnitude > 144f) continue;
-                bool ready = execution.IsExecutionEligible;
-                if (!ready && target.SecondaryResourceNormalized > 0.2f) continue;
+                string marker = ExecutionRules.MarkerTextId(execution.ExecutionKind, target.HealthNormalized,
+                    execution.IsPostureExecutionWindow, execution.IsExecutionClaimed,
+                    target.SecondaryResourceNormalized);
+                if (string.IsNullOrEmpty(marker)) continue;
                 Vector3 screen = camera.WorldToScreenPoint(target.AimPoint.position + Vector3.up * 0.7f);
                 if (screen.z <= 0f) continue;
+                Rect markerRect = new Rect(screen.x - 104f, Screen.height - screen.y - 22f, 208f, 28f);
+                DrawPanel(markerRect, 0.75f);
                 Color previous = GUI.color;
                 GUI.color = ExecutionColor(execution);
-                GUI.Label(new Rect(screen.x - 100f, Screen.height - screen.y - 22f, 200f, 30f),
-                    Text(ready ? "text:execution.marker" : "text:execution.near-break"), _centerStyle);
+                GUI.Label(markerRect, Text(marker), _centerStyle);
                 GUI.color = previous;
             }
         }
