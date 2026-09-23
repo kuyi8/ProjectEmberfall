@@ -26,6 +26,8 @@ namespace Emberfall.AI.Domain
         public MeleeAttackKind CurrentAttack { get; private set; } = MeleeAttackKind.QuickSlash;
         public HealthModel Health => _health;
         public PostureModel Posture { get; }
+        public bool IsPostureExecutionWindow => State == MeleeEnemyState.HitReact &&
+            StateElapsed < ExecutionRules.PostureWindowSeconds && Posture.IsBroken;
         public bool WantsTargetMovement => State == MeleeEnemyState.Chase;
         public bool WantsReturnMovement => State == MeleeEnemyState.Return;
         public bool WantsFaceTarget =>
@@ -120,7 +122,7 @@ namespace Emberfall.AI.Domain
                     }
                     break;
                 case MeleeEnemyState.HitReact:
-                    if (StateElapsed >= _definition.HitReactDuration)
+                    if (StateElapsed >= ExecutionRules.PostureWindowSeconds)
                     {
                         Posture.RestoreFull();
                         TransitionTo(ShouldDisengage(perception)

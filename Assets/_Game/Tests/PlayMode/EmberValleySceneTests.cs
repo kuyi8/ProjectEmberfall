@@ -455,6 +455,8 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(forest.Phase, Is.EqualTo(ForestSealPhase.Completed));
             Assert.That(player.ActiveRuneBlessing, Is.EqualTo(RuneBlessing.Ember));
             Assert.That(forest.GuardRune.gameObject.activeSelf, Is.False);
+            Assert.That(forest.ShortcutBlocker.GetComponent<Collider>().enabled, Is.False);
+            yield return new WaitForSeconds(0.6f);
             Assert.That(forest.ShortcutBlocker.activeSelf, Is.False);
             Assert.That(forest.RestoredWorldRoot.activeSelf, Is.True);
 
@@ -527,6 +529,8 @@ namespace Emberfall.Tests.PlayMode
                 "The sanctum gate control is not reachable through the real player interaction query.");
             Assert.That(playerInteractor.TryInteractNearest(), Is.True);
             Assert.That(flow.Stage, Is.EqualTo(MainQuestStage.DefeatWarden));
+            Assert.That(GameObject.Find("GateBlocker_Sanctum").GetComponent<Collider>().enabled, Is.False);
+            yield return new WaitForSeconds(0.6f);
             Assert.That(GameObject.Find("GateBlocker_Sanctum"), Is.Null);
             Transform sanctumArch = Object.FindObjectsOfType<Transform>(true)
                 .Single(item => item.name == "SanctumDungeonArch");
@@ -615,6 +619,7 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(killed.Killed, Is.True);
             Assert.That(flow.Stage, Is.EqualTo(MainQuestStage.ReturnToScout));
             yield return null;
+            yield return new WaitForSeconds(0.6f);
             Assert.That(GameObject.Find("GateBlocker_ReturnShortcut"), Is.Null);
 
             Assert.That(scout.TryInteract(context), Is.True);

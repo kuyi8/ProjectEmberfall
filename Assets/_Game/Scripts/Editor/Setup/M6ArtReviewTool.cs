@@ -400,6 +400,16 @@ namespace Emberfall.Editor.Setup
         }
 
         [MenuItem("Emberfall/Review/Capture 0.8.10 Arena Expansion")]
+        public static void CaptureM5eDropEdges()
+        {
+            M5eReadabilitySetup.Apply();
+            string output = Path.GetFullPath("Builds/ArtReview/0.8.10b");
+            Directory.CreateDirectory(output);
+            CaptureLoadedScene(Path.Combine(output, "bridge-drop-edges.png"),
+                new Vector3(7f, 4f, 39f), new Vector3(14f, -0.6f, 44.8f), 62f);
+        }
+
+        [MenuItem("Emberfall/Review/Capture 0.8.10a Arena Repair")]
         public static void CaptureM5dArenaExpansion()
         {
             M5dArenaRepair.Apply();

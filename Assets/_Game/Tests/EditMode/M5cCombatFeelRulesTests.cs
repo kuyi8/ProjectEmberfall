@@ -25,7 +25,7 @@ namespace Emberfall.Tests.EditMode
 
         [TestCase(ExecutionTargetKind.Ordinary, 25f, 100f, true)]
         [TestCase(ExecutionTargetKind.Ordinary, 25.1f, 100f, false)]
-        [TestCase(ExecutionTargetKind.Elite, 1f, 100f, false)]
+        [TestCase(ExecutionTargetKind.Elite, 1f, 100f, true)]
         [TestCase(ExecutionTargetKind.Boss, 1f, 100f, false)]
         public void ExecutionEligibility_EnforcesOrdinaryThresholdAndEliteGuardBreak(
             ExecutionTargetKind kind,

@@ -63,7 +63,7 @@ namespace Emberfall.Editor.Content
             var manifest = new ContentPackageManifest(
                 ContentPackageValidator.SupportedSchemaVersion,
                 new ContentId("package:emberfall.builtin"),
-                new SemanticVersion(0, 5, 4),
+                new SemanticVersion(0, 8, 10),
                 new SemanticVersion(0, 5, 0),
                 new SemanticVersion(0, 8, 999),
                 "builtin",
@@ -74,7 +74,6 @@ namespace Emberfall.Editor.Content
                 ContentPackageManifestJson.Serialize(manifest),
                 Utf8WithoutBom);
 
-            PlayerSettings.bundleVersion = "0.5.4";
             AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
             Debug.Log($"[M4_CONTENT_PACKAGE_READY] Built-in package {manifest.ContentVersion} contains {entries.Count} validated files.");
         }

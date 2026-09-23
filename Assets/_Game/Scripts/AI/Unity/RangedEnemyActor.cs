@@ -54,8 +54,10 @@ namespace Emberfall.AI.Unity
         public string LastAiEvent { get; private set; } = "Idle";
         public CombatTarget CombatTarget => this;
         public ExecutionTargetKind ExecutionKind => ExecutionTargetKind.Ordinary;
+        public bool IsExecutionClaimed => _executionClaimed;
+        public bool IsPostureExecutionWindow => _brain?.IsPostureExecutionWindow == true;
         public bool IsExecutionEligible => ExecutionRules.IsEligible(
-            ExecutionKind, HealthNormalized, false, _executionClaimed);
+            ExecutionKind, HealthNormalized, IsPostureExecutionWindow, _executionClaimed);
         public float ExecutionDamage => ExecutionRules.OrdinaryDamage;
 
         public event Action<RangedEnemyActor> Died;

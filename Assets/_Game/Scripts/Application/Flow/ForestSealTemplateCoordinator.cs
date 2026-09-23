@@ -34,6 +34,7 @@ namespace Emberfall.Application.Flow
         [SerializeField] private GameObject _restoredWorldRoot;
 
         private ForestSealTemplateState _state;
+        private M2StageBarrier _shortcutPresentation;
         private bool _subscribed;
         private bool _encounterWaveQueued;
         private bool _questConditionEligible;
@@ -266,7 +267,15 @@ namespace Emberfall.Application.Flow
             SetActive(_supplyCache.gameObject, !_state.SupplyClaimed);
             SetActive(_emberRune.gameObject, showRuneChoice);
             SetActive(_guardRune.gameObject, showRuneChoice);
-            SetActive(_shortcutBlocker, !restored);
+            if (_shortcutBlocker != null)
+            {
+                if (_shortcutPresentation == null)
+                {
+                    _shortcutPresentation = M2StageBarrier.CreateManual(gameObject, _shortcutBlocker);
+                    _shortcutPresentation.SetOpen(restored, true);
+                }
+                else _shortcutPresentation.SetOpen(restored);
+            }
             SetActive(_restoredWorldRoot, restored);
 
             RuneBlessing blessing = RuneChoice switch

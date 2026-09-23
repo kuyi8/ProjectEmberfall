@@ -1,6 +1,8 @@
 using Emberfall.Application.Flow;
 using Emberfall.AI.Domain;
 using Emberfall.Gameplay.Combat.Unity;
+using Emberfall.Gameplay.Combat.Domain;
+using Emberfall.Core.Identifiers;
 using Emberfall.Gameplay.Input;
 using Emberfall.Gameplay.Interaction;
 using Emberfall.Gameplay.Movement;
@@ -28,6 +30,13 @@ namespace Emberfall.UI
         private bool _showGuide = true;
         private bool _completionPresented;
         private CombatTarget[] _combatTargets = System.Array.Empty<CombatTarget>();
+        private string _barrierFeedback;
+        private float _barrierFeedbackUntil;
+        private bool[] _executionWasReady;
+        private AudioSource _executionAudio;
+        private AudioClip _executionTone;
+        private bool _executionTutorialShown;
+        private float _executionTutorialUntil;
 
         public bool IsPaused => _paused;
         public bool IsGuideVisible => _showGuide;
@@ -39,6 +48,10 @@ namespace Emberfall.UI
         private void Start()
         {
             _combatTargets = Object.FindObjectsOfType<CombatTarget>();
+            _executionWasReady = new bool[_combatTargets.Length];
+            _executionAudio = gameObject.AddComponent<AudioSource>();
+            _executionAudio.playOnAwake = false;
+            _executionTone = ConfirmationTone.Create("ExecutionReady", 780f, 0.14f);
         }
 
         public void Configure(
@@ -79,10 +92,41 @@ namespace Emberfall.UI
             }
 
             RefreshOffscreenThreatCount();
+            for (int i = 0; i < _combatTargets.Length; i++)
+            {
+                CombatTarget target = _combatTargets[i];
+                bool ready = target != null && target.IsAvailable && target is IExecutionTarget execution &&
+                    execution.IsExecutionEligible && _player != null &&
+                    (target.transform.position - _player.transform.position).sqrMagnitude <= 144f;
+                if (ready && !_executionWasReady[i])
+                {
+                    _executionAudio.PlayOneShot(_executionTone, 0.5f);
+                    if (!_executionTutorialShown)
+                    {
+                        _executionTutorialShown = true;
+                        _executionTutorialUntil = Time.time + 8f;
+                    }
+                }
+                _executionWasReady[i] = ready;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (_executionTone != null) Destroy(_executionTone);
+        }
+
+        private void OnEnable() => M2StageBarrier.FeedbackPresented += OnBarrierFeedback;
+
+        private void OnBarrierFeedback(string textId)
+        {
+            _barrierFeedback = textId;
+            _barrierFeedbackUntil = Time.time + 3f;
         }
 
         private void OnDisable()
         {
+            M2StageBarrier.FeedbackPresented -= OnBarrierFeedback;
             Time.timeScale = 1f;
             _cameraRig?.SetLookInputBlocked(false);
         }
@@ -101,6 +145,11 @@ namespace Emberfall.UI
             DrawTargetStatus();
             DrawOffscreenThreats();
             DrawInteractionPrompt();
+            if (!_paused && !_completionPresented)
+            {
+                DrawExecutionMarkers();
+                DrawActionFeedback();
+            }
             if (_showGuide && !_paused && !_completionPresented)
             {
                 DrawGuide();
@@ -217,19 +266,8 @@ namespace Emberfall.UI
                 Rect executePanel = new Rect((Screen.width - 440f) * 0.5f, Screen.height - 104f, 440f, 48f);
                 DrawPanel(executePanel, 0.94f);
                 Color previous = GUI.color;
-                GUI.color = new Color(1f, 0.72f, 0.2f);
+                GUI.color = ExecutionColor((IExecutionTarget)executionTarget);
                 GUI.Label(executePanel, "E　处决", _centerStyle);
-
-                Camera camera = Camera.main;
-                if (camera != null)
-                {
-                    Vector3 screen = camera.WorldToScreenPoint(executionTarget.AimPoint.position + Vector3.up * 0.35f);
-                    if (screen.z > 0f)
-                    {
-                        Rect marker = new Rect(screen.x - 55f, Screen.height - screen.y - 22f, 110f, 32f);
-                        GUI.Label(marker, "◆ 可处决", _centerStyle);
-                    }
-                }
 
                 GUI.color = previous;
                 return;
@@ -286,9 +324,63 @@ namespace Emberfall.UI
             {
                 DrawBar(
                     new Rect(x - 48f, y - 32f, 96f, 5f),
-                    target.SecondaryResourceNormalized,
-                    new Color(0.2f, 0.68f, 0.92f));
+                    target is IExecutionTarget ? 1f - target.SecondaryResourceNormalized : target.SecondaryResourceNormalized,
+                    target is IExecutionTarget executable ? ExecutionColor(executable) : new Color(0.2f, 0.68f, 0.92f));
             }
+            if (target is IExecutionTarget execution)
+            {
+                string id = ExecutionRules.ConditionTextId(execution.ExecutionKind,
+                    target.HealthNormalized, execution.IsPostureExecutionWindow, execution.IsExecutionClaimed);
+                GUI.Label(new Rect(x - 230f, y - 95f, 460f, 28f), Text(id), _centerStyle);
+            }
+        }
+
+        private string Text(string id) => _flow.Resolve(new ContentId(id));
+
+        private static Color ExecutionColor(IExecutionTarget target)
+        {
+            if (target.IsExecutionClaimed) return Color.gray;
+            if (target.IsPostureExecutionWindow)
+                return Color.Lerp(new Color(1f, 0.58f, 0.05f), new Color(1f, 0.92f, 0.4f),
+                    0.5f + 0.5f * Mathf.Sin(Time.time * 12f));
+            return target.IsExecutionEligible ? new Color(0.82f, 0.22f, 0.25f) : new Color(0.2f, 0.68f, 0.92f);
+        }
+
+        private void DrawExecutionMarkers()
+        {
+            Camera camera = Camera.main;
+            if (camera == null) return;
+            foreach (CombatTarget target in _combatTargets)
+            {
+                if (target == null || !target.IsAvailable || !(target is IExecutionTarget execution) ||
+                    execution.IsExecutionClaimed ||
+                    (target.transform.position - _player.transform.position).sqrMagnitude > 144f) continue;
+                bool ready = execution.IsExecutionEligible;
+                if (!ready && target.SecondaryResourceNormalized > 0.2f) continue;
+                Vector3 screen = camera.WorldToScreenPoint(target.AimPoint.position + Vector3.up * 0.7f);
+                if (screen.z <= 0f) continue;
+                Color previous = GUI.color;
+                GUI.color = ExecutionColor(execution);
+                GUI.Label(new Rect(screen.x - 100f, Screen.height - screen.y - 22f, 200f, 30f),
+                    Text(ready ? "text:execution.marker" : "text:execution.near-break"), _centerStyle);
+                GUI.color = previous;
+            }
+        }
+
+        private void DrawActionFeedback()
+        {
+            string feedback = _player.FeedbackUntil > Time.time ? _player.FeedbackTextId : null;
+            if (string.IsNullOrEmpty(feedback))
+                feedback = _barrierFeedbackUntil > Time.time ? _barrierFeedback : null;
+            if (!string.IsNullOrEmpty(feedback))
+            {
+                Rect panel = new Rect((Screen.width - 620f) * 0.5f, Screen.height - 160f, 620f, 42f);
+                DrawPanel(panel, 0.92f);
+                GUI.Label(panel, Text(feedback), _centerStyle);
+            }
+            if (Time.time < _executionTutorialUntil)
+                GUI.Label(new Rect((Screen.width - 800f) * 0.5f, Screen.height - 205f, 800f, 35f),
+                    Text("text:execution.tutorial"), _centerStyle);
         }
 
         private void DrawOffscreenThreats()

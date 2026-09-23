@@ -1796,6 +1796,7 @@ namespace Emberfall.Networking
 
         private void OnGUI()
         {
+            if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
             _titleStyle ??= new GUIStyle(GUI.skin.label)
             {
                 fontSize = 24,

@@ -35,6 +35,15 @@ namespace Emberfall.Gameplay.Movement
         public float HorizontalSpeed => new Vector2(_horizontalVelocity.x, _horizontalVelocity.z).magnitude;
         public bool IsSprinting => _combat?.Model?.IsSprinting == true;
 
+        public void ResetAfterTeleport()
+        {
+            _horizontalVelocity = Vector3.zero;
+            _verticalVelocity = 0f;
+            _previousState = CombatState.Locomotion;
+            _previousDodgeTravel = 0f;
+            _isReversalTurning = false;
+        }
+
         public void Configure(
             PlayerInputReader input,
             PlayerCombatActor combat,

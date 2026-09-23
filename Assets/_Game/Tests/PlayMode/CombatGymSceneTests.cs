@@ -393,7 +393,7 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator VoidExecutionVolume_KillsDuringDodgeAndRespawnsAtCheckpoint()
+        public IEnumerator VoidExecutionVolume_RecoversDuringDodgeWithoutDeath()
         {
             yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
             yield return null;
@@ -410,23 +410,17 @@ namespace Emberfall.Tests.PlayMode
             controller.enabled = true;
             Physics.SyncTransforms();
 
-            for (int frame = 0; frame < 120 && combat.Model.State != CombatState.Dead; frame++)
+            int deaths = 0;
+            combat.Died += _ => deaths++;
+            for (int frame = 0; frame < 120 && combat.LastCombatEvent != "Void recovery"; frame++)
             {
                 yield return new WaitForFixedUpdate();
             }
 
-            Assert.That(combat.Model.State, Is.EqualTo(CombatState.Dead));
-            Assert.That(combat.LastCombatEvent, Is.EqualTo("Fell into the void"));
-            Assert.That(combat.Model.Health.Current, Is.EqualTo(0f));
-
-            // Advance the deterministic death timer explicitly. Frame-count waits are
-            // unreliable in batchmode because the uncapped delta time can be very small.
-            combat.Model.Tick(3f);
-            for (int frame = 0; frame < 10 && combat.Model.State == CombatState.Dead; frame++)
-            {
-                yield return null;
-            }
-
+            Assert.That(deaths, Is.Zero);
+            Assert.That(combat.LastCombatEvent, Is.EqualTo("Void recovery"));
+            Assert.That(combat.Model.Health.Normalized, Is.EqualTo(0.88f).Within(0.0001f));
+            Assert.That(combat.ExecuteVoidFall(), Is.False, "TriggerStay must not double-charge a fall.");
             Assert.That(combat.Model.State, Is.EqualTo(CombatState.Locomotion));
             Assert.That(Vector3.Distance(combat.transform.position, combat.RespawnPosition), Is.LessThan(0.1f));
         }

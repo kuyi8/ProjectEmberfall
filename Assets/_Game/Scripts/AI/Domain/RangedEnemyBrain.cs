@@ -26,6 +26,8 @@ namespace Emberfall.AI.Domain
         public RangedAttackKind CurrentAttack { get; private set; } = RangedAttackKind.Projectile;
         public HealthModel Health => _health;
         public PostureModel Posture { get; }
+        public bool IsPostureExecutionWindow => State == RangedEnemyState.HitReact &&
+            StateElapsed < ExecutionRules.PostureWindowSeconds && Posture.IsBroken;
         public bool WantsTargetMovement => State == RangedEnemyState.Approach;
         public bool WantsRetreatMovement => State == RangedEnemyState.Retreat;
         public bool WantsReturnMovement => State == RangedEnemyState.Return;
@@ -112,7 +114,7 @@ namespace Emberfall.AI.Domain
                     }
                     break;
                 case RangedEnemyState.HitReact:
-                    if (StateElapsed >= _definition.HitReactDuration)
+                    if (StateElapsed >= ExecutionRules.PostureWindowSeconds)
                     {
                         Posture.RestoreFull();
                         if (ShouldDisengage(perception))

@@ -27,7 +27,7 @@ namespace Emberfall.Editor.Setup
     public static class M5NetworkingProjectSetup
     {
         public const string Version = "0.8.10";
-        public const string ReleaseLabel = "0.8.10a";
+        public const string ReleaseLabel = "0.8.10b";
         private const string ScenePath = "Assets/_Game/Scenes/91_NetworkGym.unity";
         private const string EmberValleyScenePath = "Assets/_Game/Scenes/10_EmberValley.unity";
         private const string SanctumScenePath = "Assets/_Game/Scenes/20_Sanctum.unity";

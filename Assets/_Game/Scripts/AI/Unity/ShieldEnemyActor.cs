@@ -76,6 +76,8 @@ namespace Emberfall.AI.Unity
         public Vector3 SupportDestination => _supportDestination;
         public CombatTarget CombatTarget => this;
         public ExecutionTargetKind ExecutionKind => ExecutionTargetKind.Elite;
+        public bool IsExecutionClaimed => _executionClaimed;
+        public bool IsPostureExecutionWindow => _brain?.State == ShieldEnemyState.GuardBreak;
         public bool IsExecutionEligible => ExecutionRules.IsEligible(
             ExecutionKind,
             HealthNormalized,

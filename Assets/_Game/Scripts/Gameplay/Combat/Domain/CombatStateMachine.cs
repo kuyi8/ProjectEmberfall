@@ -231,6 +231,22 @@ namespace Emberfall.Gameplay.Combat.Domain
             return true;
         }
 
+        public const float VoidFallHealthFraction = 0.12f;
+        public float ExecutionStaminaCost => _tuning.ExecutionStaminaCost;
+
+        public bool RecoverFromVoidFall()
+        {
+            if (IsDead) return false;
+            Health.ApplyNonlethalPenalty(VoidFallHealthFraction);
+            _bufferedCommand = null;
+            _bufferRemaining = 0f;
+            _heavyChargeSeconds = 0f;
+            PerfectDodgeAttackReady = false;
+            SetSprintRequested(false);
+            EnterState(CombatState.Locomotion);
+            return true;
+        }
+
         public float ApplyNeutralPostureDamage(float amount)
         {
             if (IsDead) return 0f;

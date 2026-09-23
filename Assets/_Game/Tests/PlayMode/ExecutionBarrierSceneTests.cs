@@ -1,0 +1,180 @@
+using System.Collections;
+using System.Linq;
+using Emberfall.AI.Unity;
+using Emberfall.Application.Flow;
+using Emberfall.Core.Identifiers;
+using Emberfall.Gameplay.Combat.Domain;
+using Emberfall.Gameplay.Combat.Unity;
+using Emberfall.Gameplay.Movement;
+using Emberfall.Infrastructure.Saves;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+
+namespace Emberfall.Tests.PlayMode
+{
+    public sealed class ExecutionBarrierSceneTests
+    {
+        [UnityTest]
+        public IEnumerator GraphicsEvidence_CapturesExecutionStatesAndBarrier()
+        {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+                Assert.Ignore("Graphics evidence requires a real rendering device.");
+#if UNITY_EDITOR
+            UnityEditor.EditorWindow.GetWindow(System.Type.GetType("UnityEditor.GameView,UnityEditor")).Show();
+#endif
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley");
+            yield return null;
+            yield return null;
+            var player = Object.FindObjectOfType<PlayerCombatActor>();
+            var flow = Object.FindObjectOfType<M2RouteFlowController>();
+            var enemy = Object.FindObjectsOfType<MeleeEnemyActor>().First(x => x.name.Contains("Forest"));
+            foreach (var actor in Object.FindObjectsOfType<MeleeEnemyActor>()) actor.enabled = false;
+            foreach (var actor in Object.FindObjectsOfType<RangedEnemyActor>()) actor.enabled = false;
+            foreach (var actor in Object.FindObjectsOfType<ShieldEnemyActor>()) actor.enabled = false;
+            player.GetComponent<ThirdPersonMotor>().enabled = false;
+            player.GetComponent<CharacterController>().enabled = false;
+            player.transform.position = enemy.transform.position + new Vector3(0f, 1f, -1.6f);
+            foreach (var rig in Object.FindObjectsOfType<ThirdPersonCameraRig>()) rig.enabled = false;
+            Camera camera = Camera.main;
+            camera.transform.position = enemy.transform.position + new Vector3(3f, 3.5f, -6f);
+            camera.transform.LookAt(enemy.AimPoint.position);
+            var targeting = player.GetComponent<Emberfall.Gameplay.Targeting.LockOnTargeting>();
+            typeof(Emberfall.Gameplay.Targeting.LockOnTargeting).GetProperty("CurrentTarget").SetValue(targeting, enemy);
+            Physics.SyncTransforms();
+            enemy.ApplyNeutralPostureDamage(enemy.Brain.Posture.Maximum * 0.85f);
+            yield return Capture("execution-warning");
+            enemy.ApplyNeutralPostureDamage(999f);
+            yield return Capture("execution-posture-ready");
+            enemy.Brain.Reset();
+            enemy.ReceiveDamage(new DamageRequest(player.CombatantId, 7121,
+                enemy.Brain.Health.Maximum * 0.8f + enemy.Definition.Armor, 0f, AttackTag.Light));
+            yield return Capture("execution-health-ready");
+            var gate = GameObject.Find("GateBlocker_Sanctum");
+            camera.transform.position = gate.transform.position + new Vector3(-4f, 2f, 6f);
+            camera.transform.LookAt(gate.transform.position);
+            var owner = new GameObject("EvidenceBarrierOwner");
+            var barrier = M2StageBarrier.CreateManual(owner, gate);
+            barrier.SetOpen(true);
+            yield return Capture("barrier-dissolving", 0.18f);
+            Object.Destroy(owner);
+            new JsonSaveGameStore(flow.SavePath).DeleteAllRevisions();
+        }
+
+        private static IEnumerator Capture(string name, float delay = 0.2f)
+        {
+            string output = System.IO.Path.GetFullPath("Builds/ArtReview/0.8.10b");
+            System.IO.Directory.CreateDirectory(output);
+            yield return new WaitForSeconds(delay);
+            string path = System.IO.Path.Combine(output, name + ".png");
+            System.DateTime requestedAt = System.DateTime.UtcNow;
+            ScreenCapture.CaptureScreenshot(path);
+            float deadline = Time.realtimeSinceStartup + 3f;
+            while ((!System.IO.File.Exists(path) || System.IO.File.GetLastWriteTimeUtc(path) < requestedAt) &&
+                   Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(System.IO.File.Exists(path), Is.True, "No rendered evidence was produced: " + path);
+            Assert.That(System.IO.File.GetLastWriteTimeUtc(path), Is.GreaterThanOrEqualTo(requestedAt));
+        }
+
+        [UnityTest]
+        public IEnumerator VoidFall_ReturnsToActivatedCheckpointWithoutChangingDeathCountOrEnemyHealth()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley");
+            yield return null;
+            yield return null;
+            var player = Object.FindObjectOfType<PlayerCombatActor>();
+            var flow = Object.FindObjectOfType<M2RouteFlowController>();
+            var enemy = Object.FindObjectOfType<MeleeEnemyActor>();
+            int deaths = flow.DeathCount;
+            player.ActivateCheckpoint(new ContentId("checkpoint:test"), new Vector3(0f, 1.1f, 5f), Quaternion.identity);
+            enemy.ReceiveDamage(new DamageRequest(player.CombatantId, 191, 10f, 0f, AttackTag.Light));
+            float enemyHealth = enemy.Brain.Health.Current;
+            player.Model.HealingFlasks.TryConsume();
+            player.GetComponent<CharacterController>().enabled = false;
+            player.transform.position = new Vector3(0f, -12f, 0f);
+            Assert.That(player.ExecuteVoidFall(), Is.True);
+            Assert.That(flow.DeathCount, Is.EqualTo(deaths));
+            Assert.That(player.transform.position, Is.EqualTo(player.RespawnPosition));
+            Assert.That(player.Model.Health.Normalized, Is.EqualTo(0.88f).Within(0.0001f));
+            Assert.That(player.Model.HealingFlasks.CurrentCharges, Is.EqualTo(1));
+            Assert.That(enemy.Brain.Health.Current, Is.EqualTo(enemyHealth));
+            new JsonSaveGameStore(flow.SavePath).DeleteAllRevisions();
+        }
+
+        [UnityTest]
+        public IEnumerator ActualExecutionAdapter_ShowsFailuresThenHoldsTargetAndResolvesOnce()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley");
+            yield return null;
+            yield return null;
+            var player = Object.FindObjectOfType<PlayerCombatActor>();
+            var flow = Object.FindObjectOfType<M2RouteFlowController>();
+            var enemy = Object.FindObjectsOfType<MeleeEnemyActor>().First();
+            foreach (var actor in Object.FindObjectsOfType<MeleeEnemyActor>()) actor.enabled = false;
+            foreach (var actor in Object.FindObjectsOfType<RangedEnemyActor>()) actor.enabled = false;
+            foreach (var actor in Object.FindObjectsOfType<ShieldEnemyActor>()) actor.enabled = false;
+            player.GetComponent<ThirdPersonMotor>().enabled = false;
+            player.GetComponent<CharacterController>().enabled = false;
+            player.transform.position = enemy.transform.position + Vector3.back * 1.5f + Vector3.up;
+            Physics.SyncTransforms();
+            Assert.That(player.TryHandleExecutionInput(), Is.True);
+            Assert.That(player.FeedbackTextId, Is.EqualTo("text:execution.need-posture"));
+            enemy.ApplyNeutralPostureDamage(999f);
+            player.Model.Stamina.TrySpend(player.Model.Stamina.Current - 21f);
+            Assert.That(player.TryHandleExecutionInput(), Is.True);
+            Assert.That(player.FeedbackTextId, Is.EqualTo("text:execution.need-stamina"));
+            player.Model.Stamina.RestoreFull();
+            float before = player.Model.Stamina.Current;
+            Assert.That(player.TryHandleExecutionInput(), Is.True);
+            Assert.That(player.Model.State, Is.EqualTo(CombatState.Execution));
+            Assert.That(player.Model.Stamina.Current, Is.EqualTo(before - 22f));
+            Assert.That(player.Model.IsInvulnerable, Is.True);
+            Assert.That(enemy.IsExecutionClaimed, Is.True);
+            Assert.That(enemy.IsExecutionEligible, Is.False);
+            player.Model.Tick(0.33f);
+            yield return null;
+            Assert.That(enemy.IsAvailable, Is.False);
+            Assert.That(player.Model.ExecutionResolveSequence, Is.EqualTo(1));
+            new JsonSaveGameStore(flow.SavePath).DeleteAllRevisions();
+        }
+
+        [UnityTest]
+        public IEnumerator TaskBarrier_OpensWithFadeSoundAndMessage_AndClosesAgain()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley");
+            yield return null;
+            yield return null;
+            var flow = Object.FindObjectOfType<M2RouteFlowController>();
+            var gate = GameObject.Find("GateBlocker_Sanctum");
+            var owner = new GameObject("BarrierTestOwner");
+            var barrier = M2StageBarrier.CreateManual(owner, gate);
+            barrier.SetOpen(true);
+            Assert.That(gate.GetComponent<Collider>().enabled, Is.False);
+            Assert.That(barrier.IsTransitioning, Is.True);
+            Assert.That(barrier.LastFeedbackTextId, Is.EqualTo("text:barrier.open"));
+            Assert.That(barrier.SoundSequence, Is.EqualTo(1));
+            Assert.That(owner.GetComponent<AudioSource>().isPlaying, Is.True);
+            yield return new WaitForSeconds(0.25f);
+            Assert.That(barrier.VisualOpacity, Is.InRange(0.1f, 0.9f));
+            var properties = new MaterialPropertyBlock();
+            gate.GetComponent<Renderer>().GetPropertyBlock(properties);
+            Assert.That(properties.GetColor("_BaseColor").a, Is.InRange(0.01f, 0.6f));
+            yield return new WaitForSeconds(0.3f);
+            Assert.That(gate.activeSelf, Is.False);
+            barrier.SetOpen(false);
+            Assert.That(gate.GetComponent<Collider>().enabled, Is.True);
+            Assert.That(barrier.LastFeedbackTextId, Is.EqualTo("text:barrier.closed"));
+            yield return new WaitForSeconds(0.6f);
+            Assert.That(gate.activeSelf, Is.True);
+            Assert.That(barrier.VisualOpacity, Is.EqualTo(1f));
+            Assert.That(barrier.SoundSequence, Is.EqualTo(2));
+            Object.Destroy(owner);
+            new JsonSaveGameStore(flow.SavePath).DeleteAllRevisions();
+        }
+    }
+}

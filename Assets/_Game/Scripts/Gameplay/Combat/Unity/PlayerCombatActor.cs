@@ -40,6 +40,15 @@ namespace Emberfall.Gameplay.Combat.Unity
         private IExecutionTarget _executionTarget;
         private IExecutionTarget _executionPromptTarget;
         private float _executionPromptRefreshRemaining;
+        private float _nextVoidRecoveryTime;
+        public string FeedbackTextId { get; private set; }
+        public float FeedbackUntil { get; private set; }
+
+        private void ShowFeedback(string textId)
+        {
+            FeedbackTextId = textId;
+            FeedbackUntil = Time.time + 3f;
+        }
 
         public override int CombatantId => GetInstanceID();
         public override Transform AimPoint => _aimPoint != null ? _aimPoint : transform;
@@ -186,7 +195,7 @@ namespace Emberfall.Gameplay.Combat.Unity
                 }
             }
 
-            if (_input.InteractPressedPending && TryBeginExecution())
+            if (_input.InteractPressedPending && TryHandleExecutionInput())
             {
                 _input.ConsumeInteractPressed();
             }
@@ -302,13 +311,19 @@ namespace Emberfall.Gameplay.Combat.Unity
 
         public bool ExecuteVoidFall()
         {
-            if (_model == null || !_model.ForceDeath())
+            if (_model == null || Time.time < _nextVoidRecoveryTime || !_model.RecoverFromVoidFall())
             {
                 return false;
             }
 
-            LastCombatEvent = "Fell into the void";
-            Died?.Invoke(this);
+            _nextVoidRecoveryTime = Time.time + 0.5f;
+            _executionTarget = null;
+            _executionPromptTarget = null;
+            _guardCounterReady = false;
+            MoveToRespawnTransform();
+            GetComponent<Emberfall.Gameplay.Movement.ThirdPersonMotor>()?.ResetAfterTeleport();
+            LastCombatEvent = "Void recovery";
+            ShowFeedback("text:void.checkpoint-recovery");
             return true;
         }
 
@@ -586,12 +601,27 @@ namespace Emberfall.Gameplay.Combat.Unity
             LastCombatEvent = "Guard rune counter primed";
         }
 
-        private bool TryBeginExecution()
+        // True means E was handled (including a explained rejection), not necessarily accepted.
+        public bool TryHandleExecutionInput()
         {
-            if (_model == null || _model.State != CombatState.Locomotion) return false;
+            if (_model == null || _model.IsDead) return false;
             IExecutionTarget best = FindNearestExecutionTarget();
-            if (best == null || !_model.Submit(CombatCommand.Execution) || !best.TryClaimExecution())
-                return false;
+            best ??= FindNearestExecutionTarget(false);
+            if (best == null) return false;
+            string failure = ExecutionRules.FailureTextId(best.ExecutionKind,
+                best.CombatTarget.HealthNormalized, best.IsPostureExecutionWindow,
+                best.IsExecutionClaimed, _model.Stamina.Current, _model.ExecutionStaminaCost);
+            if (!string.IsNullOrEmpty(failure))
+            {
+                ShowFeedback(failure);
+                return true;
+            }
+            if (_model.State != CombatState.Locomotion || !_model.Submit(CombatCommand.Execution))
+            {
+                ShowFeedback("text:execution.busy");
+                return true;
+            }
+            if (!best.TryClaimExecution()) return true;
 
             _executionPromptTarget = null;
             _executionTarget = best;
@@ -607,9 +637,9 @@ namespace Emberfall.Gameplay.Combat.Unity
             return true;
         }
 
-        private IExecutionTarget FindNearestExecutionTarget()
+        private IExecutionTarget FindNearestExecutionTarget(bool eligibleOnly = true)
         {
-            if (_model == null || _model.State != CombatState.Locomotion) return null;
+            if (_model == null) return null;
             int count = Physics.OverlapSphereNonAlloc(
                 transform.position,
                 ExecutionRules.Range,
@@ -622,13 +652,14 @@ namespace Emberfall.Gameplay.Combat.Unity
             for (int i = 0; i < count; i++)
             {
                 IExecutionTarget candidate = _hitBuffer[i].GetComponentInParent<IExecutionTarget>();
-                if (candidate == null || !candidate.IsExecutionEligible ||
+                if (candidate == null || (eligibleOnly && !candidate.IsExecutionEligible) ||
                     candidate.CombatTarget == null || !candidate.CombatTarget.IsAvailable)
                     continue;
                 Vector3 offset = Vector3.ProjectOnPlane(
                     candidate.CombatTarget.transform.position - transform.position,
                     Vector3.up);
                 float distance = offset.sqrMagnitude;
+                if (distance > ExecutionRules.Range * ExecutionRules.Range) continue;
                 int id = candidate.CombatTarget.CombatantId;
                 if (distance < bestDistance - 0.0001f ||
                     (Mathf.Abs(distance - bestDistance) <= 0.0001f && id < bestId))

@@ -78,11 +78,14 @@ namespace Emberfall.Application.Flow
             RefreshPresentation(true);
         }
 
+        private M2StageBarrier _barrierPresentation;
+
         private void Start()
         {
             if (_gateBlocker != null && _flow != null)
             {
-                _gateBlocker.SetActive(!_flow.IsSanctumOpen);
+                _barrierPresentation = M2StageBarrier.CreateManual(gameObject, _gateBlocker);
+                _barrierPresentation.SetOpen(_flow.IsSanctumOpen, true);
             }
 
             RefreshPresentation(true);
@@ -111,7 +114,7 @@ namespace Emberfall.Application.Flow
 
             if (succeeded && _role == M2RouteRole.SanctumGate && _gateBlocker != null)
             {
-                _gateBlocker.SetActive(false);
+                _barrierPresentation?.SetOpen(true);
             }
 
             RefreshPresentation(true);

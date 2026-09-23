@@ -109,7 +109,7 @@ namespace Emberfall.Tests.EditMode
             float spawnDistance) =>
             new RangedEnemyPerception(available, visible, targetDistance, spawnDistance);
 
-        private static RangedEnemyDefinition CreateDefinition() =>
+        internal static RangedEnemyDefinition CreateDefinition() =>
             new RangedEnemyDefinition(
                 new ContentId("enemy:ranged-test"),
                 new ContentId("text:enemy.ranged-test"),

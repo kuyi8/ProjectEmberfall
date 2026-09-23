@@ -34,6 +34,16 @@ namespace Emberfall.Gameplay.Combat.Domain
 
         public void RestoreFull() => Current = Maximum;
 
+        public float ApplyNonlethalPenalty(float maximumFraction)
+        {
+            if (float.IsNaN(maximumFraction) || maximumFraction < 0f || maximumFraction > 1f)
+                throw new ArgumentOutOfRangeException(nameof(maximumFraction));
+            if (IsDead) return 0f;
+            float loss = Math.Min(Math.Max(0f, Current - 1f), Maximum * maximumFraction);
+            Current -= loss;
+            return loss;
+        }
+
         public float Restore(float amount)
         {
             if (amount <= 0f)
