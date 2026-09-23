@@ -17,6 +17,7 @@ namespace Emberfall.Gameplay.Movement
                 case CombatState.LightAttack3:
                 case CombatState.HeavyCharge:
                 case CombatState.HeavyAttack:
+                case CombatState.Sweep:
                 case CombatState.RangedAttack:
                 case CombatState.Guard:
                     return true;

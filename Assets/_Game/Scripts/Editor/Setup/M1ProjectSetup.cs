@@ -93,6 +93,7 @@ namespace Emberfall.Editor.Setup
                 EnsureButtonAction(existingPlayerMap, "Guard", "<Keyboard>/q", "<Gamepad>/leftShoulder");
                 EnsureButtonAction(existingPlayerMap, "Heal", "<Keyboard>/r", "<Gamepad>/dpad/up");
                 EnsureButtonAction(existingPlayerMap, "RangedAttack", "<Keyboard>/f", "<Gamepad>/rightShoulder");
+                EnsureButtonAction(existingPlayerMap, "Sweep", "<Keyboard>/v", "<Gamepad>/dpad/left");
                 EnsureButtonAction(existingPlayerMap, "InputOverlay", "<Keyboard>/f2", "<Gamepad>/dpad/down");
                 ReplaceBindingPath(
                     existingPlayerMap.FindAction("InputOverlay", true),
@@ -123,6 +124,7 @@ namespace Emberfall.Editor.Setup
             AddButton(player, "LightAttack", "<Mouse>/leftButton", "<Gamepad>/buttonWest");
             AddButton(player, "HeavyAttack", "<Mouse>/rightButton", "<Gamepad>/buttonNorth");
             AddButton(player, "RangedAttack", "<Keyboard>/f", "<Gamepad>/rightShoulder");
+            AddButton(player, "Sweep", "<Keyboard>/v", "<Gamepad>/dpad/left");
             AddButton(player, "Dodge", "<Keyboard>/space", "<Gamepad>/buttonEast");
             AddButton(player, "Sprint", "<Keyboard>/leftShift", "<Gamepad>/leftStickPress");
             AddButton(player, "Guard", "<Keyboard>/q", "<Gamepad>/leftShoulder");
@@ -215,6 +217,14 @@ namespace Emberfall.Editor.Setup
             serialized.FindProperty("_executionStaminaCost").floatValue = 22f;
             serialized.FindProperty("_executionDuration").floatValue = 0.72f;
             serialized.FindProperty("_executionResolveTime").floatValue = 0.32f;
+            serialized.FindProperty("_sweepDamage").floatValue = 44f;
+            serialized.FindProperty("_sweepStaminaCost").floatValue = 30f;
+            serialized.FindProperty("_sweepCooldown").floatValue = 4.5f;
+            serialized.FindProperty("_sweepDuration").floatValue = 0.82f;
+            serialized.FindProperty("_sweepDamageOpen").floatValue = 0.24f;
+            serialized.FindProperty("_sweepDamageClose").floatValue = 0.48f;
+            serialized.FindProperty("_sweepRadius").floatValue = 2.7f;
+            serialized.FindProperty("_sweepAngle").floatValue = 240f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(tuning);
         }

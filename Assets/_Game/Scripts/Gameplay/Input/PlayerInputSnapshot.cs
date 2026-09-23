@@ -12,6 +12,7 @@ namespace Emberfall.Gameplay.Input
             bool lightAttack,
             bool heavyAttack,
             bool rangedAttack,
+            bool sweep,
             bool guard,
             bool dodge,
             bool heal,
@@ -27,6 +28,7 @@ namespace Emberfall.Gameplay.Input
             LightAttack = lightAttack;
             HeavyAttack = heavyAttack;
             RangedAttack = rangedAttack;
+            Sweep = sweep;
             Guard = guard;
             Dodge = dodge;
             Heal = heal;
@@ -43,6 +45,7 @@ namespace Emberfall.Gameplay.Input
         public bool LightAttack { get; }
         public bool HeavyAttack { get; }
         public bool RangedAttack { get; }
+        public bool Sweep { get; }
         public bool Guard { get; }
         public bool Dodge { get; }
         public bool Heal { get; }

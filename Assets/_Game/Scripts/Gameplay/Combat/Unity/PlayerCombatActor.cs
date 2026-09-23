@@ -36,6 +36,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         private int _countedAttackSequence = -1;
         private int _currentAttackHitCount;
         private bool _attackHitMetricPending;
+        private bool _countedAttackWasSweep;
         private IExecutionTarget _executionTarget;
         private IExecutionTarget _executionPromptTarget;
         private float _executionPromptRefreshRemaining;
@@ -142,6 +143,20 @@ namespace Emberfall.Gameplay.Combat.Unity
                     LastCombatEvent = _model.RangedCooldownRemaining > 0f
                         ? $"Throwing knife cooldown {_model.RangedCooldownRemaining:0.0}s"
                         : "Cannot throw now";
+                }
+            }
+
+            if (_input.ConsumeSweepPressed())
+            {
+                if (_model.Submit(CombatCommand.Sweep))
+                {
+                    LastCombatEvent = "Wide sweep";
+                }
+                else
+                {
+                    LastCombatEvent = _model.SweepCooldownRemaining > 0f
+                        ? $"Wide sweep cooldown {_model.SweepCooldownRemaining:0.0}s"
+                        : "Cannot sweep now";
                 }
             }
 
@@ -398,9 +413,12 @@ namespace Emberfall.Gameplay.Combat.Unity
 
         private void QueryAttackHits()
         {
+            bool sweep = _model.State == CombatState.Sweep;
+            float radius = sweep ? _model.SweepRadius : _attackRadius;
+            float angle = sweep ? _model.SweepAngle : _attackAngle;
             int count = Physics.OverlapSphereNonAlloc(
                 transform.position,
-                _attackRadius,
+                radius,
                 _hitBuffer,
                 ~0,
                 QueryTriggerInteraction.Collide);
@@ -416,8 +434,8 @@ namespace Emberfall.Gameplay.Combat.Unity
                         transform.forward.z,
                         target.AimPoint.position.x,
                         target.AimPoint.position.z,
-                        _attackRadius,
-                        _attackAngle) ||
+                        radius,
+                        angle) ||
                     !_hitRegistry.TryRegister(_model.AttackSequence, target.CombatantId))
                 {
                     continue;
@@ -441,6 +459,10 @@ namespace Emberfall.Gameplay.Combat.Unity
                     ResolveCurrentPostureDamage(guardCounter),
                     _model.CurrentAttackTag);
                 DamageResult result = target.ReceiveDamage(request);
+                if (sweep && (result.Accepted || result.Staggered))
+                {
+                    ApplySweepReaction(target);
+                }
                 _currentAttackHitCount++;
                 NotifyCombatProgress(result, CombatProgressKind.DamageDealt);
                 CombatImpactStyle impactStyle = result.Blocked || result.Staggered
@@ -491,6 +513,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             FlushAttackHitMetric();
             _countedAttackSequence = _model.AttackSequence;
             _currentAttackHitCount = 0;
+            _countedAttackWasSweep = _model.State == CombatState.Sweep;
             _attackHitMetricPending = true;
         }
 
@@ -503,7 +526,20 @@ namespace Emberfall.Gameplay.Combat.Unity
         {
             if (!_attackHitMetricPending) return;
             LogFeel("attack-hit-count", _currentAttackHitCount, _countedAttackSequence);
+            if (_countedAttackWasSweep)
+                LogFeel("sweep", _currentAttackHitCount, _countedAttackSequence);
             _attackHitMetricPending = false;
+        }
+
+        private void ApplySweepReaction(CombatTarget target)
+        {
+            MonoBehaviour[] behaviours = target.GetComponentsInParent<MonoBehaviour>();
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] is not ISweepReactive reactive) continue;
+                reactive.ApplySweepImpulse(transform.position, 0.55f);
+                return;
+            }
         }
 
         private void NotifyCombatProgress(DamageResult result, CombatProgressKind kind)
@@ -525,6 +561,11 @@ namespace Emberfall.Gameplay.Combat.Unity
                     (ActiveRuneBlessing == RuneBlessing.Ember && _model.IsHeavyFullyCharged
                     ? RuneBlessingRules.EmberHeavyBonusPostureDamage
                     : 0f);
+            }
+
+            if (_model.CurrentAttackTag == AttackTag.Sweep)
+            {
+                return 34f + _model.CurrentAttackPostureBonus;
             }
 
             float postureDamage = _model.State switch

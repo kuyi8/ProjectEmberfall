@@ -8,6 +8,7 @@ namespace Emberfall.Gameplay.Combat.Domain
         LightAttack3,
         HeavyCharge,
         HeavyAttack,
+        Sweep,
         RangedAttack,
         Dodge,
         Guard,

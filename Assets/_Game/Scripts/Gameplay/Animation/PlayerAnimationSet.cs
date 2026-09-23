@@ -14,6 +14,7 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _lightAttack3;
         [SerializeField] private AnimationClip _heavyCharge;
         [SerializeField] private AnimationClip _heavyAttack;
+        [SerializeField] private AnimationClip _sweep;
         [SerializeField] private AnimationClip _rangedAttack;
         [SerializeField] private AnimationClip _dodge;
         [SerializeField] private AnimationClip _guard;
@@ -45,6 +46,8 @@ namespace Emberfall.Gameplay.Animation
                     return _heavyCharge;
                 case CombatState.HeavyAttack:
                     return _heavyAttack;
+                case CombatState.Sweep:
+                    return _sweep;
                 case CombatState.RangedAttack:
                     return _rangedAttack;
                 case CombatState.Dodge:
@@ -104,6 +107,7 @@ namespace Emberfall.Gameplay.Animation
             AnimationClip lightAttack3,
             AnimationClip heavyCharge,
             AnimationClip heavyAttack,
+            AnimationClip sweep,
             AnimationClip rangedAttack,
             AnimationClip dodge,
             AnimationClip guard,
@@ -127,6 +131,7 @@ namespace Emberfall.Gameplay.Animation
             _lightAttack3 = lightAttack3;
             _heavyCharge = heavyCharge;
             _heavyAttack = heavyAttack;
+            _sweep = sweep;
             _rangedAttack = rangedAttack;
             _dodge = dodge;
             _guard = guard;

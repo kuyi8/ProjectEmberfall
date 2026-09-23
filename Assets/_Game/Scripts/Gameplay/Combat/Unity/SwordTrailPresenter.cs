@@ -189,7 +189,7 @@ namespace Emberfall.Gameplay.Combat.Unity
 
         private static bool IsSwingState(CombatState state) =>
             state >= CombatState.LightAttack1 && state <= CombatState.LightAttack3 ||
-            state == CombatState.HeavyAttack;
+            state == CombatState.HeavyAttack || state == CombatState.Sweep;
 
         private Color ResolveColor(CombatStateMachine model)
         {
@@ -197,6 +197,8 @@ namespace Emberfall.Gameplay.Combat.Unity
                 return new Color(1f, 0.24f, 0.035f, 0.72f);
             if (model.State == CombatState.HeavyAttack)
                 return new Color(1f, 0.62f, 0.16f, 0.62f);
+            if (model.State == CombatState.Sweep)
+                return new Color(1f, 0.82f, 0.24f, 0.82f);
             return new Color(0.56f, 0.86f, 1f, 0.52f);
         }
 

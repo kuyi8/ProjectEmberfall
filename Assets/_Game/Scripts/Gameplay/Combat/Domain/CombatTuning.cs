@@ -65,7 +65,15 @@ namespace Emberfall.Gameplay.Combat.Domain
             float sprintStaminaPerSecond,
             float executionStaminaCost,
             float executionDuration,
-            float executionResolveTime)
+            float executionResolveTime,
+            float sweepDamage = 44f,
+            float sweepStaminaCost = 30f,
+            float sweepCooldown = 4.5f,
+            float sweepDuration = 0.82f,
+            float sweepDamageOpen = 0.24f,
+            float sweepDamageClose = 0.48f,
+            float sweepRadius = 2.7f,
+            float sweepAngle = 240f)
         {
             ValidateTriplet(lightDamage, nameof(lightDamage));
             ValidateTriplet(lightDuration, nameof(lightDuration));
@@ -155,6 +163,18 @@ namespace Emberfall.Gameplay.Combat.Domain
             ExecutionResolveTime = Positive(executionResolveTime, nameof(executionResolveTime));
             if (ExecutionResolveTime > ExecutionDuration)
                 throw new ArgumentOutOfRangeException(nameof(executionResolveTime));
+            SweepDamage = Positive(sweepDamage, nameof(sweepDamage));
+            SweepStaminaCost = Positive(sweepStaminaCost, nameof(sweepStaminaCost));
+            SweepCooldown = Positive(sweepCooldown, nameof(sweepCooldown));
+            SweepDuration = Positive(sweepDuration, nameof(sweepDuration));
+            SweepDamageOpen = NonNegative(sweepDamageOpen, nameof(sweepDamageOpen));
+            SweepDamageClose = Positive(sweepDamageClose, nameof(sweepDamageClose));
+            if (SweepDamageClose > SweepDuration || SweepDamageOpen >= SweepDamageClose)
+                throw new ArgumentOutOfRangeException(nameof(sweepDamageClose));
+            SweepRadius = Positive(sweepRadius, nameof(sweepRadius));
+            if (sweepAngle <= 0f || sweepAngle > 360f)
+                throw new ArgumentOutOfRangeException(nameof(sweepAngle));
+            SweepAngle = sweepAngle;
         }
 
         public float MaxHealth { get; }
@@ -202,6 +222,14 @@ namespace Emberfall.Gameplay.Combat.Domain
         public float ExecutionStaminaCost { get; }
         public float ExecutionDuration { get; }
         public float ExecutionResolveTime { get; }
+        public float SweepDamage { get; }
+        public float SweepStaminaCost { get; }
+        public float SweepCooldown { get; }
+        public float SweepDuration { get; }
+        public float SweepDamageOpen { get; }
+        public float SweepDamageClose { get; }
+        public float SweepRadius { get; }
+        public float SweepAngle { get; }
 
         public float GetLightDamage(int comboIndex) => _lightDamage[comboIndex];
         public float GetLightDuration(int comboIndex) => _lightDuration[comboIndex];

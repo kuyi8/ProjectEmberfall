@@ -144,9 +144,8 @@ namespace Emberfall.UI
             };
             GUI.Label(
                 new Rect(34f, 171f, 302f, 21f),
-                _player.Model.RangedCooldownRemaining <= 0f
-                    ? "飞刀：就绪　F 投掷"
-                    : $"飞刀：冷却 {_player.Model.RangedCooldownRemaining:0.0}s",
+                $"飞刀 {(_player.Model.RangedCooldownRemaining <= 0f ? "就绪" : $"{_player.Model.RangedCooldownRemaining:0.0}s")}" +
+                $"　横扫 {(_player.Model.SweepCooldownRemaining <= 0f ? "就绪" : $"{_player.Model.SweepCooldownRemaining:0.0}s")}",
                 _bodyStyle);
             GUI.Label(
                 new Rect(34f, 196f, 302f, 21f),
@@ -255,7 +254,7 @@ namespace Emberfall.UI
             GUI.Label(new Rect(panel.x + 14f, panel.y + 8f, panel.width - 28f, 25f), "操作提示（F1 隐藏）", _titleStyle);
             GUI.Label(
                 new Rect(panel.x + 14f, panel.y + 40f, panel.width - 28f, panel.height - 48f),
-                "WASD 移动　Shift 冲刺\nE 交互 / 近身处决　左键轻击\n按住右键蓄力重击\nF 投掷飞刀（有冷却）\nQ 防御 / 精准防御\nR 治疗药（可被打断）\nSpace 闪避　中键锁定\nF2 输入显示　Esc 暂停",
+                "WASD 移动　Shift 冲刺\nE 交互 / 近身处决　左键轻击\n按住右键蓄力重击\nF 投掷飞刀（有冷却）\nV 大范围横扫（有冷却）\nQ 防御 / 精准防御\nR 治疗药（可被打断）\nSpace 闪避　中键锁定\nF2 输入显示　Esc 暂停",
                 _bodyStyle);
         }
 

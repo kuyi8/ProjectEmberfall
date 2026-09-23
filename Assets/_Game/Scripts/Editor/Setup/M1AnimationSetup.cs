@@ -52,6 +52,9 @@ namespace Emberfall.Editor.Setup
             AnimationClip heavyAttack = CreateInPlaceClip(
                 FindClip(Library1Path, "Rig|Sword_Attack"),
                 "A_Player_HeavyAttack_InPlace");
+            AnimationClip sweep = CreateInPlaceClip(
+                FindClip(Library2Path, "Armature|Sword_Regular_Combo"),
+                "A_Player_Sweep_InPlace");
             AnimationClip rangedAttack = CreateInPlaceClip(
                 FindClip(Library2Path, "Armature|OverhandThrow"),
                 "A_Player_RangedAttack_InPlace");
@@ -98,7 +101,7 @@ namespace Emberfall.Editor.Setup
 
             AnimatorController controller = CreateController(
                 idle, walk, sprint, light1, light1Recovery, light2, light2Recovery, light3,
-                heavyCharge, heavyAttack, rangedAttack, dodge, guard, guardBreak, hitReact, heal, dead,
+                heavyCharge, heavyAttack, sweep, rangedAttack, dodge, guard, guardBreak, hitReact, heal, dead,
                 enemyMeleeCombo, enemyRuneCast, enemyShieldGuard, enemyShieldBash, wardenCharge,
                 wardenPhaseBreak, wardenRuneCleave);
             PlayerAnimationSet animationSet = AssetDatabase.LoadAssetAtPath<PlayerAnimationSet>(AnimationSetPath);
@@ -110,7 +113,7 @@ namespace Emberfall.Editor.Setup
 
             animationSet.Configure(
                 controller, light1, light1Recovery, light2, light2Recovery, light3, heavyCharge,
-                heavyAttack, rangedAttack, dodge, guard, guardBreak, hitReact, heal, dead,
+                heavyAttack, sweep, rangedAttack, dodge, guard, guardBreak, hitReact, heal, dead,
                 enemyMeleeCombo, enemyRuneCast, enemyShieldGuard, enemyShieldBash, wardenCharge,
                 wardenPhaseBreak, wardenRuneCleave);
             EditorUtility.SetDirty(animationSet);
@@ -193,6 +196,7 @@ namespace Emberfall.Editor.Setup
             AnimationClip light3,
             AnimationClip heavyCharge,
             AnimationClip heavyAttack,
+            AnimationClip sweep,
             AnimationClip rangedAttack,
             AnimationClip dodge,
             AnimationClip guard,
@@ -234,6 +238,7 @@ namespace Emberfall.Editor.Setup
             AddState(stateMachine, "LightAttack3", light3);
             AddState(stateMachine, "HeavyCharge", heavyCharge);
             AddState(stateMachine, "HeavyAttack", heavyAttack);
+            AddState(stateMachine, "Sweep", sweep);
             AddState(stateMachine, "RangedAttack", rangedAttack);
             AddState(stateMachine, "Dodge", dodge);
             AddState(stateMachine, "Guard", guard);

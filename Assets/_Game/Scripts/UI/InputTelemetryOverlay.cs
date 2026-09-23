@@ -76,6 +76,7 @@ namespace Emberfall.UI
             ObserveRisingEdge(LatestSnapshot.LightAttack, _previous.LightAttack, "LightAttack / LMB");
             ObserveRisingEdge(LatestSnapshot.HeavyAttack, _previous.HeavyAttack, "HeavyAttack / RMB");
             ObserveRisingEdge(LatestSnapshot.RangedAttack, _previous.RangedAttack, "ThrowingKnife / F");
+            ObserveRisingEdge(LatestSnapshot.Sweep, _previous.Sweep, "WideSweep / V");
             ObserveRisingEdge(LatestSnapshot.LockOn, _previous.LockOn, "LockToggle / MMB");
             _previous = LatestSnapshot;
             _eventRemaining = Mathf.Max(0f, _eventRemaining - Time.unscaledDeltaTime);
@@ -116,11 +117,12 @@ namespace Emberfall.UI
             DrawKey(new Rect(keyX + ((key + gap) * 2f), keyY + key + gap, key, key), "D", LatestSnapshot.Move.x > 0.25f);
 
             float actionX = panel.x + (150f * scale);
-            DrawKey(new Rect(actionX, keyY, 40f * scale, key), "Q", LatestSnapshot.Guard);
-            DrawKey(new Rect(actionX + (45f * scale), keyY, 40f * scale, key), "E", LatestSnapshot.Interact);
-            DrawKey(new Rect(actionX + (90f * scale), keyY, 40f * scale, key), "R", LatestSnapshot.Heal);
-            DrawKey(new Rect(actionX + (135f * scale), keyY, 40f * scale, key), "F", LatestSnapshot.RangedAttack);
-            DrawKey(new Rect(actionX + (180f * scale), keyY, 62f * scale, key), "SPC", LatestSnapshot.Dodge);
+            DrawKey(new Rect(actionX, keyY, 36f * scale, key), "Q", LatestSnapshot.Guard);
+            DrawKey(new Rect(actionX + (40f * scale), keyY, 36f * scale, key), "E", LatestSnapshot.Interact);
+            DrawKey(new Rect(actionX + (80f * scale), keyY, 36f * scale, key), "R", LatestSnapshot.Heal);
+            DrawKey(new Rect(actionX + (120f * scale), keyY, 36f * scale, key), "F", LatestSnapshot.RangedAttack);
+            DrawKey(new Rect(actionX + (160f * scale), keyY, 36f * scale, key), "V", LatestSnapshot.Sweep);
+            DrawKey(new Rect(actionX + (200f * scale), keyY, 48f * scale, key), "SPC", LatestSnapshot.Dodge);
             DrawKey(new Rect(actionX, keyY + key + gap, 72f * scale, key), "LMB", LatestSnapshot.LightAttack);
             DrawKey(new Rect(actionX + (78f * scale), keyY + key + gap, 72f * scale, key), "RMB", LatestSnapshot.HeavyAttack);
             DrawKey(new Rect(actionX + (156f * scale), keyY + key + gap, 68f * scale, key), "MMB", LatestSnapshot.LockOn);

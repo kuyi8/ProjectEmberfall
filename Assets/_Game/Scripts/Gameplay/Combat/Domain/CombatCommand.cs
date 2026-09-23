@@ -10,6 +10,7 @@ namespace Emberfall.Gameplay.Combat.Domain
         Heal,
         GuardPressed,
         GuardReleased,
-        Execution
+        Execution,
+        Sweep
     }
 }

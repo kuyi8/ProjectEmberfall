@@ -25,6 +25,7 @@ namespace Emberfall.Tests.EditMode
             "A_Player_LightAttack2Recovery_InPlace",
             "A_Player_LightAttack3_InPlace",
             "A_Player_HeavyAttack_InPlace",
+            "A_Player_Sweep_InPlace",
             "A_Player_RangedAttack_InPlace",
             "A_Player_Dodge_InPlace",
             "A_Player_Guard_InPlace",

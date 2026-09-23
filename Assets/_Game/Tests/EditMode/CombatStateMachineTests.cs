@@ -56,6 +56,7 @@ namespace Emberfall.Tests.EditMode
         [TestCase(CombatState.LightAttack3, true)]
         [TestCase(CombatState.HeavyCharge, true)]
         [TestCase(CombatState.HeavyAttack, true)]
+        [TestCase(CombatState.Sweep, true)]
         [TestCase(CombatState.RangedAttack, true)]
         [TestCase(CombatState.Guard, true)]
         public void LockOnFacingPolicy_SeparatesLocomotionFromAttackFacing(CombatState state, bool expected)
@@ -96,6 +97,41 @@ namespace Emberfall.Tests.EditMode
             machine.Tick(3f);
             Assert.That(machine.RangedCooldownRemaining, Is.Zero.Within(0.001f));
             Assert.That(machine.Submit(CombatCommand.RangedAttack), Is.True);
+        }
+
+        [Test]
+        public void Sweep_SpendsThirtyStaminaUsesAuthoredSectorAndCooldown()
+        {
+            CombatStateMachine machine = CreateMachine();
+            float before = machine.Stamina.Current;
+
+            Assert.That(machine.Submit(CombatCommand.Sweep), Is.True);
+            Assert.That(machine.State, Is.EqualTo(CombatState.Sweep));
+            Assert.That(machine.CurrentAttackTag, Is.EqualTo(AttackTag.Sweep));
+            Assert.That(machine.Stamina.Current, Is.EqualTo(before - 30f).Within(0.001f));
+            Assert.That(machine.SweepRadius, Is.EqualTo(2.7f).Within(0.001f));
+            Assert.That(machine.SweepAngle, Is.EqualTo(240f).Within(0.001f));
+            machine.Tick(machine.StateDuration);
+            Assert.That(machine.Submit(CombatCommand.Sweep), Is.False);
+            machine.Tick(4f);
+            Assert.That(machine.SweepCooldownRemaining, Is.Zero.Within(0.001f));
+            Assert.That(machine.Submit(CombatCommand.Sweep), Is.True);
+        }
+
+        [Test]
+        public void PerfectDodge_EmpowersAndConsumesOnSweep()
+        {
+            CombatStateMachine machine = CreateMachine();
+            machine.Submit(CombatCommand.Dodge);
+            machine.Tick(0.1f);
+            Assert.That(machine.ReceiveDamage(
+                new DamageRequest(7, 91, 30f, 10f, AttackTag.Light)).PerfectDodge, Is.True);
+            machine.Tick(machine.StateDuration);
+
+            Assert.That(machine.Submit(CombatCommand.Sweep), Is.True);
+            Assert.That(machine.CurrentAttackEmpowered, Is.True);
+            Assert.That(machine.CurrentAttackDamage, Is.EqualTo(56f).Within(0.001f));
+            Assert.That(machine.PerfectDodgeAttackReady, Is.False);
         }
 
         [Test]

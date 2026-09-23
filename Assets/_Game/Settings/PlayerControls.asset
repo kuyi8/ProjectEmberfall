@@ -137,6 +137,14 @@ MonoBehaviour:
       m_Interactions: 
       m_SingletonActionBindings: []
       m_Flags: 0
+    - m_Name: Sweep
+      m_Type: 1
+      m_ExpectedControlType: Button
+      m_Id: 6a8606e2-70f9-4760-8c48-267d24aeb5a7
+      m_Processors: 
+      m_Interactions: 
+      m_SingletonActionBindings: []
+      m_Flags: 0
     m_Bindings:
     - m_Name: 2DVector
       m_Id: 86ed9a2f-90f3-490c-8ee1-70c54505d21c
@@ -409,6 +417,22 @@ MonoBehaviour:
       m_Processors: 
       m_Groups: 
       m_Action: Sprint
+      m_Flags: 0
+    - m_Name: 
+      m_Id: eb6599bc-2c9d-4efb-b3cf-9461742fc091
+      m_Path: <Keyboard>/v
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Sweep
+      m_Flags: 0
+    - m_Name: 
+      m_Id: 6857bc95-0b66-4e4c-b6c1-a13c6943c5c5
+      m_Path: <Gamepad>/dpad/left
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Sweep
       m_Flags: 0
   m_ControlSchemes: []
   m_IsProjectWide: 0

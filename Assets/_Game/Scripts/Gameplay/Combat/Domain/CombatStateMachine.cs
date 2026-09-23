@@ -38,7 +38,7 @@ namespace Emberfall.Gameplay.Combat.Domain
         public bool IsDead => State == CombatState.Dead;
         public bool IsGuarding => State == CombatState.Guard;
         public bool IsPerfectGuardWindow => IsGuarding && StateElapsed <= _tuning.PerfectGuardWindow;
-        public bool IsAttacking => IsLightAttack(State) || State == CombatState.HeavyAttack;
+        public bool IsAttacking => IsLightAttack(State) || State == CombatState.HeavyAttack || State == CombatState.Sweep;
         public bool IsDamageWindowOpen => IsAttacking && StateElapsed >= DamageOpen && StateElapsed <= DamageClose;
         public bool IsInvulnerable =>
             (State == CombatState.Dodge && StateElapsed <= _tuning.DodgeInvulnerabilitySeconds) ||
@@ -61,6 +61,12 @@ namespace Emberfall.Gameplay.Combat.Domain
         public float RangedCooldownRemaining { get; private set; }
         public float RangedCooldownNormalized => Math.Min(1f, RangedCooldownRemaining / _tuning.RangedCooldown);
         public bool CanUseRangedAttack => State == CombatState.Locomotion && RangedCooldownRemaining <= 0f;
+        public float SweepCooldownRemaining { get; private set; }
+        public float SweepCooldownNormalized => Math.Min(1f, SweepCooldownRemaining / _tuning.SweepCooldown);
+        public bool CanUseSweep => State == CombatState.Locomotion && SweepCooldownRemaining <= 0f &&
+                                   Stamina.Current >= _tuning.SweepStaminaCost;
+        public float SweepRadius => _tuning.SweepRadius;
+        public float SweepAngle => _tuning.SweepAngle;
         public float RangedDamage => _tuning.RangedDamage;
         public float RangedPostureDamage => _tuning.RangedPostureDamage;
         public float RangedProjectileSpeed => _tuning.RangedProjectileSpeed;
@@ -117,6 +123,7 @@ namespace Emberfall.Gameplay.Combat.Domain
 
             StateElapsed += deltaTime;
             RangedCooldownRemaining = Math.Max(0f, RangedCooldownRemaining - deltaTime);
+            SweepCooldownRemaining = Math.Max(0f, SweepCooldownRemaining - deltaTime);
             if (State == CombatState.HeavyCharge)
             {
                 _heavyChargeSeconds += deltaTime;
@@ -250,6 +257,7 @@ namespace Emberfall.Gameplay.Combat.Domain
             IsHeavyFullyCharged = false;
             LastHealAmount = 0f;
             RangedCooldownRemaining = 0f;
+            SweepCooldownRemaining = 0f;
             HealingFlasks.Refill();
             SetSprintRequested(false);
             EnterState(CombatState.Locomotion);
@@ -358,6 +366,21 @@ namespace Emberfall.Gameplay.Combat.Domain
                     ExecutionSequence++;
                     EnterState(CombatState.Execution);
                     return true;
+                case CombatCommand.Sweep:
+                    if (State != CombatState.Locomotion || SweepCooldownRemaining > 0f ||
+                        !Stamina.TrySpend(_tuning.SweepStaminaCost))
+                    {
+                        return false;
+                    }
+
+                    CurrentAttackDamage = _tuning.SweepDamage;
+                    CurrentAttackTag = AttackTag.Sweep;
+                    ApplyPerfectDodgeAttackBonus();
+                    IsHeavyFullyCharged = false;
+                    AttackSequence++;
+                    SweepCooldownRemaining = _tuning.SweepCooldown;
+                    EnterState(CombatState.Sweep);
+                    return true;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(command), command, null);
             }
@@ -425,6 +448,7 @@ namespace Emberfall.Gameplay.Combat.Domain
                 case CombatState.LightAttack2:
                 case CombatState.LightAttack3:
                 case CombatState.HeavyAttack:
+                case CombatState.Sweep:
                 case CombatState.RangedAttack:
                 case CombatState.Dodge:
                 case CombatState.HitReact:
@@ -512,8 +536,10 @@ namespace Emberfall.Gameplay.Combat.Domain
         }
 
         private int LightIndex => (int)State - (int)CombatState.LightAttack1;
-        private float DamageOpen => IsLightAttack(State) ? _tuning.GetLightDamageOpen(LightIndex) : _tuning.HeavyDamageOpen;
-        private float DamageClose => IsLightAttack(State) ? _tuning.GetLightDamageClose(LightIndex) : _tuning.HeavyDamageClose;
+        private float DamageOpen => IsLightAttack(State) ? _tuning.GetLightDamageOpen(LightIndex) :
+            State == CombatState.Sweep ? _tuning.SweepDamageOpen : _tuning.HeavyDamageOpen;
+        private float DamageClose => IsLightAttack(State) ? _tuning.GetLightDamageClose(LightIndex) :
+            State == CombatState.Sweep ? _tuning.SweepDamageClose : _tuning.HeavyDamageClose;
 
         private float GetStateDuration(CombatState state)
         {
@@ -526,6 +552,8 @@ namespace Emberfall.Gameplay.Combat.Domain
             {
                 case CombatState.HeavyAttack:
                     return _tuning.HeavyDuration;
+                case CombatState.Sweep:
+                    return _tuning.SweepDuration;
                 case CombatState.RangedAttack:
                     return _tuning.RangedDuration;
                 case CombatState.Dodge:

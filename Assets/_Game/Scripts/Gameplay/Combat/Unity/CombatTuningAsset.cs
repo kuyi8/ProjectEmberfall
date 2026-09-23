@@ -74,6 +74,16 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, Min(0.1f)] private float _executionDuration = 0.72f;
         [SerializeField, Min(0.01f)] private float _executionResolveTime = 0.32f;
 
+        [Header("Wide sweep (offline)")]
+        [SerializeField, Min(1f)] private float _sweepDamage = 44f;
+        [SerializeField, Min(0.1f)] private float _sweepStaminaCost = 30f;
+        [SerializeField, Min(0.1f)] private float _sweepCooldown = 4.5f;
+        [SerializeField, Min(0.1f)] private float _sweepDuration = 0.82f;
+        [SerializeField, Min(0f)] private float _sweepDamageOpen = 0.24f;
+        [SerializeField, Min(0.01f)] private float _sweepDamageClose = 0.48f;
+        [SerializeField, Min(0.1f)] private float _sweepRadius = 2.7f;
+        [SerializeField, Range(1f, 360f)] private float _sweepAngle = 240f;
+
         public CombatTuning CreateRuntimeCopy() => new CombatTuning(
             _maxHealth, _maxStamina, _staminaRegenPerSecond, _staminaRegenDelay, _inputBufferSeconds,
             _lightDamage, _lightStaminaCost, _lightDuration, _lightDamageOpen, _lightDamageClose,
@@ -89,6 +99,8 @@ namespace Emberfall.Gameplay.Combat.Unity
             _perfectGuardWindow, _perfectGuardPostureMultiplier, _perfectGuardCounterPostureDamage,
             _guardBreakDuration, _healingFlaskCharges, _healDuration, _healResolveTime,
             _healHealthFraction, _sprintWarmupSeconds, _sprintStaminaPerSecond,
-            _executionStaminaCost, _executionDuration, _executionResolveTime);
+            _executionStaminaCost, _executionDuration, _executionResolveTime,
+            _sweepDamage, _sweepStaminaCost, _sweepCooldown, _sweepDuration,
+            _sweepDamageOpen, _sweepDamageClose, _sweepRadius, _sweepAngle);
     }
 }

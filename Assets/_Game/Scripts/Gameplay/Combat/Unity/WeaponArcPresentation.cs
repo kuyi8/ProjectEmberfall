@@ -49,6 +49,11 @@ namespace Emberfall.Gameplay.Combat.Unity
                 float angle = Mathf.Lerp(-110f, 130f, Smooth(model.StateNormalized));
                 target = _restRotation * Quaternion.Euler(angle, 0f, -20f);
             }
+            else if (model.State == CombatState.Sweep)
+            {
+                float angle = Mathf.Lerp(-150f, 150f, Smooth(model.StateNormalized));
+                target = _restRotation * Quaternion.Euler(0f, angle, -32f);
+            }
             else if (model.State == CombatState.Dodge)
             {
                 target = _restRotation * Quaternion.Euler(0f, 0f, 160f * model.StateNormalized);

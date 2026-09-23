@@ -85,3 +85,11 @@ MonoBehaviour:
   _executionStaminaCost: 22
   _executionDuration: 0.72
   _executionResolveTime: 0.32
+  _sweepDamage: 44
+  _sweepStaminaCost: 30
+  _sweepCooldown: 4.5
+  _sweepDuration: 0.82
+  _sweepDamageOpen: 0.24
+  _sweepDamageClose: 0.48
+  _sweepRadius: 2.7
+  _sweepAngle: 240

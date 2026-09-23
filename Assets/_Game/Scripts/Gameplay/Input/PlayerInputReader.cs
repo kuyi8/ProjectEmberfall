@@ -16,6 +16,7 @@ namespace Emberfall.Gameplay.Input
         private InputAction _light;
         private InputAction _heavy;
         private InputAction _ranged;
+        private InputAction _sweep;
         private InputAction _dodge;
         private InputAction _sprint;
         private InputAction _guard;
@@ -29,6 +30,7 @@ namespace Emberfall.Gameplay.Input
         private bool _heavyPressed;
         private bool _heavyReleased;
         private bool _rangedPressed;
+        private bool _sweepPressed;
         private bool _dodgePressed;
         private bool _guardPressed;
         private bool _guardReleased;
@@ -72,6 +74,7 @@ namespace Emberfall.Gameplay.Input
             _light?.IsPressed() ?? false,
             _heavy?.IsPressed() ?? false,
             _ranged?.IsPressed() ?? false,
+            _sweep?.IsPressed() ?? false,
             _guard?.IsPressed() ?? false,
             _dodge?.IsPressed() ?? false,
             _heal?.IsPressed() ?? false,
@@ -101,6 +104,7 @@ namespace Emberfall.Gameplay.Input
             _light = _runtimeActions.FindAction("Player/LightAttack", true);
             _heavy = _runtimeActions.FindAction("Player/HeavyAttack", true);
             _ranged = _runtimeActions.FindAction("Player/RangedAttack", true);
+            _sweep = _runtimeActions.FindAction("Player/Sweep", true);
             _dodge = _runtimeActions.FindAction("Player/Dodge", true);
             _sprint = _runtimeActions.FindAction("Player/Sprint", true);
             _guard = _runtimeActions.FindAction("Player/Guard", true);
@@ -115,6 +119,7 @@ namespace Emberfall.Gameplay.Input
             _heavy.started += OnHeavyStarted;
             _heavy.canceled += OnHeavyCanceled;
             _ranged.performed += OnRangedPerformed;
+            _sweep.performed += OnSweepPerformed;
             _dodge.performed += OnDodgePerformed;
             _guard.started += OnGuardStarted;
             _guard.canceled += OnGuardCanceled;
@@ -151,6 +156,7 @@ namespace Emberfall.Gameplay.Input
             _light = null;
             _heavy = null;
             _ranged = null;
+            _sweep = null;
             _dodge = null;
             _sprint = null;
             _guard = null;
@@ -170,6 +176,7 @@ namespace Emberfall.Gameplay.Input
         public bool ConsumeHeavyPressed() => Consume(ref _heavyPressed);
         public bool ConsumeHeavyReleased() => Consume(ref _heavyReleased);
         public bool ConsumeRangedPressed() => Consume(ref _rangedPressed);
+        public bool ConsumeSweepPressed() => Consume(ref _sweepPressed);
         public bool ConsumeDodgePressed() => Consume(ref _dodgePressed);
         public bool ConsumeGuardPressed() => Consume(ref _guardPressed);
         public bool ConsumeGuardReleased() => Consume(ref _guardReleased);
@@ -196,6 +203,7 @@ namespace Emberfall.Gameplay.Input
 
         private void OnDodgePerformed(InputAction.CallbackContext _) => _dodgePressed = true;
         private void OnRangedPerformed(InputAction.CallbackContext _) => _rangedPressed = true;
+        private void OnSweepPerformed(InputAction.CallbackContext _) => _sweepPressed = true;
         private void OnGuardStarted(InputAction.CallbackContext _)
         {
             GuardHeld = true;

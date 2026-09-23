@@ -94,6 +94,16 @@ namespace Emberfall.Tests.EditMode
         }
 
         [Test]
+        public void IntentValidatorExplicitlyRejectsOfflineSweep()
+        {
+            var validator = new NetworkCombatIntentValidator();
+
+            Assert.That(validator.TryAccept(1, CombatCommand.Sweep, out string reason), Is.False);
+            Assert.That(reason, Is.EqualTo("unsupported-command"));
+            Assert.That(validator.LastAcceptedSequence, Is.Zero);
+        }
+
+        [Test]
         public void HeavyReleaseWithoutAcceptedChargeIsRejectedByDomain()
         {
             var validator = new NetworkCombatIntentValidator();

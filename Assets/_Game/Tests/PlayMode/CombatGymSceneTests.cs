@@ -134,6 +134,51 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(player.Model.RangedCooldownRemaining, Is.GreaterThan(2f));
         }
 
+        [UnityTest]
+        public IEnumerator PlayerSweep_HitsMultipleTargetsInWideSectorAndStartsCooldown()
+        {
+            yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
+            yield return null;
+            yield return null;
+
+            foreach (MonoBehaviour enemy in Object.FindObjectsOfType<MonoBehaviour>()
+                         .Where(item => item is MeleeEnemyActor || item is RangedEnemyActor || item is ShieldEnemyActor))
+                enemy.enabled = false;
+
+            PlayerCombatActor player = Object.FindObjectOfType<PlayerCombatActor>();
+            CharacterController controller = player.GetComponent<CharacterController>();
+            controller.enabled = false;
+            player.transform.position = Vector3.zero;
+            player.transform.rotation = Quaternion.identity;
+            controller.enabled = true;
+
+            TrainingDummy[] dummies = Object.FindObjectsOfType<TrainingDummy>();
+            Assert.That(dummies.Length, Is.GreaterThanOrEqualTo(3));
+            Vector3[] offsets =
+            {
+                new Vector3(0f, 0f, 2.1f),
+                Quaternion.Euler(0f, 105f, 0f) * new Vector3(0f, 0f, 2.1f),
+                Quaternion.Euler(0f, -105f, 0f) * new Vector3(0f, 0f, 2.1f)
+            };
+            float[] before = new float[3];
+            for (int i = 0; i < 3; i++)
+            {
+                dummies[i].transform.position = player.transform.position + offsets[i];
+                before[i] = dummies[i].HealthNormalized;
+            }
+            Physics.SyncTransforms();
+
+            Assert.That(player.Model.Submit(CombatCommand.Sweep), Is.True);
+            yield return new WaitForSeconds(0.32f);
+            int hitCount = 0;
+            for (int i = 0; i < 3; i++)
+                if (dummies[i].HealthNormalized < before[i]) hitCount++;
+            Assert.That(hitCount, Is.EqualTo(3));
+            Assert.That(player.Model.SweepCooldownRemaining, Is.GreaterThan(4f));
+            Assert.That(typeof(ISweepReactive).IsAssignableFrom(typeof(ShieldEnemyActor)), Is.False,
+                "Elite enemies must not receive ordinary sweep displacement.");
+        }
+
         private static void AssertAttachmentScaleAndWeaponBounds()
         {
             Transform[] sockets = Object.FindObjectsOfType<Transform>(true)

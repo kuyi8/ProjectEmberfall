@@ -230,6 +230,7 @@ namespace Emberfall.Gameplay.Movement
                 case CombatState.LightAttack2:
                 case CombatState.LightAttack3:
                 case CombatState.HeavyAttack:
+                case CombatState.Sweep:
                 case CombatState.RangedAttack:
                     return 0.12f;
                 default:

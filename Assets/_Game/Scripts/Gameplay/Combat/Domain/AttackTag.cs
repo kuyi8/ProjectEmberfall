@@ -4,6 +4,7 @@ namespace Emberfall.Gameplay.Combat.Domain
     {
         Light,
         Heavy,
+        Sweep,
         Projectile,
         Hazard
     }
