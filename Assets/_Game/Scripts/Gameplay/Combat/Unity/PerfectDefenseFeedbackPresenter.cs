@@ -1,3 +1,4 @@
+using Emberfall.Gameplay.Animation;
 using UnityEngine;
 
 namespace Emberfall.Gameplay.Combat.Unity
@@ -8,12 +9,9 @@ namespace Emberfall.Gameplay.Combat.Unity
     {
         [SerializeField] private PlayerCombatActor _actor;
         [SerializeField] private Animator _animator;
-        [SerializeField, Min(0.01f)] private float _freezeSeconds = 0.045f;
 
         private AudioSource _source;
         private AudioClip _clip;
-        private float _freezeRemaining;
-        private float _restoreSpeed = 1f;
 
         public void Configure(PlayerCombatActor actor, Animator animator)
         {
@@ -37,7 +35,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         private void OnDisable()
         {
             if (_actor != null) _actor.PerfectDefensePresented -= Present;
-            RestoreAnimator();
+            var speed = _animator != null ? _animator.GetComponent<AnimatorSpeedCoordinator>() : null;
+            if (speed != null && speed.ActiveGrade == HitFeedbackGrade.PerfectDefense) speed.Cancel("defense-disabled");
         }
 
         private void OnDestroy()
@@ -45,34 +44,15 @@ namespace Emberfall.Gameplay.Combat.Unity
             if (_clip != null) Destroy(_clip);
         }
 
-        private void Update()
-        {
-            if (_freezeRemaining <= 0f) return;
-            _freezeRemaining -= Time.unscaledDeltaTime;
-            if (_freezeRemaining <= 0f) RestoreAnimator();
-        }
-
         private void Present(PerfectDefenseKind kind)
         {
-            if (_animator != null)
-            {
-                if (_freezeRemaining <= 0f) _restoreSpeed = Mathf.Max(0.01f, _animator.speed);
-                _animator.speed = 0f;
-                _freezeRemaining = _freezeSeconds;
-            }
+            AnimatorSpeedCoordinator.For(_animator)?.Request(HitFeedbackGrade.PerfectDefense);
 
             if (_source != null && _clip != null)
             {
                 _source.pitch = kind == PerfectDefenseKind.Guard ? 1.15f : 1.45f;
                 _source.PlayOneShot(_clip, 0.62f);
             }
-        }
-
-        private void RestoreAnimator()
-        {
-            if (_animator != null && Mathf.Approximately(_animator.speed, 0f))
-                _animator.speed = _restoreSpeed;
-            _freezeRemaining = 0f;
         }
 
         private static AudioClip CreateConfirmationClip()

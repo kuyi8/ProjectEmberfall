@@ -62,7 +62,7 @@ namespace Emberfall.Gameplay.Animation
 
             _presentedState = state;
             _isPlayingRecovery = false;
-            _animator.speed = GetPlaybackSpeed(state);
+            AnimatorSpeedCoordinator.SetBase(_animator, GetPlaybackSpeed(state), state == CombatState.Dead);
             _animator.CrossFadeInFixedTime(state.ToString(), CrossFadeSeconds, 0, 0f);
         }
 
@@ -129,7 +129,7 @@ namespace Emberfall.Gameplay.Animation
                 0.05f,
                 _combat.Model.StateDuration - _combat.Model.LightRecoveryStart);
             _isPlayingRecovery = true;
-            _animator.speed = Mathf.Clamp(recovery.length / recoveryDuration, 0.35f, 4f);
+            AnimatorSpeedCoordinator.SetBase(_animator, Mathf.Clamp(recovery.length / recoveryDuration, 0.35f, 4f));
             _animator.CrossFadeInFixedTime($"{state}Recovery", 0.04f, 0, 0f);
         }
     }

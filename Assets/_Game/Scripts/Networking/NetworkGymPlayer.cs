@@ -25,6 +25,34 @@ namespace Emberfall.Networking
         private const float GroundedVerticalSpeed = -2f;
         private const float CombatFacingMinimumDot = -0.25f;
         private static readonly int AnimationSpeedId = Animator.StringToHash("Speed");
+        private ulong _confirmedHitSequence;
+        private CombatHitFeedbackPresenter _hitFeedback;
+
+        internal void ServerPresentHit(ulong targetId, int attackSequence, AttackTag tag,
+            DamageResult result, Vector3 position, ImpactSurface surface)
+        {
+            if (!IsServer) return;
+            HitFeedbackGrade grade = HitFeedbackRules.Classify(result, tag);
+            if (grade == HitFeedbackGrade.None) return;
+            // Host also consumes the RPC once; never invoke the presenter on the Server side here.
+            PresentConfirmedHitClientRpc(++_confirmedHitSequence, targetId, attackSequence,
+                (byte)grade, (byte)(result.Blocked ? ImpactSurface.Metal : surface), (byte)tag, position, result.Killed);
+        }
+
+        [ClientRpc]
+        private void PresentConfirmedHitClientRpc(ulong sequence, ulong targetId, int attackSequence,
+            byte grade, byte surface, byte tag, Vector3 position, bool killed)
+        {
+            _hitFeedback ??= GetComponent<CombatHitFeedbackPresenter>();
+            if (_hitFeedback == null) return;
+            Animator targetAnimator = null;
+            if (!killed && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out NetworkObject target))
+                targetAnimator = target.GetComponentInChildren<Animator>();
+            _hitFeedback.SetNetworkOwner(IsOwner && !_inputSuppressed.Value && !IsDowned, OwnerClientId);
+            _hitFeedback.Enqueue(new CombatImpactPresentationEvent(position, CombatImpactStyle.Steel,
+                sequence, attackSequence, unchecked((int)targetId), (HitFeedbackGrade)grade,
+                (ImpactSurface)surface, targetAnimator, (AttackTag)tag));
+        }
 
         [SerializeField] private CharacterController _controller;
         [SerializeField] private PlayerInputReader _input;
@@ -1028,9 +1056,9 @@ namespace Emberfall.Networking
             _presentedAnimationState = state;
             AnimationClip clip = _animationSet.GetClip(state);
             float duration = GetPresentationStateDuration(state);
-            _animator.speed = clip != null && duration > 0f
+            AnimatorSpeedCoordinator.SetBase(_animator, clip != null && duration > 0f
                 ? Mathf.Clamp(clip.length / duration, 0.35f, 3f)
-                : 1f;
+                : 1f, state == CombatState.Dead);
             _animator.CrossFadeInFixedTime(state.ToString(), 0.08f, 0, 0f);
         }
 

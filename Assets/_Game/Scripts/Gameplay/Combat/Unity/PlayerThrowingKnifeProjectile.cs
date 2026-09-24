@@ -96,7 +96,7 @@ namespace Emberfall.Gameplay.Combat.Unity
                         AttackTag.Projectile,
                         true,
                         DefenseArcUtility.IsThreatInFrontArc(target.transform, origin)));
-                    _owner.PresentRangedImpact(target, result, hit.point);
+                    _owner.PresentRangedImpact(target, result, hit.point, _release.AttackSequence);
                 }
                 else
                 {

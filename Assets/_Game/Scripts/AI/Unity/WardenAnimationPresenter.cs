@@ -40,7 +40,7 @@ namespace Emberfall.AI.Unity
                 ? _actor.HorizontalSpeed : 0f, 0.08f, Time.deltaTime);
             if (desired == _presented) return;
             _presented = desired;
-            _animator.speed = ResolvePlaybackSpeed(desired);
+            AnimatorSpeedCoordinator.SetBase(_animator, ResolvePlaybackSpeed(desired), desired == PresentationState.Dead);
             _animator.CrossFadeInFixedTime(
                 ResolveStateName(desired),
                 desired == PresentationState.ChargeRecovery ? 0.12f : 0.06f,

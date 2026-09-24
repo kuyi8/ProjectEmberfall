@@ -12,6 +12,9 @@ namespace Emberfall.Gameplay.Combat.Unity
         public virtual bool HasSecondaryResource => false;
         public virtual float SecondaryResourceNormalized => 0f;
         public virtual bool IsThreatening => false;
+        // Authored presentation classification, never inferred from VFX colors or damage authority.
+        [SerializeField] private ImpactSurface _impactSurface;
+        public ImpactSurface ImpactSurface => _impactSurface;
         public abstract DamageResult ReceiveDamage(DamageRequest request);
         public virtual float ApplyNeutralPostureDamage(float amount) => 0f;
     }

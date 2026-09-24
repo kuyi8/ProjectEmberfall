@@ -51,7 +51,7 @@ namespace Emberfall.AI.Unity
             }
 
             _presented = desired;
-            _animator.speed = GetPlaybackSpeed(desired);
+            AnimatorSpeedCoordinator.SetBase(_animator, GetPlaybackSpeed(desired), desired == PresentationState.Dead);
             _animator.CrossFadeInFixedTime(GetStateName(desired), CrossFadeSeconds, 0, 0f);
         }
 

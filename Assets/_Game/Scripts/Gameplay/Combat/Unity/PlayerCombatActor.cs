@@ -70,6 +70,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         public event Action<PlayerCombatActor> Died;
         public event Action<PlayerCombatActor> Respawned;
         public event Action<CombatImpactPresentationEvent> ImpactPresented;
+        private ulong _impactSequence;
         public event Action<RangedAttackRelease> RangedAttackReleased;
         public event Action<PlayerCombatActor, CombatProgressKind> CombatProgressed;
         public event Action<PerfectDefenseKind> PerfectDefensePresented;
@@ -405,7 +406,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             return true;
         }
 
-        public void PresentRangedImpact(CombatTarget target, DamageResult result, Vector3 position)
+        public void PresentRangedImpact(CombatTarget target, DamageResult result, Vector3 position, int attackSequence = 0)
         {
             if (target == null)
             {
@@ -415,9 +416,8 @@ namespace Emberfall.Gameplay.Combat.Unity
 
             if (result.Accepted || result.Blocked || result.Staggered)
             {
-                ImpactPresented?.Invoke(new CombatImpactPresentationEvent(
-                    position,
-                    result.Blocked || result.Staggered ? CombatImpactStyle.Guard : CombatImpactStyle.Steel));
+                PublishImpact(target, result, AttackTag.Projectile, attackSequence, position,
+                    result.Blocked || result.Staggered ? CombatImpactStyle.Guard : CombatImpactStyle.Steel);
                 NotifyCombatProgress(result, CombatProgressKind.DamageDealt);
             }
 
@@ -489,9 +489,8 @@ namespace Emberfall.Gameplay.Combat.Unity
                         : CombatImpactStyle.Steel;
                 if (result.Accepted || result.Blocked || result.Staggered)
                 {
-                    ImpactPresented?.Invoke(new CombatImpactPresentationEvent(
-                        target.AimPoint.position,
-                        impactStyle));
+                    PublishImpact(target, result, _model.CurrentAttackTag, _model.AttackSequence,
+                        target.AimPoint.position, impactStyle);
                 }
                 if (result.Blocked)
                 {
@@ -701,12 +700,23 @@ namespace Emberfall.Gameplay.Combat.Unity
                 false,
                 true));
             NotifyCombatProgress(result, CombatProgressKind.DamageDealt);
-            ImpactPresented?.Invoke(new CombatImpactPresentationEvent(
-                _executionTarget.CombatTarget.AimPoint.position,
-                CombatImpactStyle.Ember));
+            PublishImpact(_executionTarget.CombatTarget, result, AttackTag.Heavy,
+                1000000 + _model.ExecutionResolveSequence, _executionTarget.CombatTarget.AimPoint.position,
+                CombatImpactStyle.Ember, true);
             LastCombatEvent = result.Killed ? "Execution kill" : $"Execution: {result.AppliedDamage:0}";
             LogFeel("execution", 1, _executionTarget.CombatTarget.CombatantId);
             _executionTarget = null;
+        }
+
+        private void PublishImpact(CombatTarget target, DamageResult result, AttackTag attack,
+            int attackSequence, Vector3 position, CombatImpactStyle style, bool execution = false)
+        {
+            HitFeedbackGrade grade = HitFeedbackRules.Classify(result, attack, execution);
+            if (grade == HitFeedbackGrade.None) return;
+            ImpactPresented?.Invoke(new CombatImpactPresentationEvent(position, style, ++_impactSequence,
+                attackSequence, target.CombatantId, grade,
+                result.Blocked ? ImpactSurface.Metal : target.ImpactSurface,
+                result.Killed ? null : target.GetComponentInChildren<Animator>(), attack));
         }
 
         private static void LogFeel(string eventName, float value, int sequence = 0)

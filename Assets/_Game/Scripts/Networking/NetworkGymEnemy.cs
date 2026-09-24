@@ -5,6 +5,8 @@ using Emberfall.AI.Domain;
 using Emberfall.Core.Content;
 using Emberfall.Core.Identifiers;
 using Emberfall.Gameplay.Combat.Domain;
+using Emberfall.Gameplay.Animation;
+using Emberfall.Gameplay.Combat.Unity;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -628,6 +630,9 @@ namespace Emberfall.Networking
             PublishServerState();
             if (result.Accepted || result.Blocked)
             {
+                sourcePlayer.ServerPresentHit(NetworkObjectId, combat.AttackSequence, combat.CurrentAttackTag,
+                    result, transform.position + Vector3.up, _archetype == NetworkEnemyArchetype.RuinGuard
+                        ? ImpactSurface.Metal : ImpactSurface.Flesh);
                 Debug.Log(
                     $"[M5_ENEMY_DAMAGE] source={sourcePlayer.OwnerClientId} sequence={combat.AttackSequence} " +
                     $"archetype={_archetype} applied={result.AppliedDamage:F1} blocked={result.Blocked} " +
@@ -719,6 +724,9 @@ namespace Emberfall.Networking
             reason = resolved ? string.Empty : "projectile-damage-rejected";
             if (resolved)
             {
+                sourcePlayer.ServerPresentHit(NetworkObjectId, release.AttackSequence, AttackTag.Projectile,
+                    result, transform.position + Vector3.up, _archetype == NetworkEnemyArchetype.RuinGuard
+                        ? ImpactSurface.Metal : ImpactSurface.Flesh);
                 Debug.Log(
                     $"[M5_RANGED_ENEMY_DAMAGE] source={sourcePlayer.OwnerClientId} " +
                     $"sequence={release.AttackSequence} applied={result.AppliedDamage:F1} " +
@@ -980,7 +988,7 @@ namespace Emberfall.Networking
             if (_lastAnimatorState == key) return;
             _lastAnimatorState = key;
             string stateName = ResolveAnimatorStateName(state);
-            _animator.speed = 1f;
+            AnimatorSpeedCoordinator.SetBase(_animator, 1f, IsDeadState(state));
             _animator.CrossFadeInFixedTime(stateName, 0.08f, 0, 0f);
         }
 

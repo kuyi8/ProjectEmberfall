@@ -249,6 +249,8 @@ namespace Emberfall.Networking
             bool frontal = toAttacker.sqrMagnitude > 0.001f &&
                 Vector3.Angle(transform.forward, toAttacker) <= _definition.FrontalBlockAngle * 0.5f;
             DamageResult result = _brain.ReceiveDamage(request, frontal);
+            sourcePlayer.ServerPresentHit(NetworkObjectId, request.AttackSequence, request.Tag,
+                result, transform.position + Vector3.up, Emberfall.Gameplay.Combat.Unity.ImpactSurface.Metal);
             float threatAmount = result.AppliedDamage + result.PostureDamageApplied * 0.08f;
             if (threatAmount > 0f) _threat.RecordDamage(sourcePlayer.OwnerClientId, threatAmount, ServerNow);
             PublishServerState();
@@ -571,6 +573,7 @@ namespace Emberfall.Networking
                 WardenState.Attack => ResolveAttackAnimation(),
                 _ => CombatState.Locomotion.ToString()
             };
+            Emberfall.Gameplay.Animation.AnimatorSpeedCoordinator.SetBase(_animator, 1f, ReplicatedState == WardenState.Dead);
             _animator.CrossFadeInFixedTime(stateName, 0.08f, 0, 0f);
         }
 
