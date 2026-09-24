@@ -19,11 +19,16 @@ namespace Emberfall.Editor.Setup
         private const string Package = "Packages/com.unity.render-pipelines.universal";
 
         // Look-dev builds consume existing assets verbatim: no Apply(), no shared-asset toggling.
-        public static void BuildStyleLabPlayers()
+        public static void BuildStyleLabPlayers() => BuildDiagnosticPlayers("StyleLab-Development", "StyleLab-ReleaseGuard");
+
+        // Preserve accepted Release and authored assets while verifying Development-only timing code.
+        public static void BuildPerformanceProbePlayers() => BuildDiagnosticPlayers("0.9.0-Development", "Performance-ReleaseGuard");
+
+        private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder)
         {
             foreach (bool development in new[] { true, false })
             {
-                string folder = development ? "StyleLab-Development" : "StyleLab-ReleaseGuard";
+                string folder = development ? developmentFolder : releaseFolder;
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = EditorBuildSettings.scenes.Where(x => x.enabled).Select(x => x.path).ToArray(),
