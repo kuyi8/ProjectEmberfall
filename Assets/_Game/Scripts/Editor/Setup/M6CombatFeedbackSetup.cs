@@ -38,6 +38,7 @@ namespace Emberfall.Editor.Setup
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
             // Existing author/user sound selections survive every rebuild.
+            M6ImpactAudioQualitySetup.EnsureConfigured(audio);
             try
             {
                 foreach (string name in new[] { "10_EmberValley", "20_Sanctum", "90_CombatGym", "91_NetworkGym" })

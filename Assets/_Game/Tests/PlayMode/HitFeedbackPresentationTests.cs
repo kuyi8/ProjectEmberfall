@@ -174,6 +174,46 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator AudioVariations_UseMeasuredGainAndBoundedPitch_WithoutImmediateRepeat()
+        {
+#if UNITY_EDITOR
+            var root = new GameObject("AudioVariationTest"); _objects.Add(root);
+            var presenter = root.AddComponent<CombatHitFeedbackPresenter>();
+            var set = UnityEditor.AssetDatabase.LoadAssetAtPath<CombatImpactAudioSet>("Assets/_Game/Settings/CombatImpactAudio_M6.asset");
+            presenter.Configure(null, null, set, null);
+            var voice = root.GetComponentInChildren<AudioSource>();
+            AudioClip previous = null;
+            for (ulong sequence = 1; sequence <= 12; sequence++)
+            {
+                presenter.Enqueue(new CombatImpactPresentationEvent(Vector3.zero, CombatImpactStyle.Steel,
+                    sequence, (int)sequence, 1, HitFeedbackGrade.Light, ImpactSurface.Metal));
+                var randomState = Random.state;
+                presenter.SendMessage("Update");
+                Assert.That(Random.state, Is.EqualTo(randomState), "Audio randomness must not consume gameplay's random stream.");
+                Assert.That(presenter.LastAudioFrame, Is.EqualTo(Time.frameCount));
+                Assert.That(voice.clip, Is.Not.Null.And.Not.SameAs(previous));
+                Assert.That(voice.pitch, Is.InRange(.95f, 1.05f));
+                bool matched = false;
+                for (int i = 0; i < 3; i++)
+                {
+                    var authored = set.Select(HitFeedbackGrade.Light, ImpactSurface.Metal, -1, (i + .1f) / 3, .5f);
+                    if (authored.Clip != voice.clip) continue;
+                    Assert.That(voice.volume, Is.EqualTo(.6f * authored.Gain).Within(.00001f));
+                    matched = true;
+                }
+                Assert.That(matched, Is.True);
+                previous = voice.clip;
+                yield return new WaitForSecondsRealtime(.06f);
+            }
+            Assert.That(presenter.PresentedCount, Is.EqualTo(12));
+            presenter.enabled = false;
+            Assert.That(voice.isPlaying, Is.False);
+#else
+            yield break;
+#endif
+        }
+
+        [UnityTest]
         public IEnumerator IdenticalInput_WithFeedbackOnOrOff_HasIdenticalDamageTicksAndJudgmentFrames()
         {
             Animator animator = CreateAnimator();

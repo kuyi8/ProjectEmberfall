@@ -12,9 +12,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e02ce82cdc71bb14f82b7292a3823c06, type: 3}
   m_Name: CombatImpactAudio_M6
   m_EditorClassIdentifier: 
-  _flesh: {fileID: 8300000, guid: 3fb0b2f793da2994cbdfeaeae4ba45b2, type: 3}
-  _metal: {fileID: 8300000, guid: 4c12c4bbb8be8be4e9a1e19eb5b5cfa6, type: 3}
-  _heavyFlesh: {fileID: 8300000, guid: c40c74dce7704954ab653a4f72477bd3, type: 3}
-  _heavyMetal: {fileID: 8300000, guid: 20031cdda60e16048a7cde540b99e094, type: 3}
-  _guardBreak: {fileID: 8300000, guid: 8f8941611530e684dba38642b4629427, type: 3}
-  _execution: {fileID: 8300000, guid: 7c58473335d839547baafa3a9d60ec3a, type: 3}
+  _flesh: {fileID: 0}
+  _metal: {fileID: 0}
+  _heavyFlesh: {fileID: 0}
+  _heavyMetal: {fileID: 0}
+  _guardBreak: {fileID: 0}
+  _execution: {fileID: 0}
+  _slots:
+  - label: LightFlesh
+    variants:
+    - clip: {fileID: 8300000, guid: 3fb0b2f793da2994cbdfeaeae4ba45b2, type: 3}
+      gain: 0.4692846
+    - clip: {fileID: 8300000, guid: 6a1589b08f48a4841b0ce6f25ba629d8, type: 3}
+      gain: 0.50282764
+    - clip: {fileID: 8300000, guid: d0cfbfe69c010ac4ba2bce4c11ef80e7, type: 3}
+      gain: 0.46075085
+  - label: LightMetal
+    variants:
+    - clip: {fileID: 8300000, guid: 4c12c4bbb8be8be4e9a1e19eb5b5cfa6, type: 3}
+      gain: 1
+    - clip: {fileID: 8300000, guid: 0197f34dd2fc19d49a2236e8156aaaa6, type: 3}
+      gain: 0.91132295
+    - clip: {fileID: 8300000, guid: 7556ab99f2072d54aa7d396061b95f70, type: 3}
+      gain: 0.9722524
+  - label: HeavyFlesh
+    variants:
+    - clip: {fileID: 8300000, guid: c40c74dce7704954ab653a4f72477bd3, type: 3}
+      gain: 0.47204238
+    - clip: {fileID: 8300000, guid: 48d945a02d90b4d43aacd14fefd9d1ff, type: 3}
+      gain: 0.4625524
+    - clip: {fileID: 8300000, guid: 4c09f4c6dd61be84da3e2586d3d80a86, type: 3}
+      gain: 0.5732372
+  - label: HeavyMetal
+    variants:
+    - clip: {fileID: 8300000, guid: 20031cdda60e16048a7cde540b99e094, type: 3}
+      gain: 0.69580036
+    - clip: {fileID: 8300000, guid: 3b2859d88a01a7c45b190857ba2f7456, type: 3}
+      gain: 1
+    - clip: {fileID: 8300000, guid: 29906fd1550fa614481a883972a1e406, type: 3}
+      gain: 0.5665293
+  - label: GuardBreak
+    variants:
+    - clip: {fileID: 8300000, guid: 8f8941611530e684dba38642b4629427, type: 3}
+      gain: 1
+    - clip: {fileID: 8300000, guid: 469a6f9567da2af418def7dd80149655, type: 3}
+      gain: 0.55030894
+    - clip: {fileID: 8300000, guid: ae9c78cbd67a5394a878491b22c5d633, type: 3}
+      gain: 0.9172365
+  - label: Execution
+    variants:
+    - clip: {fileID: 8300000, guid: 7c58473335d839547baafa3a9d60ec3a, type: 3}
+      gain: 1
+    - clip: {fileID: 8300000, guid: b3d9231808793864297788eb269c9617, type: 3}
+      gain: 0.93600017
+    - clip: {fileID: 8300000, guid: 710336f6f9fdd794cbfd573452622206, type: 3}
+      gain: 0.85433155

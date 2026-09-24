@@ -2,6 +2,7 @@
     "name": "Emberfall.Tests.EditMode",
     "rootNamespace": "Emberfall.Tests.EditMode",
     "references": [
+        "Emberfall.Editor",
         "Emberfall.Core",
         "Emberfall.Gameplay",
         "Emberfall.AI",

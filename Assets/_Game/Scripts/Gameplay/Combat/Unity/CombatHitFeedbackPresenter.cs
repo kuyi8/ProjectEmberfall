@@ -20,6 +20,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         private string _sourceId;
         private double _nextAudioAt;
         private HitFeedbackGrade _lastAudioGrade;
+        private System.Random _audioRandom;
+        private readonly int[] _lastAudioIndices = { -1, -1, -1, -1, -1, -1 };
         public int PresentedCount { get; private set; }
         public int LastAudioFrame { get; private set; } = -1;
         public int LastFeedbackFrame { get; private set; } = -1;
@@ -29,6 +31,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         {
             Unsubscribe();
             _actor = actor; _animator = animator; _audioSet = audioSet; _cameraImpulse = cameraImpulse;
+            if (Application.isPlaying && _audioSet != null) _audioSet.Preload();
             Subscribe();
         }
 
@@ -42,6 +45,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         private void Awake()
         {
             _sourceId = "offline:" + GetInstanceID();
+            _audioRandom = new System.Random(GetInstanceID()); // Never consume Unity's gameplay random stream.
+            if (_audioSet != null) _audioSet.Preload();
             // Dedicated voice, not the existing perfect-defense source; one hit voice per attacker.
             var voice = new GameObject("HitFeedbackVoice");
             voice.transform.SetParent(transform, false);
@@ -86,15 +91,21 @@ namespace Emberfall.Gameplay.Combat.Unity
             if (_owner && _cameraImpulse != null) _cameraImpulse.Request(impact.Grade);
             LastFeedbackFrame = Time.frameCount;
             LastAudioFrame = -1;
-            AudioClip clip = _audioSet != null ? _audioSet.Resolve(impact.Grade, impact.Surface) : null;
-            if (clip != null && (Time.realtimeSinceStartupAsDouble >= _nextAudioAt || impact.Grade > _lastAudioGrade))
+            if (_audioSet != null && (Time.realtimeSinceStartupAsDouble >= _nextAudioAt || impact.Grade > _lastAudioGrade))
             {
-                _audio.transform.position = impact.Position;
-                _audio.Stop(); _audio.clip = clip; _audio.volume = 0.6f;
-                _audio.pitch = impact.Grade == HitFeedbackGrade.Execution ? 0.85f : 1f;
-                _audio.Play(); LastAudioFrame = Time.frameCount;
-                _nextAudioAt = Time.realtimeSinceStartupAsDouble + 0.05d;
-                _lastAudioGrade = impact.Grade;
+                int slot = CombatImpactAudioSet.SlotIndex(impact.Grade, impact.Surface);
+                var playback = _audioSet.Select(impact.Grade, impact.Surface, _lastAudioIndices[slot],
+                    (float)_audioRandom.NextDouble(), (float)_audioRandom.NextDouble());
+                if (playback.Clip != null)
+                {
+                    _audio.transform.position = impact.Position;
+                    _audio.Stop(); _audio.clip = playback.Clip; _audio.volume = 0.6f * playback.Gain;
+                    _audio.pitch = playback.Pitch;
+                    _audio.Play(); LastAudioFrame = Time.frameCount;
+                    _lastAudioIndices[slot] = playback.Index;
+                    _nextAudioAt = Time.realtimeSinceStartupAsDouble + 0.05d;
+                    _lastAudioGrade = impact.Grade;
+                }
             }
             PresentedCount++;
             Debug.Log($"[M5C_FEEL] event=hit-feedback grade={impact.Grade} attack={impact.Attack} surface={impact.Surface} source={_sourceId} " +

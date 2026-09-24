@@ -261,8 +261,8 @@ GameObject:
   - component: {fileID: 469860778771457846}
   - component: {fileID: 8506332223047782154}
   - component: {fileID: 913736706445381125}
-  - component: {fileID: 7794896361298796776}
-  - component: {fileID: 8645473268917805109}
+  - component: {fileID: 5536003445421971076}
+  - component: {fileID: 1254802144040592780}
   m_Layer: 0
   m_Name: NetworkOwnerCamera
   m_TagString: MainCamera
@@ -369,7 +369,7 @@ MonoBehaviour:
   _collisionMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &7794896361298796776
+--- !u!114 &5536003445421971076
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -413,7 +413,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!114 &8645473268917805109
+--- !u!114 &1254802144040592780
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -523,7 +523,7 @@ GameObject:
   - component: {fileID: 7192944896624929703}
   - component: {fileID: 5886228472818516987}
   - component: {fileID: 749102359282035865}
-  - component: {fileID: 1809134029536219171}
+  - component: {fileID: 1941952510367665857}
   m_Layer: 0
   m_Name: P_M5_NetworkGymPlayer
   m_TagString: Untagged
@@ -671,7 +671,7 @@ MonoBehaviour:
   _player: {fileID: 5886228472818516987}
   _input: {fileID: 7649796876633058820}
   _targeting: {fileID: 7192944896624929703}
---- !u!114 &1809134029536219171
+--- !u!114 &1941952510367665857
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -686,7 +686,7 @@ MonoBehaviour:
   _actor: {fileID: 0}
   _animator: {fileID: 9110490787762873391}
   _audioSet: {fileID: 11400000, guid: c628a25c903997e41bb0d74f15cb74c0, type: 2}
-  _cameraImpulse: {fileID: 8645473268917805109}
+  _cameraImpulse: {fileID: 1254802144040592780}
 --- !u!1001 &7861601675119123805
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -745,14 +745,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5683277129681861042, guid: 485c461e58dd3724997761b36664f6fa, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5754569569008915109}
+      addedObject: {fileID: 698231446338637105}
   m_SourcePrefab: {fileID: 100100000, guid: 485c461e58dd3724997761b36664f6fa, type: 3}
 --- !u!1 &2577478877305545967 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5683277129681861042, guid: 485c461e58dd3724997761b36664f6fa, type: 3}
   m_PrefabInstance: {fileID: 7861601675119123805}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &5754569569008915109
+--- !u!114 &698231446338637105
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
