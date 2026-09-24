@@ -3,7 +3,7 @@
     "packageId": "package:emberfall.builtin",
     "contentVersion": "0.8.11",
     "minClientVersion": "0.5.0",
-    "maxClientVersion": "0.8.999",
+    "maxClientVersion": "0.9.999",
     "signatureAlgorithm": "builtin",
     "signature": "embedded-trusted-content",
     "files": [

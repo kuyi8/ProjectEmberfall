@@ -65,7 +65,7 @@ namespace Emberfall.Editor.Content
                 new ContentId("package:emberfall.builtin"),
                 new SemanticVersion(0, 8, 11),
                 new SemanticVersion(0, 5, 0),
-                new SemanticVersion(0, 8, 999),
+                new SemanticVersion(0, 9, 999),
                 "builtin",
                 "embedded-trusted-content",
                 entries);

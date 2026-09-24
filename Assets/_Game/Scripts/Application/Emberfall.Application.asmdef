@@ -6,7 +6,9 @@
         "Emberfall.Gameplay",
         "Emberfall.AI",
         "Emberfall.Quests",
-        "Emberfall.Infrastructure"
+        "Emberfall.Infrastructure",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

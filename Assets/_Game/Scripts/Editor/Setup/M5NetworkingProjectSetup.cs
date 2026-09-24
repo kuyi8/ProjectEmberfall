@@ -26,8 +26,8 @@ namespace Emberfall.Editor.Setup
 {
     public static class M5NetworkingProjectSetup
     {
-        public const string Version = "0.8.10";
-        public const string ReleaseLabel = "0.8.10c";
+        public const string Version = "0.9.0";
+        public const string ReleaseLabel = "0.9.0";
         private const string ScenePath = "Assets/_Game/Scenes/91_NetworkGym.unity";
         private const string EmberValleyScenePath = "Assets/_Game/Scenes/10_EmberValley.unity";
         private const string SanctumScenePath = "Assets/_Game/Scenes/20_Sanctum.unity";
@@ -78,6 +78,7 @@ namespace Emberfall.Editor.Setup
             ConfigureEmberValleyNetworkSlice(
                 playerPrefab, enemyPrefab, rangedEnemyPrefab, shieldEnemyPrefab, wardenPrefab, worldObjectivePrefab);
             ConfigureBuildSettings();
+            M6VisualFoundationSetup.Apply();
             PlayerSettings.bundleVersion = Version;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -100,13 +101,20 @@ namespace Emberfall.Editor.Setup
                 if (configuredScenes[i].enabled) enabledScenes.Add(configuredScenes[i].path);
             }
 
-            BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            BuildReport report;
+            // Keep SSAO variants in the diagnostic build for full/off/fallback A/B; restore authored fallback.
+            M6VisualFoundationSetup.SetSsaoForCaptureBuild(true);
+            try
             {
-                scenes = enabledScenes.ToArray(),
-                locationPathName = outputPath,
-                target = BuildTarget.StandaloneWindows64,
-                options = BuildOptions.Development
-            });
+                report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = enabledScenes.ToArray(),
+                    locationPathName = outputPath,
+                    target = BuildTarget.StandaloneWindows64,
+                    options = BuildOptions.Development
+                });
+            }
+            finally { M6VisualFoundationSetup.SetSsaoForCaptureBuild(false); }
             if (report.summary.result != BuildResult.Succeeded)
                 throw new System.InvalidOperationException($"M5 matrix Development Build failed: {report.summary.result}");
 
@@ -120,6 +128,8 @@ namespace Emberfall.Editor.Setup
         public static void BuildNetworkReleasePlayer()
         {
             Apply();
+            // A killed diagnostic build cannot be allowed to leave SSAO enabled in Release.
+            M6VisualFoundationSetup.SetSsaoForCaptureBuild(false);
             string outputPath = $"Builds/Windows/{ReleaseLabel}/ProjectEmberfall.exe";
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
 

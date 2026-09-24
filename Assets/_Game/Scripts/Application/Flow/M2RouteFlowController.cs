@@ -444,6 +444,9 @@ namespace Emberfall.Application.Flow
             string path = string.IsNullOrWhiteSpace(_savePathOverride)
                 ? Path.Combine(saveDirectory, _saveFileName)
                 : _savePathOverride;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (VisualFoundationReviewProbe.IsActive) path = VisualFoundationReviewProbe.SavePath;
+#endif
             _store = new JsonSaveGameStore(path);
 
             M2LaunchMode launchMode = M2LaunchIntent.Consume();
