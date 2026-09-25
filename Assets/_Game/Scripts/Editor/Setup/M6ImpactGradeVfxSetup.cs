@@ -13,7 +13,6 @@ namespace Emberfall.Editor.Setup
         public const string GuardBreakPath = Root + "P_M6_Impact_GuardBreak.prefab";
         public const string ExecutionPath = Root + "P_M6_Impact_Execution.prefab";
         public const string SweepPath = Root + "P_M6_Impact_Sweep.prefab";
-        private const string Shock = "Assets/_Game/Art/DownloadResources/Vefects/Easy Shockwaves VFX URP/VFX/Shockwaves/Particles/VFX_Shockwave_01_White_Big_1s.prefab";
         private const string Slash = "Assets/_Game/Art/DownloadResources/Matthew Guz/Slash Effects FREE/Prefab/Multiple Slash 2 .prefab";
 
         public static void EnsureAssets(bool rebuild = false)
@@ -21,7 +20,7 @@ namespace Emberfall.Editor.Setup
             Create(GuardBreakPath, root =>
             {
                 Add(root, Root + "P_M6_Impact_Guard.prefab", .8f, Vector3.zero, new Color(1f, .65f, .18f));
-                Add(root, Shock, 1.4f, Vector3.zero, new Color(1f, .7f, .25f));
+                CreateContactBurst(root);
             }, rebuild);
             Create(ExecutionPath, root =>
             {
@@ -30,12 +29,68 @@ namespace Emberfall.Editor.Setup
             }, rebuild);
             Create(SweepPath, root =>
             {
-                var effect = Add(root, Slash, .55f, Vector3.zero, new Color(1f, .85f, .55f));
-                // One physical mesh crescent, without the source's second slash and sparkle halo.
-                foreach (var child in effect.GetComponentsInChildren<Transform>(true).Reverse().ToArray())
-                    if (child != effect.transform)
-                        UnityEngine.Object.DestroyImmediate(child.gameObject);
+                var particle = CreateAccent(root, "ConfirmedRangeArc", true, 1, .4f);
+                var main = particle.main;
+                main.startSize = 1; main.startSpeed = 0;
+                var renderer = particle.GetComponent<ParticleSystemRenderer>();
+                renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                renderer.alignment = ParticleSystemRenderSpace.Local;
+                // The pool supplies a cached per-slot mesh from the actual confirmed query, never a constant prefab radius.
+                renderer.mesh = null;
             }, rebuild);
+        }
+
+        public static void RebuildApprovedImpactAccents()
+        {
+            EnsureAssets(true);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void CreateContactBurst(GameObject root)
+        {
+            var shards = CreateAccent(root, "ContactFracture", false, 14, .26f);
+            var main = shards.main;
+            main.startSize = new ParticleSystem.MinMaxCurve(.14f, .28f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.1f, 2.6f);
+            main.startRotation = new ParticleSystem.MinMaxCurve(0, Mathf.PI * 2);
+            var shape = shards.shape; shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Sphere; shape.radius = .06f;
+            var core = CreateAccent(root, "ContactFlash", false, 1, .11f);
+            var flash = core.main; flash.startSize = .72f; flash.startSpeed = 0;
+        }
+
+        private static ParticleSystem CreateAccent(GameObject root, string name, bool arc, short count, float lifetime)
+        {
+            string materialPath = "Assets/_Game/Art/Materials/M6Art/M_ImpactAccent_" + (arc ? "Arc" : "Spark") + ".mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Emberfall/M6ImpactAccent"));
+                material.SetFloat("_Arc", arc ? 1 : 0);
+                AssetDatabase.CreateAsset(material, materialPath);
+            }
+            var effect = new GameObject(name); effect.transform.SetParent(root.transform, false);
+            var particle = effect.AddComponent<ParticleSystem>();
+            particle.Stop(false, ParticleSystemStopBehavior.StopEmittingAndClear);
+            var main = particle.main;
+            main.loop = false; main.playOnAwake = false; main.duration = .5f;
+            main.startLifetime = lifetime; main.startDelay = 0; main.simulationSpeed = 1;
+            main.startColor = arc ? new Color(1f, .64f, .16f, .85f) : new Color(1f, .54f, .12f);
+            main.maxParticles = count; main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            var emission = particle.emission; emission.rateOverTime = 0;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0, count) });
+            var shape = particle.shape; shape.enabled = false;
+            var color = particle.colorOverLifetime; color.enabled = true;
+            var gradient = new Gradient();
+            gradient.SetKeys(new[] { new GradientColorKey(Color.white, 0), new GradientColorKey(Color.white, 1) },
+                new[] { new GradientAlphaKey(1, 0), new GradientAlphaKey(1, .2f), new GradientAlphaKey(0, 1) });
+            color.color = gradient;
+            var renderer = particle.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return particle;
         }
 
         public static void Bind(CombatImpactVfxPresenter presenter) => presenter.ConfigureGradeEffects(

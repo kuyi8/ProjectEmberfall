@@ -92,6 +92,29 @@ namespace Emberfall.Gameplay.Combat.Unity
         {
             if (!isActiveAndEnabled || impact.Sequence == 0 || impact.Sequence <= _lastSequence || impact.Grade == HitFeedbackGrade.None) return;
             _lastSequence = impact.Sequence;
+            // A Sweep that breaks every target still has one range arc, alongside per-target break accents.
+            // This does not change the grade used by audio, freeze or damage.
+            if (impact.Attack == Domain.AttackTag.Sweep && impact.Grade != HitFeedbackGrade.Sweep &&
+                impact.Sector.IsValid && _sweepPrefab != null && _lastSweepAttack != impact.AttackSequence)
+            {
+                _lastSweepAttack = impact.AttackSequence;
+                bool arcSpawned = CombatBurstVfxPool.ForScene(gameObject.scene).TrySpawn(CombatBurstKind.Sweep,
+                    _sweepPrefab, impact.Sector.Origin + Vector3.down * .8f,
+                    Quaternion.LookRotation(impact.Sector.Forward, Vector3.up), _gradeLifetime, impact.Sector);
+                if (arcSpawned) PresentedCount++; else DroppedCount++;
+                Debug.Log($"[M6_VFX] event=confirmed-impact sequence={impact.Sequence} kind=Sweep spawned={arcSpawned} active={CombatBurstVfxPool.ActiveCount(CombatBurstKind.Sweep)} grade={impact.Grade} attackSequence={impact.AttackSequence}");
+            }
+            // A Sweep that breaks every target still has one range arc, alongside per-target break accents.
+            // This does not change the grade used by audio, freeze or damage.
+            if (impact.Attack == Domain.AttackTag.Sweep && impact.Grade != HitFeedbackGrade.Sweep &&
+                impact.Sector.IsValid && _sweepPrefab != null && _lastSweepAttack != impact.AttackSequence)
+            {
+                _lastSweepAttack = impact.AttackSequence;
+                bool arcSpawned = CombatBurstVfxPool.ForScene(gameObject.scene).TrySpawn(CombatBurstKind.Sweep,
+                    _sweepPrefab, impact.Sector.Origin + Vector3.down * .8f,
+                    Quaternion.LookRotation(impact.Sector.Forward, Vector3.up), _gradeLifetime, impact.Sector);
+                if (arcSpawned) PresentedCount++; else DroppedCount++;
+            }
             GameObject prefab = impact.Style switch
             {
                 CombatImpactStyle.Guard => _guardImpactPrefab,
@@ -134,7 +157,20 @@ namespace Emberfall.Gameplay.Combat.Unity
             var rotation = gradePrefab != null ? Quaternion.Euler(0, transform.eulerAngles.y, 0) : Quaternion.identity;
             // AimPoint is near the head; wide accents read at the upper torso instead of as a head halo.
             Vector3 position = impact.Position + (gradePrefab != null ? Vector3.up * _gradeVerticalOffset : Vector3.zero);
-            bool spawned = CombatBurstVfxPool.ForScene(gameObject.scene).TrySpawn(kind, prefab, position, rotation, lifetime);
+            if (kind == CombatBurstKind.GuardBreak)
+            {
+                // AimPoint is inside the body: place the local burst on the attacker-facing surface,
+                // not through the victim (and never disable depth testing to force visibility).
+                Vector3 source = impact.Sector.IsValid ? impact.Sector.Origin : transform.position;
+                position += Vector3.ProjectOnPlane(source - impact.Position, Vector3.up).normalized * .34f;
+            }
+            if (kind == CombatBurstKind.Sweep && impact.Sector.IsValid)
+            {
+                // Query origin is the capsule centre. Vertical offset is decorative; XZ/radius/edges stay exact.
+                position = impact.Sector.Origin + Vector3.down * .8f;
+                rotation = Quaternion.LookRotation(impact.Sector.Forward, Vector3.up);
+            }
+            bool spawned = CombatBurstVfxPool.ForScene(gameObject.scene).TrySpawn(kind, prefab, position, rotation, lifetime, impact.Sector);
             if (spawned) PresentedCount++; else DroppedCount++;
             Debug.Log($"[M6_VFX] event=confirmed-impact sequence={impact.Sequence} kind={kind} spawned={spawned} active={CombatBurstVfxPool.ActiveCount(kind)} grade={impact.Grade} attackSequence={impact.AttackSequence}");
         }

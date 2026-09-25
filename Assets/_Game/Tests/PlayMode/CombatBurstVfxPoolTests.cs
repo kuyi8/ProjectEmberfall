@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Emberfall.AI.Unity;
 using Emberfall.Gameplay.Input;
 using Emberfall.Gameplay.Combat.Unity;
+using Emberfall.Gameplay.Combat.Domain;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -44,6 +46,99 @@ namespace Emberfall.Tests.PlayMode
         private bool Spawn(CombatBurstVfxPool pool, CombatBurstKind kind = CombatBurstKind.Steel,
             float lifetime = 10f, GameObject prefab = null) =>
             pool.TrySpawn(kind, prefab != null ? prefab : _prefab, Vector3.zero, Quaternion.identity, lifetime);
+
+        private PlayerCombatActor NewActor(Scene scene, CombatTuningAsset tuning, Vector3 position)
+        {
+            var root = NewObject(scene, "SectorQueryActor"); root.SetActive(false);
+            root.transform.SetPositionAndRotation(position, Quaternion.Euler(0, 37, 0));
+            var input = root.AddComponent<PlayerInputReader>(); input.enabled = false;
+            var actor = root.AddComponent<PlayerCombatActor>();
+            actor.Configure(input, tuning, root.transform, root.transform, null, null);
+            root.AddComponent<CapsuleCollider>();
+            root.SetActive(true); actor.enabled = false;
+            return actor;
+        }
+
+        [TestCase(AttackTag.Light, 2.45f, 170f)]
+        [TestCase(AttackTag.Heavy, 3.1f, 155f)]
+        [TestCase(AttackTag.Sweep, 2.7f, 240f)]
+        [TestCase(AttackTag.Sweep, 3.4f, 210f)]
+        public void ActualQuery_ExportsPerAttackParametersAndPose(AttackTag attack, float radius, float angle)
+        {
+            var tuning = ScriptableObject.CreateInstance<CombatTuningAsset>();
+            try
+            {
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                if (attack == AttackTag.Sweep)
+                {
+                    typeof(CombatTuningAsset).GetField("_sweepRadius", flags).SetValue(tuning, radius);
+                    typeof(CombatTuningAsset).GetField("_sweepAngle", flags).SetValue(tuning, angle);
+                }
+                var scene = NewScene();
+                var actor = NewActor(scene, tuning, new Vector3(10000, 2, 10000));
+                if (attack != AttackTag.Sweep)
+                {
+                    typeof(PlayerCombatActor).GetField("_attackRadius", flags).SetValue(actor, radius);
+                    typeof(PlayerCombatActor).GetField("_attackAngle", flags).SetValue(actor, angle);
+                }
+                var target = NewActor(scene, tuning, actor.transform.position + actor.transform.forward * 1.3f);
+                CombatImpactPresentationEvent observed = default;
+                actor.ImpactPresented += impact => observed = impact;
+                Assert.That(actor.Model.Submit(attack == AttackTag.Sweep ? CombatCommand.Sweep :
+                    attack == AttackTag.Heavy ? CombatCommand.HeavyPressed : CombatCommand.LightAttack), Is.True);
+                if (attack == AttackTag.Heavy) actor.Model.Submit(CombatCommand.HeavyReleased);
+                Physics.SyncTransforms();
+                typeof(PlayerCombatActor).GetMethod("QueryAttackHits", flags).Invoke(actor, null);
+                Assert.That(observed.Sequence, Is.GreaterThan(0));
+                Assert.That(observed.Attack, Is.EqualTo(attack));
+                Assert.That(observed.Sector.Origin, Is.EqualTo(actor.transform.position));
+                Assert.That(Vector3.Distance(observed.Sector.Forward, actor.transform.forward), Is.LessThan(.00001f));
+                Assert.That(observed.Sector.Radius, Is.EqualTo(radius));
+                Assert.That(observed.Sector.FullAngle, Is.EqualTo(angle));
+                Assert.That(observed.Position, Is.EqualTo(target.AimPoint.position));
+            }
+            finally { Object.DestroyImmediate(tuning); }
+        }
+
+        [UnityTest]
+        public IEnumerator ActualSweepPrefab_UsesSnapshotNotMovedAttackerOrTarget_AndReusesMesh()
+        {
+#if UNITY_EDITOR
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Game/Prefabs/VFX/M6Art/P_M6_Impact_Sweep.prefab");
+            var scene = NewScene();
+            var presenter = NewObject(scene, "SnapshotPresenter").AddComponent<CombatImpactVfxPresenter>();
+            presenter.ConfigureGradeEffects(null, null, prefab);
+            presenter.transform.SetPositionAndRotation(new Vector3(99, 0, 99), Quaternion.Euler(0, 173, 0));
+            var sector = new MeleeImpactSector(new Vector3(3, 1, 5), Quaternion.Euler(0, 41, 0) * Vector3.forward, 2.7f, 240);
+            presenter.Present(new CombatImpactPresentationEvent(new Vector3(44, 1, 55), CombatImpactStyle.Steel,
+                1, 7, 8, HitFeedbackGrade.Sweep, ImpactSurface.Flesh, attack: AttackTag.Sweep, sector: sector));
+            var pool = CombatBurstVfxPool.ForScene(scene);
+            var renderer = pool.GetComponentInChildren<ParticleSystemRenderer>();
+            Assert.That(renderer, Is.Not.Null);
+            var mesh = renderer.mesh;
+            Assert.That(mesh, Is.Not.Null);
+            foreach (Vector3 local in mesh.vertices)
+            {
+                var world = renderer.transform.TransformPoint(local);
+                Assert.That(Vector2.Distance(new Vector2(world.x, world.z), new Vector2(sector.Origin.x, sector.Origin.z)),
+                    Is.LessThanOrEqualTo(sector.Radius + .0001f));
+            }
+            Assert.That(renderer.transform.position, Is.EqualTo(sector.Origin + Vector3.down * .8f));
+            var main = renderer.GetComponent<ParticleSystem>().main;
+            Assert.That(main.startSize.constant, Is.EqualTo(1));
+            Assert.That(main.startSpeed.constant, Is.Zero);
+            Assert.That(renderer.GetComponent<ParticleSystem>().sizeOverLifetime.enabled, Is.False);
+            Assert.That(renderer.GetComponent<ParticleSystem>().rotationOverLifetime.enabled, Is.False);
+            yield return new WaitForSeconds(.8f);
+            presenter.Present(new CombatImpactPresentationEvent(Vector3.zero, CombatImpactStyle.Steel,
+                2, 8, 8, HitFeedbackGrade.Sweep, ImpactSurface.Flesh, attack: AttackTag.Sweep, sector: sector));
+            Assert.That(pool.CreatedCount, Is.EqualTo(3));
+            Assert.That(pool.GetComponentInChildren<ParticleSystemRenderer>().mesh, Is.SameAs(mesh));
+#else
+            yield return null;
+#endif
+        }
 
         [UnityTearDown]
         public IEnumerator Cleanup()
@@ -200,6 +295,21 @@ namespace Emberfall.Tests.PlayMode
                 1, 1, 8, HitFeedbackGrade.Execution, ImpactSurface.Flesh));
             Assert.That(presenter.PresentedCount, Is.EqualTo(1));
             Assert.That(CombatBurstVfxPool.ActiveCount(CombatBurstKind.Steel), Is.EqualTo(1));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SweepBreakingEveryTarget_StillEmitsOnlyOneArcAndPerTargetAccents()
+        {
+            var presenter = NewObject(NewScene(), "BreakSweep").AddComponent<CombatImpactVfxPresenter>();
+            presenter.ConfigureGradeEffects(_prefab, null, _prefab);
+            var sector = new MeleeImpactSector(Vector3.zero, Vector3.forward, 2.7f, 240);
+            for (ulong i = 1; i <= 3; i++)
+                presenter.Present(new CombatImpactPresentationEvent(Vector3.one, CombatImpactStyle.Guard,
+                    i, 7, (int)i, HitFeedbackGrade.GuardBreak, ImpactSurface.Metal, attack: AttackTag.Sweep, sector: sector));
+            Assert.That(CombatBurstVfxPool.ActiveCount(CombatBurstKind.Sweep), Is.EqualTo(1));
+            Assert.That(CombatBurstVfxPool.ActiveCount(CombatBurstKind.GuardBreak), Is.EqualTo(3));
+            Assert.That(presenter.PresentedCount, Is.EqualTo(4));
             yield return null;
         }
 

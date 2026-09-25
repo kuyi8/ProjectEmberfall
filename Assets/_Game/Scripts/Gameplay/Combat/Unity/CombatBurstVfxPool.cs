@@ -30,6 +30,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             public ParticleSystem[] Particles;
             public bool Leased;
             public double ExpiresAt;
+            public MeleeImpactArcMesh Arc;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -69,7 +70,8 @@ namespace Emberfall.Gameplay.Combat.Unity
             }
         }
 
-        public bool TrySpawn(CombatBurstKind kind, GameObject prefab, Vector3 position, Quaternion rotation, float lifetime)
+        public bool TrySpawn(CombatBurstKind kind, GameObject prefab, Vector3 position, Quaternion rotation, float lifetime,
+            MeleeImpactSector sector = default)
         {
             if (!isActiveAndEnabled || !Valid(kind) || prefab == null || lifetime <= 0 ||
                 float.IsNaN(lifetime) || float.IsInfinity(lifetime)) return false;
@@ -79,6 +81,12 @@ namespace Emberfall.Gameplay.Combat.Unity
             {
                 if (_slots[i]?.Leased == true) continue;
                 Slot slot = EnsureSlot(i, prefab);
+                if (slot.Arc != null)
+                {
+                    // Missing geometry may not masquerade as a correctly sized range arc.
+                    if (!sector.IsValid) { DroppedCount++; return false; }
+                    slot.Arc.SetSector(sector.Radius, sector.FullAngle);
+                }
                 slot.Leased = true;
                 slot.ExpiresAt = Time.timeAsDouble + lifetime;
                 Active[(int)kind]++;
@@ -100,6 +108,7 @@ namespace Emberfall.Gameplay.Combat.Unity
                 slot.Instance.SetActive(false);
                 Destroy(slot.Instance); // Only an authored prefab change replaces a cached instance.
             }
+            if (slot?.Arc != null) Destroy(slot.Arc.Mesh);
             var instance = Instantiate(prefab, _inactiveRoot); // Inactive parent prevents play-on-awake.
             instance.name = "Pooled_" + prefab.name;
             instance.SetActive(false);
@@ -113,6 +122,12 @@ namespace Emberfall.Gameplay.Combat.Unity
                 main.stopAction = ParticleSystemStopAction.None; // Pool alone owns lifetime.
             }
             slot = new Slot { Prefab = prefab, Instance = instance, Particles = particles };
+            if (index / PerKindLimit == (int)CombatBurstKind.Sweep &&
+                instance.transform.Find("ConfirmedRangeArc") != null)
+            {
+                slot.Arc = new MeleeImpactArcMesh();
+                instance.transform.Find("ConfirmedRangeArc").GetComponent<ParticleSystemRenderer>().mesh = slot.Arc.Mesh;
+            }
             _slots[index] = slot;
             CreatedCount++;
             return slot;
@@ -148,6 +163,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         private void OnDestroy()
         {
             OnDisable();
+            foreach (var slot in _slots)
+                if (slot?.Arc != null) Destroy(slot.Arc.Mesh);
             if (Pools.TryGetValue(_sceneHandle, out var pool) && pool == this) Pools.Remove(_sceneHandle);
         }
     }

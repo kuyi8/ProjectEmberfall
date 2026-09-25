@@ -17,7 +17,9 @@ namespace Emberfall.Application.Flow
     /// <summary>Explicit Development-only evidence. Attacks resolve through the production combat actor.</summary>
     public sealed class CombatImpactReviewCapture
     {
-        private static readonly string Output = Environment.GetCommandLineArgs().Contains("-emberfall-impact-refined")
+        private static readonly string Output = Environment.GetCommandLineArgs().Contains("-emberfall-impact-contact-refined")
+            ? "Builds/ArtReview/0.9.2-impact-geometry-contact-refined" : Environment.GetCommandLineArgs().Contains("-emberfall-impact-geometry")
+            ? "Builds/ArtReview/0.9.2-impact-geometry-contact" : Environment.GetCommandLineArgs().Contains("-emberfall-impact-refined")
             ? "Builds/ArtReview/0.9.2-impact-layered-refined" : "Builds/ArtReview/0.9.2-impact-layered-baseline";
         private static readonly float[] SampleSeconds = { .02f, .08f, .16f, .25f, .40f };
         private CombatImpactPresentationEvent _last;
@@ -39,6 +41,9 @@ namespace Emberfall.Application.Flow
             public int captureFrame;
             public Vector3 cameraPosition, cameraEuler, attackerPosition, targetPosition, impactPosition;
             public RendererRecord[] renderers;
+            public Vector3 queryOrigin, queryForward;
+            public float queryRadius, queryFullAngle;
+            public Vector3[] arcOuterWorldPoints;
         }
 
         [Serializable] private sealed class Confirmation
@@ -121,7 +126,8 @@ namespace Emberfall.Application.Flow
                     string name = "P_M6_Impact_" + kind;
                     var variant = Resources.FindObjectsOfTypeAll<GameObject>().First(x => x.name == name && !x.scene.IsValid());
                     for (int i = 0; i < CombatBurstVfxPool.PerKindLimit; i++)
-                        if (pool.TrySpawn(kind, variant, enemy.transform.position + new Vector3((i - 1) * .55f, 1f, -.2f), Quaternion.identity, 1f))
+                        if (pool.TrySpawn(kind, variant, enemy.transform.position + new Vector3((i - 1) * .55f, 1f, -.2f), Quaternion.identity, 1f,
+                            new MeleeImpactSector(player.transform.position, player.transform.forward, player.Model.SweepRadius, player.Model.SweepAngle)))
                             report.stressBursts++;
                 }
                 foreach (var particle in pool.GetComponentsInChildren<ParticleSystem>())
@@ -195,6 +201,11 @@ namespace Emberfall.Application.Flow
                             cameraPosition = camera.transform.position, cameraEuler = camera.transform.eulerAngles,
                             attackerPosition = player.transform.position, targetPosition = enemy.transform.position,
                             impactPosition = _last.Position,
+                            queryOrigin = _last.Sector.Origin, queryForward = _last.Sector.Forward,
+                            queryRadius = _last.Sector.Radius, queryFullAngle = _last.Sector.FullAngle,
+                            arcOuterWorldPoints = impactRenderers.OfType<ParticleSystemRenderer>()
+                                .Where(x => x.name == "ConfirmedRangeArc" && x.mesh != null)
+                                .SelectMany(x => x.mesh.vertices.Where((v, i) => i % 2 == 1).Select(x.transform.TransformPoint)).ToArray(),
                             renderers = renderers.Select(x => Describe(x, impactRenderers.Contains(x) ? "impact" : "trail")).ToArray()
                         });
                     }

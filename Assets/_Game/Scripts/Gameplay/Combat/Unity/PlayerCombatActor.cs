@@ -433,6 +433,8 @@ namespace Emberfall.Gameplay.Combat.Unity
             bool sweep = _model.State == CombatState.Sweep;
             float radius = sweep ? _model.SweepRadius : _attackRadius;
             float angle = sweep ? _model.SweepAngle : _attackAngle;
+            // Capture the actual query pose before target reactions; presentation must not reconstruct it later.
+            var sector = new MeleeImpactSector(transform.position, transform.forward, radius, angle);
             int count = Physics.OverlapSphereNonAlloc(
                 transform.position,
                 radius,
@@ -490,7 +492,7 @@ namespace Emberfall.Gameplay.Combat.Unity
                 if (result.Accepted || result.Blocked || result.Staggered)
                 {
                     PublishImpact(target, result, _model.CurrentAttackTag, _model.AttackSequence,
-                        target.AimPoint.position, impactStyle);
+                        target.AimPoint.position, impactStyle, sector: sector);
                 }
                 if (result.Blocked)
                 {
@@ -709,14 +711,15 @@ namespace Emberfall.Gameplay.Combat.Unity
         }
 
         private void PublishImpact(CombatTarget target, DamageResult result, AttackTag attack,
-            int attackSequence, Vector3 position, CombatImpactStyle style, bool execution = false)
+            int attackSequence, Vector3 position, CombatImpactStyle style, bool execution = false,
+            MeleeImpactSector sector = default)
         {
             HitFeedbackGrade grade = HitFeedbackRules.Classify(result, attack, execution);
             if (grade == HitFeedbackGrade.None) return;
             ImpactPresented?.Invoke(new CombatImpactPresentationEvent(position, style, ++_impactSequence,
                 attackSequence, target.CombatantId, grade,
                 result.Blocked ? ImpactSurface.Metal : target.ImpactSurface,
-                result.Killed ? null : target.GetComponentInChildren<Animator>(), attack));
+                result.Killed ? null : target.GetComponentInChildren<Animator>(), attack, sector));
         }
 
         private static void LogFeel(string eventName, float value, int sequence = 0)

@@ -23,6 +23,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             Surface = ImpactSurface.Flesh;
             TargetAnimator = null;
             Attack = AttackTag.Light;
+            Sector = default;
         }
 
         public Vector3 Position { get; }
@@ -34,10 +35,12 @@ namespace Emberfall.Gameplay.Combat.Unity
         public ImpactSurface Surface { get; }
         public Animator TargetAnimator { get; }
         public AttackTag Attack { get; }
+        public MeleeImpactSector Sector { get; }
 
         public CombatImpactPresentationEvent(Vector3 position, CombatImpactStyle style,
             ulong sequence, int attackSequence, int targetId, HitFeedbackGrade grade,
-            ImpactSurface surface, Animator targetAnimator = null, AttackTag attack = AttackTag.Light) : this(position, style)
+            ImpactSurface surface, Animator targetAnimator = null, AttackTag attack = AttackTag.Light,
+            MeleeImpactSector sector = default) : this(position, style)
         {
             Sequence = sequence;
             AttackSequence = attackSequence;
@@ -46,6 +49,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             Surface = surface;
             TargetAnimator = targetAnimator;
             Attack = attack;
+            Sector = sector;
         }
     }
 
