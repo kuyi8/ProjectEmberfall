@@ -562,6 +562,66 @@ namespace Emberfall.Editor.Setup
             Debug.Log($"EMBERFALL_M6_VFX_REVIEW_COMPLETE output={absoluteOutput}");
         }
 
+        public static void CaptureImpactGradeCandidates()
+        {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                throw new InvalidOperationException("VFX review requires a graphics device.");
+            const string hovl = "Assets/_Game/Art/DownloadResources/Hovl Studio/Magic effects pack/Prefabs/";
+            const string shock = "Assets/_Game/Art/DownloadResources/Vefects/Easy Shockwaves VFX URP/VFX/Shockwaves/Particles/";
+            (string Name, string Path, float Scale)[] candidates =
+            {
+                ("guard-ground", hovl + "AoE effects/Ground AOE explosion.prefab", .45f),
+                ("sweep-arc", hovl + "AoE effects/AoE slash orange.prefab", .85f),
+                ("execution-cross", "Assets/_Game/Art/DownloadResources/Matthew Guz/Slash Effects FREE/Prefab/Multiple Slash 2 .prefab", .65f),
+                ("execution-charge", hovl + "Slash effects/Charge slash red.prefab", .6f),
+                ("shock-small", shock + "VFX_Shockwave_01_White_Small_500ms.prefab", .75f),
+                ("shock-large", shock + "VFX_Shockwave_01_White_Big_1s.prefab", .55f)
+            };
+            string output = Path.GetFullPath("Builds/ArtReview/0.9.2-impact-candidates");
+            Directory.CreateDirectory(output);
+            foreach (var candidate in candidates)
+            foreach (float time in new[] { .08f, .2f })
+            {
+                var scene = CreateReviewScene();
+                var instance = InstantiateRequired(candidate.Path, candidate.Name);
+                instance.transform.position = Vector3.up * .8f;
+                instance.transform.localScale = Vector3.one * candidate.Scale;
+                foreach (var particle in instance.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    particle.useAutoRandomSeed = false; particle.randomSeed = 42;
+                    particle.Simulate(time, false, true, true); particle.Pause(false);
+                }
+                CaptureScene(scene, Path.Combine(output, candidate.Name + "-" + Mathf.RoundToInt(time * 1000) + ".png"),
+                    new Vector3(0, 2.8f, -6), new Vector3(0, .8f, 0), 42f);
+            }
+            Debug.Log("EMBERFALL_IMPACT_CANDIDATES_COMPLETE " + output);
+        }
+
+        public static void CaptureImpactGradeDerivatives()
+        {
+            M6ImpactGradeVfxSetup.EnsureAssets(true);
+            M6CombatFeedbackSetup.Apply();
+            string output = Path.GetFullPath("Builds/ArtReview/0.9.2-impact-derivatives");
+            Directory.CreateDirectory(output);
+            foreach (string path in new[] { M6ImpactGradeVfxSetup.GuardBreakPath, M6ImpactGradeVfxSetup.ExecutionPath, M6ImpactGradeVfxSetup.SweepPath })
+            foreach (float time in new[] { .08f, .2f, .4f })
+            {
+                var scene = CreateReviewScene();
+                var model = InstantiateRequired("Assets/_Game/Prefabs/Characters/M6Art/P_M6_Enemy_FogwalkerSkeleton.prefab", "ScaleReference");
+                FitAndPlace(model, Vector3.zero, 1.8f, 180f, true);
+                var instance = InstantiateRequired(path, "Impact");
+                instance.transform.position = new Vector3(0, 1f, -.25f);
+                foreach (var particle in instance.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    particle.useAutoRandomSeed = false; particle.randomSeed = 42;
+                    particle.Simulate(time, false, true, true); particle.Pause(false);
+                }
+                CaptureScene(scene, Path.Combine(output, Path.GetFileNameWithoutExtension(path) + "-" + Mathf.RoundToInt(time * 1000) + ".png"),
+                    new Vector3(2.5f, 2.8f, -6), new Vector3(0, .8f, 0), 42f);
+            }
+            Debug.Log("EMBERFALL_IMPACT_DERIVATIVES_COMPLETE " + output);
+        }
+
         [MenuItem("Emberfall/Review/Capture M6 Warden VFX Candidates")]
         public static void CaptureWardenVfxCandidates()
         {

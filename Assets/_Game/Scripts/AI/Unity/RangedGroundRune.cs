@@ -49,6 +49,8 @@ namespace Emberfall.AI.Unity
             _hasAuthority = hasAuthority;
             _onResolved = onResolved;
             _impactVfxPrefab = impactVfxPrefab;
+            if (_impactVfxPrefab != null)
+                CombatBurstVfxPool.ForScene(gameObject.scene).Prewarm(CombatBurstKind.GroundBlast, _impactVfxPrefab);
             _materialInstance = warningMaterial != null ? new Material(warningMaterial) : null;
             CreateSegmentedWarning();
         }
@@ -162,9 +164,8 @@ namespace Emberfall.AI.Unity
         private void SpawnImpactVfx()
         {
             if (_impactVfxPrefab == null) return;
-            GameObject instance = Instantiate(_impactVfxPrefab, transform.position, Quaternion.identity);
-            instance.name = $"WardenDelayedBlastImpactVfx_{_attackSequence:000}";
-            Destroy(instance, 2.5f);
+            CombatBurstVfxPool.ForScene(gameObject.scene).TrySpawn(CombatBurstKind.GroundBlast,
+                _impactVfxPrefab, transform.position, Quaternion.identity, 2.5f);
         }
 
         private void OnDestroy()

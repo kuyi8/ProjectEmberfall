@@ -4001,6 +4001,11 @@ MonoBehaviour:
   _steelImpactPrefab: {fileID: 459587592750320488, guid: 723a4498fa729ed44b97860f10af9b2b, type: 3}
   _guardImpactPrefab: {fileID: 4233956540869739481, guid: 5ba41c9f9f103784cbd1ccf37966a30d, type: 3}
   _emberImpactPrefab: {fileID: 3891180624329409873, guid: bcd65ab5cfafe2d489e0fea9cd10d488, type: 3}
+  _guardBreakPrefab: {fileID: 5580502434533052068, guid: b36f4c06b786cf64ab6d9d868c678cf9, type: 3}
+  _executionPrefab: {fileID: 5973238902461953509, guid: 3bdef31a6dbdee2479f2e82ea4d3d14c, type: 3}
+  _sweepPrefab: {fileID: 987010980768501778, guid: 765694121f12219469b6030c001f13e6, type: 3}
+  _gradeLifetime: 0.7
+  _gradeVerticalOffset: -0.55
   _lifetime: 1.8
 --- !u!114 &994004245
 MonoBehaviour:

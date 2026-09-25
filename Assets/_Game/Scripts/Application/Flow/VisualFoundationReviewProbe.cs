@@ -57,6 +57,7 @@ namespace Emberfall.Application.Flow
         {
             if (!Environment.GetCommandLineArgs().Contains("-emberfall-visual-review") &&
                 !Environment.GetCommandLineArgs().Contains("-emberfall-style-lab") &&
+                !Environment.GetCommandLineArgs().Contains("-emberfall-impact-review") &&
                 !Environment.GetCommandLineArgs().Contains("-emberfall-production-review")) return;
             if (UnityEngine.Application.isBatchMode)
                 throw new InvalidOperationException("Use a graphics Development player without -batchmode: batch screenshots can be black.");
@@ -65,7 +66,9 @@ namespace Emberfall.Application.Flow
             var root = new GameObject("Development Visual Review Probe");
             IsActive = true;
             // A unique verification save never touches the normal user's playthrough or another test.
-            SavePath = Path.GetFullPath(Path.Combine(Output, "Saves", Guid.NewGuid().ToString("N") + ".json"));
+            string saveOutput = Environment.GetCommandLineArgs().Contains("-emberfall-impact-review")
+                ? "Builds/ArtReview/0.9.2-impact-runtime" : Output;
+            SavePath = Path.GetFullPath(Path.Combine(saveOutput, "Saves", Guid.NewGuid().ToString("N") + ".json"));
             DontDestroyOnLoad(root);
             root.AddComponent<VisualFoundationReviewProbe>();
         }
@@ -117,6 +120,14 @@ namespace Emberfall.Application.Flow
             _target.Create();
             _completionPixel = new Texture2D(1, 1, TextureFormat.RGB24, false);
             Physics.SyncTransforms();
+            if (Environment.GetCommandLineArgs().Contains("-emberfall-impact-review"))
+            {
+                // Development builds retain the SSAO A/B variant; production deliberately disables it.
+                SetMode("no-ssao");
+                yield return new CombatImpactReviewCapture().Run(_camera, player, enemy, _target);
+                UnityEngine.Application.Quit(0);
+                yield break;
+            }
             Time.timeScale = 0f; // Identical animated pose in each A/B; not a gameplay performance claim.
             yield return CapturePair("forest");
             enemy.ApplyNeutralPostureDamage(999f);

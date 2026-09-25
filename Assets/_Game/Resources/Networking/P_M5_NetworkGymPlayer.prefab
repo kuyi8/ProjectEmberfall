@@ -261,8 +261,8 @@ GameObject:
   - component: {fileID: 469860778771457846}
   - component: {fileID: 8506332223047782154}
   - component: {fileID: 913736706445381125}
-  - component: {fileID: 5536003445421971076}
-  - component: {fileID: 1254802144040592780}
+  - component: {fileID: 8338075373924479996}
+  - component: {fileID: 5264284486356079205}
   m_Layer: 0
   m_Name: NetworkOwnerCamera
   m_TagString: MainCamera
@@ -369,7 +369,7 @@ MonoBehaviour:
   _collisionMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &5536003445421971076
+--- !u!114 &8338075373924479996
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -413,7 +413,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!114 &1254802144040592780
+--- !u!114 &5264284486356079205
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -523,7 +523,8 @@ GameObject:
   - component: {fileID: 7192944896624929703}
   - component: {fileID: 5886228472818516987}
   - component: {fileID: 749102359282035865}
-  - component: {fileID: 1941952510367665857}
+  - component: {fileID: 5824342997977099752}
+  - component: {fileID: 5404184627279932848}
   m_Layer: 0
   m_Name: P_M5_NetworkGymPlayer
   m_TagString: Untagged
@@ -671,7 +672,7 @@ MonoBehaviour:
   _player: {fileID: 5886228472818516987}
   _input: {fileID: 7649796876633058820}
   _targeting: {fileID: 7192944896624929703}
---- !u!114 &1941952510367665857
+--- !u!114 &5824342997977099752
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -686,7 +687,29 @@ MonoBehaviour:
   _actor: {fileID: 0}
   _animator: {fileID: 9110490787762873391}
   _audioSet: {fileID: 11400000, guid: c628a25c903997e41bb0d74f15cb74c0, type: 2}
-  _cameraImpulse: {fileID: 1254802144040592780}
+  _cameraImpulse: {fileID: 5264284486356079205}
+--- !u!114 &5404184627279932848
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7349077484468207115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e1fc212750a6c14a820265647b7dadc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _actor: {fileID: 0}
+  _steelImpactPrefab: {fileID: 459587592750320488, guid: 723a4498fa729ed44b97860f10af9b2b, type: 3}
+  _guardImpactPrefab: {fileID: 4233956540869739481, guid: 5ba41c9f9f103784cbd1ccf37966a30d, type: 3}
+  _emberImpactPrefab: {fileID: 3891180624329409873, guid: bcd65ab5cfafe2d489e0fea9cd10d488, type: 3}
+  _guardBreakPrefab: {fileID: 5580502434533052068, guid: b36f4c06b786cf64ab6d9d868c678cf9, type: 3}
+  _executionPrefab: {fileID: 5973238902461953509, guid: 3bdef31a6dbdee2479f2e82ea4d3d14c, type: 3}
+  _sweepPrefab: {fileID: 987010980768501778, guid: 765694121f12219469b6030c001f13e6, type: 3}
+  _gradeLifetime: 0.7
+  _gradeVerticalOffset: -0.55
+  _lifetime: 1.8
 --- !u!1001 &7861601675119123805
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -745,14 +768,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 5683277129681861042, guid: 485c461e58dd3724997761b36664f6fa, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 698231446338637105}
+      addedObject: {fileID: 4632029648567232928}
   m_SourcePrefab: {fileID: 100100000, guid: 485c461e58dd3724997761b36664f6fa, type: 3}
 --- !u!1 &2577478877305545967 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 5683277129681861042, guid: 485c461e58dd3724997761b36664f6fa, type: 3}
   m_PrefabInstance: {fileID: 7861601675119123805}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &698231446338637105
+--- !u!114 &4632029648567232928
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

@@ -93,6 +93,9 @@ namespace Emberfall.Tests.EditMode
         }
 
         [TestCase("P_M6_Impact_Steel.prefab")]
+        [TestCase("P_M6_Impact_GuardBreak.prefab")]
+        [TestCase("P_M6_Impact_Execution.prefab")]
+        [TestCase("P_M6_Impact_Sweep.prefab")]
         [TestCase("P_M6_Impact_Guard.prefab")]
         [TestCase("P_M6_Impact_Ember.prefab")]
         public void CombatImpactVariant_IsProjectOwnedAndParticleOnly(string fileName)
@@ -104,6 +107,62 @@ namespace Emberfall.Tests.EditMode
             Assert.That(prefab.GetComponentsInChildren<Collider>(true), Is.Empty, path);
             Assert.That(prefab.GetComponentsInChildren<MonoBehaviour>(true), Is.Empty,
                 "Imported demo scripts must not become runtime dependencies of the project VFX variant.");
+        }
+
+        [TestCase("GuardBreak")]
+        [TestCase("Execution")]
+        [TestCase("Sweep")]
+        public void GradeImpactVariant_HasBoundedDecorativeParticles(string grade)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/_Game/Prefabs/VFX/M6Art/P_M6_Impact_{grade}.prefab");
+            foreach (var particle in prefab.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                Assert.That(particle.main.loop, Is.False);
+                Assert.That(particle.main.playOnAwake, Is.False);
+                Assert.That(particle.main.maxParticles, Is.LessThanOrEqualTo(32));
+                Assert.That(particle.collision.enabled, Is.False);
+                Assert.That(particle.trigger.enabled, Is.False);
+            }
+        }
+
+        [TestCase("10_EmberValley")]
+        [TestCase("90_CombatGym")]
+        public void OfflinePlayers_HaveGradeEffectsAndActorSubscription(string sceneName)
+        {
+            EditorSceneManager.OpenScene($"Assets/_Game/Scenes/{sceneName}.unity", OpenSceneMode.Single);
+            var player = Object.FindObjectOfType<PlayerCombatActor>(true);
+            Assert.That(player, Is.Not.Null);
+            var serialized = new SerializedObject(player.GetComponent<CombatImpactVfxPresenter>());
+            Assert.That(serialized.FindProperty("_actor").objectReferenceValue, Is.EqualTo(player));
+            AssertGradeReferences(serialized);
+        }
+
+        [Test]
+        public void Sanctum_UsesNetworkSpawnAnchors_NotAnExtraOfflinePlayer()
+        {
+            EditorSceneManager.OpenScene("Assets/_Game/Scenes/20_Sanctum.unity", OpenSceneMode.Single);
+            Assert.That(Object.FindObjectsOfType<PlayerCombatActor>(true), Is.Empty);
+            Assert.That(GameObject.Find("NetworkSanctum_PlayerSpawn_A"), Is.Not.Null);
+            Assert.That(GameObject.Find("NetworkSanctum_PlayerSpawn_B"), Is.Not.Null);
+            var networkPlayer = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/_Game/Resources/Networking/P_M5_NetworkGymPlayer.prefab");
+            AssertGradeReferences(new SerializedObject(networkPlayer.GetComponent<CombatImpactVfxPresenter>()));
+        }
+
+        [Test]
+        public void NetworkPlayer_HasGradeEffectsWithoutLocalDomainAuthority()
+        {
+            var root = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Resources/Networking/P_M5_NetworkGymPlayer.prefab");
+            var serialized = new SerializedObject(root.GetComponent<CombatImpactVfxPresenter>());
+            Assert.That(serialized.FindProperty("_actor").objectReferenceValue, Is.Null);
+            AssertGradeReferences(serialized);
+        }
+
+        private static void AssertGradeReferences(SerializedObject serialized)
+        {
+            foreach (string field in new[] { "_guardBreakPrefab", "_executionPrefab", "_sweepPrefab" })
+                Assert.That(serialized.FindProperty(field).objectReferenceValue, Is.Not.Null, field);
+            Assert.That(serialized.FindProperty("_gradeLifetime").floatValue, Is.EqualTo(.7f));
         }
 
         [TestCase("P_M6_Warden_PhaseTransition.prefab")]
@@ -218,6 +277,23 @@ namespace Emberfall.Tests.EditMode
             Bounds bounds = renderers[0].bounds;
             for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
             Assert.That(Mathf.Max(bounds.size.x, bounds.size.y, bounds.size.z), Is.InRange(0.35f, 0.5f));
+        }
+
+        [Test]
+        public void NetworkPlayer_BindsConfirmedOnlyProjectOwnedImpactVfx()
+        {
+            var root = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Resources/Networking/P_M5_NetworkGymPlayer.prefab");
+            var presenter = root.GetComponent<CombatImpactVfxPresenter>();
+            Assert.That(presenter, Is.Not.Null);
+            var serialized = new SerializedObject(presenter);
+            Assert.That(serialized.FindProperty("_actor").objectReferenceValue, Is.Null,
+                "Network presentation must consume confirmed RPCs, not an offline actor event.");
+            foreach (string field in new[] { "_steelImpactPrefab", "_guardImpactPrefab", "_emberImpactPrefab" })
+            {
+                var prefab = serialized.FindProperty(field).objectReferenceValue;
+                Assert.That(prefab, Is.Not.Null);
+                Assert.That(AssetDatabase.GetAssetPath(prefab), Does.StartWith("Assets/_Game/Prefabs/VFX/M6Art/"));
+            }
         }
 
         [Test]

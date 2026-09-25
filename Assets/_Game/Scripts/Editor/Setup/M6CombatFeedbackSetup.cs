@@ -39,6 +39,7 @@ namespace Emberfall.Editor.Setup
             }
             // Existing author/user sound selections survive every rebuild.
             M6ImpactAudioQualitySetup.EnsureConfigured(audio);
+            M6ImpactGradeVfxSetup.EnsureAssets();
             try
             {
                 foreach (string name in new[] { "10_EmberValley", "20_Sanctum", "90_CombatGym", "91_NetworkGym" })
@@ -61,8 +62,16 @@ namespace Emberfall.Editor.Setup
                     }
                     var cameras = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<CombatCameraImpulse>(true)).ToArray();
                     foreach (var player in scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<PlayerCombatActor>(true)))
+                    {
                         Ensure<CombatHitFeedbackPresenter>(player.gameObject).Configure(player,
                             player.GetComponentInChildren<Animator>(true), audio, cameras.FirstOrDefault());
+                        var vfx = Ensure<CombatImpactVfxPresenter>(player.gameObject);
+                        vfx.Configure(player,
+                            AssetDatabase.LoadAssetAtPath<GameObject>(M6ImpactGradeVfxSetup.Root + "P_M6_Impact_Steel.prefab"),
+                            AssetDatabase.LoadAssetAtPath<GameObject>(M6ImpactGradeVfxSetup.Root + "P_M6_Impact_Guard.prefab"),
+                            AssetDatabase.LoadAssetAtPath<GameObject>(M6ImpactGradeVfxSetup.Root + "P_M6_Impact_Ember.prefab"));
+                        M6ImpactGradeVfxSetup.Bind(vfx);
+                    }
                     EditorSceneManager.MarkSceneDirty(scene);
                     EditorSceneManager.SaveScene(scene);
                 }
@@ -80,6 +89,12 @@ namespace Emberfall.Editor.Setup
                             var camera = root.GetComponentInChildren<ThirdPersonCameraRig>(true);
                             var impulse = camera != null ? Ensure<CombatCameraImpulse>(camera.gameObject) : null;
                             Ensure<CombatHitFeedbackPresenter>(root).Configure(null, root.GetComponentInChildren<Animator>(true), audio, impulse);
+                            const string vfxRoot = "Assets/_Game/Prefabs/VFX/M6Art/";
+                            Ensure<CombatImpactVfxPresenter>(root).Configure(null,
+                                AssetDatabase.LoadAssetAtPath<GameObject>(vfxRoot + "P_M6_Impact_Steel.prefab"),
+                                AssetDatabase.LoadAssetAtPath<GameObject>(vfxRoot + "P_M6_Impact_Guard.prefab"),
+                                AssetDatabase.LoadAssetAtPath<GameObject>(vfxRoot + "P_M6_Impact_Ember.prefab"));
+                            M6ImpactGradeVfxSetup.Bind(root.GetComponent<CombatImpactVfxPresenter>());
                         }
                         PrefabUtility.SaveAsPrefabAsset(root, path);
                     }

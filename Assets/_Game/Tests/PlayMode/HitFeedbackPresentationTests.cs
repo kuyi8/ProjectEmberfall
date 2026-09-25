@@ -174,6 +174,47 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator SaturatedVfxBudget_DoesNotSuppressConfirmedAudioOrAnimatorFreeze()
+        {
+#if UNITY_EDITOR
+            Animator animator = CreateAnimator();
+            var scene = SceneManager.CreateScene("FeedbackBudget_" + System.Guid.NewGuid());
+            try
+            {
+                var pool = CombatBurstVfxPool.ForScene(scene);
+                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Prefabs/VFX/M6Art/P_M6_Impact_Steel.prefab");
+                for (int i = 0; i < 3; i++)
+                    Assert.That(pool.TrySpawn(CombatBurstKind.Steel, prefab, Vector3.zero, Quaternion.identity, 10f), Is.True);
+                var root = new GameObject("CappedFeedback");
+                SceneManager.MoveGameObjectToScene(root, scene);
+                var vfx = root.AddComponent<CombatImpactVfxPresenter>();
+                vfx.Configure(null, prefab, null, null);
+                var feedback = root.AddComponent<CombatHitFeedbackPresenter>();
+                var audio = UnityEditor.AssetDatabase.LoadAssetAtPath<CombatImpactAudioSet>("Assets/_Game/Settings/CombatImpactAudio_M6.asset");
+                feedback.Configure(null, animator, audio, null);
+                var impact = new CombatImpactPresentationEvent(Vector3.zero, CombatImpactStyle.Steel,
+                    1, 1, 10, HitFeedbackGrade.Heavy, ImpactSurface.Metal);
+                vfx.Present(impact);
+                feedback.Enqueue(impact);
+                feedback.SendMessage("Update");
+                Assert.That(vfx.DroppedCount, Is.EqualTo(1));
+                Assert.That(feedback.PresentedCount, Is.EqualTo(1));
+                Assert.That(feedback.LastAudioFrame, Is.EqualTo(Time.frameCount));
+                Assert.That(animator.speed, Is.Zero);
+                Assert.That(AnimatorSpeedCoordinator.For(animator).ActiveGrade, Is.EqualTo(HitFeedbackGrade.Heavy));
+                Debug.Log("[M6_VFX] event=cap-independent-feedback dropped=1 audioSameFrame=True freezeStarted=True");
+            }
+            finally
+            {
+                SceneManager.UnloadSceneAsync(scene);
+            }
+            yield return null; yield return null;
+#else
+            yield break;
+#endif
+        }
+
+        [UnityTest]
         public IEnumerator AudioVariations_UseMeasuredGainAndBoundedPitch_WithoutImmediateRepeat()
         {
 #if UNITY_EDITOR

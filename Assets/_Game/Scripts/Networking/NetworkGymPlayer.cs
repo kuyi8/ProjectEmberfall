@@ -27,6 +27,7 @@ namespace Emberfall.Networking
         private static readonly int AnimationSpeedId = Animator.StringToHash("Speed");
         private ulong _confirmedHitSequence;
         private CombatHitFeedbackPresenter _hitFeedback;
+        private CombatImpactVfxPresenter _impactVfx;
 
         internal void ServerPresentHit(ulong targetId, int attackSequence, AttackTag tag,
             DamageResult result, Vector3 position, ImpactSurface surface)
@@ -49,9 +50,14 @@ namespace Emberfall.Networking
             if (!killed && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(targetId, out NetworkObject target))
                 targetAnimator = target.GetComponentInChildren<Animator>();
             _hitFeedback.SetNetworkOwner(IsOwner && !_inputSuppressed.Value && !IsDowned, OwnerClientId);
-            _hitFeedback.Enqueue(new CombatImpactPresentationEvent(position, CombatImpactStyle.Steel,
+            var style = (HitFeedbackGrade)grade == HitFeedbackGrade.GuardBreak || (ImpactSurface)surface == ImpactSurface.Metal
+                ? CombatImpactStyle.Guard : CombatImpactStyle.Steel;
+            var impact = new CombatImpactPresentationEvent(position, style,
                 sequence, attackSequence, unchecked((int)targetId), (HitFeedbackGrade)grade,
-                (ImpactSurface)surface, targetAnimator, (AttackTag)tag));
+                (ImpactSurface)surface, targetAnimator, (AttackTag)tag);
+            _hitFeedback.Enqueue(impact);
+            _impactVfx ??= GetComponent<CombatImpactVfxPresenter>();
+            if (_impactVfx != null) _impactVfx.Present(impact);
         }
 
         [SerializeField] private CharacterController _controller;
