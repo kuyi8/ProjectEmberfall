@@ -97,6 +97,9 @@ namespace Emberfall.Networking
             false,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<uint> _sceneTransitionEpoch = new NetworkVariable<uint>(
+            0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        private uint _appliedSceneTransitionEpoch;
         private readonly NetworkVariable<int> _correctionCount = new NetworkVariable<int>(
             0,
             NetworkVariableReadPermission.Everyone,
@@ -259,7 +262,8 @@ namespace Emberfall.Networking
 
         public bool IsReady => _ready.Value;
         public bool MatchStarted => _matchStarted.Value;
-        public bool InputSuppressed => _inputSuppressed.Value;
+        public bool InputSuppressed => _inputSuppressed.Value ||
+            (IsOwner && _appliedSceneTransitionEpoch != _sceneTransitionEpoch.Value);
         public bool OwnerCameraUsesGameplayRig => _ownerCameraRig != null;
         public bool OwnerHasNetworkTargeting => _targeting != null;
         public int CorrectionCount => _correctionCount.Value;
@@ -447,7 +451,7 @@ namespace Emberfall.Networking
         {
             if (!IsSpawned) return;
             if (IsOwner && _ownerCameraRig != null)
-                _ownerCameraRig.SetLookInputBlocked(_inputSuppressed.Value);
+                _ownerCameraRig.SetLookInputBlocked(InputSuppressed);
             _worldObjective ??= NetworkGymSceneController.Find()?.WorldObjective;
             if (IsServer) TickServerCombat();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -479,7 +483,7 @@ namespace Emberfall.Networking
                 return;
             }
 
-            if (_matchStarted.Value && !_inputSuppressed.Value && !IsDowned && !IsDead && !PartyDefeated)
+            if (_matchStarted.Value && !InputSuppressed && !IsDowned && !IsDead && !PartyDefeated)
             {
                 DriveOwner();
                 CaptureCombatInput();
@@ -1127,6 +1131,7 @@ namespace Emberfall.Networking
 
         private void ReconcileOwner()
         {
+            if (InputSuppressed) return;
             uint acknowledged = _acknowledgedSequence.Value;
             if (acknowledged == 0 || acknowledged == _lastReconciledSequence) return;
             _lastReconciledSequence = acknowledged;
@@ -1239,18 +1244,31 @@ namespace Emberfall.Networking
                 Time.realtimeSinceStartupAsDouble,
                 _acknowledgedSequence.Value);
             _serverPoseSuppressedUntil = Time.unscaledTime + 1.2f;
-            ApplySceneTransitionTeleportClientRpc(position, yaw);
+            NetworkGymSceneController sceneController = NetworkGymSceneController.Find();
+            if (sceneController == null) throw new InvalidOperationException("Scene transfer requires the active arena bounds.");
+            uint epoch = ++_sceneTransitionEpoch.Value;
+            ApplySceneTransitionTeleportClientRpc(position, yaw, sceneController.MovementBoundsSnapshot, epoch);
         }
 
         [ClientRpc]
-        private void ApplySceneTransitionTeleportClientRpc(Vector3 position, float yaw)
+        private void ApplySceneTransitionTeleportClientRpc(Vector3 position, float yaw, Vector4 bounds, uint epoch)
         {
             if (!IsOwner) return;
+            ApplySceneTransitionSnapshot(position, yaw, bounds, epoch);
+        }
+
+        private void ApplySceneTransitionSnapshot(Vector3 position, float yaw, Vector4 bounds, uint epoch)
+        {
+            NetworkGymSceneController sceneController = NetworkGymSceneController.Find();
+            if (sceneController == null) throw new InvalidOperationException("Owner scene transfer has no bounds controller.");
+            sceneController.ApplyServerMovementBounds(bounds);
             bool wasEnabled = _controller != null && _controller.enabled;
             if (wasEnabled) _controller.enabled = false;
             transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             if (wasEnabled) _controller.enabled = true;
             _verticalSpeed = 0f;
+            _appliedSceneTransitionEpoch = epoch;
+            Debug.Log($"[M5_SCENE_BOUNDS_APPLIED] owner={OwnerClientId} epoch={epoch} bounds={bounds} position={position}");
         }
 
         [ClientRpc]

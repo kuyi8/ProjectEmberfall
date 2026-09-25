@@ -21,7 +21,8 @@ namespace Emberfall.Networking
 
     public readonly struct SessionCompatibility : IEquatable<SessionCompatibility>
     {
-        public const int CurrentProtocolVersion = 1;
+        // v2 adds the atomic scene-transfer bounds/epoch and its replicated input gate.
+        public const int CurrentProtocolVersion = 2;
 
         public SessionCompatibility(
             int protocolVersion,

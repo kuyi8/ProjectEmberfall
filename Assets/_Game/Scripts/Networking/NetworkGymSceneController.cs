@@ -635,6 +635,16 @@ namespace Emberfall.Networking
             }
         }
 
+        internal Vector4 MovementBoundsSnapshot => new Vector4(_movementBoundsCenter.x,
+            _movementBoundsCenter.y, _movementBoundsHalfExtents.x, _movementBoundsHalfExtents.y);
+
+        // Called by the Server-authored reliable scene-transfer RPC before enabling Owner input.
+        internal void ApplyServerMovementBounds(Vector4 bounds)
+        {
+            _movementBoundsCenter = new Vector2(bounds.x, bounds.y);
+            _movementBoundsHalfExtents = new Vector2(bounds.z, bounds.w);
+        }
+
         internal Vector3 ConstrainToPlayableBounds(Vector3 position)
         {
             float halfWidth = Mathf.Max(0.5f, _movementBoundsHalfExtents.x);

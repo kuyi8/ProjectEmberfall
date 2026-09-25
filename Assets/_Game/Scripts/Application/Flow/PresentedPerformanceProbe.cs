@@ -38,7 +38,7 @@ namespace Emberfall.Application.Flow
             public string version, scene, device, unavailableTimingMeaning = "count=0 means no valid timing, NOT zero cost";
             public bool accepted, externalPresentationMeasured = false, frameTimingEnabled;
             public int quality, vSync, width, height, unfocusedFrames;
-            public double durationSeconds;
+            public double durationSeconds, startRealtimeSeconds;
             public float renderScale;
             public FrameIntervalStatistics.Summary updateIntervals, cpu, gpu;
             public Sample[] samples;
@@ -106,7 +106,7 @@ namespace Emberfall.Application.Flow
                     device = SystemInfo.graphicsDeviceName, frameTimingEnabled = FrameTimingManager.IsFeatureEnabled(),
                     quality = QualitySettings.GetQualityLevel(), vSync = QualitySettings.vSyncCount,
                     width = Screen.width, height = Screen.height, renderScale = pipeline == null ? 0 : pipeline.renderScale,
-                    durationSeconds = now - _started, unfocusedFrames = _unfocused,
+                    durationSeconds = now - _started, startRealtimeSeconds = _started, unfocusedFrames = _unfocused,
                     updateIntervals = FrameIntervalStatistics.Calculate(_intervals),
                     cpu = FrameIntervalStatistics.Calculate(_cpu), gpu = FrameIntervalStatistics.Calculate(_gpu), samples = _samples.ToArray()
                 };

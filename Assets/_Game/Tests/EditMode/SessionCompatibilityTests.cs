@@ -39,10 +39,10 @@ namespace Emberfall.Tests.EditMode
             Assert.That(SessionCompatibilityCodec.IsCompatible(Expected, Expected, out string acceptedReason), Is.True);
             Assert.That(acceptedReason, Is.Empty);
 
-            AssertRejected(new SessionCompatibility(2, Expected.ClientVersion, 1, Expected.ContentVersion), "网络协议");
-            AssertRejected(new SessionCompatibility(1, new SemanticVersion(0, 7, 1), 1, Expected.ContentVersion), "客户端版本");
-            AssertRejected(new SessionCompatibility(1, Expected.ClientVersion, 2, Expected.ContentVersion), "内容结构版本");
-            AssertRejected(new SessionCompatibility(1, Expected.ClientVersion, 1, new SemanticVersion(0, 5, 4)), "内容版本");
+            AssertRejected(new SessionCompatibility(1, Expected.ClientVersion, 1, Expected.ContentVersion), "网络协议");
+            AssertRejected(new SessionCompatibility(Expected.ProtocolVersion, new SemanticVersion(0, 7, 1), 1, Expected.ContentVersion), "客户端版本");
+            AssertRejected(new SessionCompatibility(Expected.ProtocolVersion, Expected.ClientVersion, 2, Expected.ContentVersion), "内容结构版本");
+            AssertRejected(new SessionCompatibility(Expected.ProtocolVersion, Expected.ClientVersion, 1, new SemanticVersion(0, 5, 4)), "内容版本");
         }
 
         [Test]

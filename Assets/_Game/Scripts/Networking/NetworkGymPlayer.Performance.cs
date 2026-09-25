@@ -15,6 +15,9 @@ namespace Emberfall.Networking
         private NetworkWarden _performanceWarden;
         private float _performanceFindAt, _performanceInputAt, _performanceAttackAt, _performanceTraceAt;
         private int _performancePlayerSequence, _performanceBossSequence;
+        private int _performanceMoveLeg;
+        private float _performanceMoveTime;
+        private Vector3 _performanceMoveStart;
 
         private bool PerformanceCombatActive => _performanceCombat &&
             _worldObjective != null && _worldObjective.ReplicatedStage == MainQuestStage.DefeatWarden;
@@ -35,6 +38,23 @@ namespace Emberfall.Networking
             if (!PerformanceCombatActive) return false;
             var boss = PerformanceWarden();
             if (boss == null || !boss.IsAlive) return true;
+            if (_performanceMoveLeg < 4)
+            {
+                if (_performanceMoveTime == 0) _performanceMoveStart = transform.position;
+                _performanceMoveTime += Time.deltaTime;
+                if (_performanceMoveTime >= .3f)
+                {
+                    Debug.Log($"[PERF_MOVE_LEG] owner={OwnerClientId} leg={_performanceMoveLeg} start={_performanceMoveStart} end={transform.position}");
+                    _performanceMoveLeg++;
+                    _performanceMoveTime = 0;
+                }
+                if (_performanceMoveLeg < 4)
+                {
+                    move = _performanceMoveLeg == 0 ? Vector2.right : _performanceMoveLeg == 1 ? Vector2.left :
+                        _performanceMoveLeg == 2 ? Vector2.up : Vector2.down;
+                    return true;
+                }
+            }
             Vector3 delta = boss.transform.position - transform.position;
             delta.y = 0;
             if (delta.sqrMagnitude > .001f)
@@ -83,19 +103,21 @@ namespace Emberfall.Networking
             if (_attackSequence.Value != _performancePlayerSequence)
             {
                 _performancePlayerSequence = _attackSequence.Value;
-                Debug.Log($"[PERF_PLAYER_ATTACK] owner={OwnerClientId} sequence={_performancePlayerSequence} state={ReplicatedCombatState}");
+                if (_performancePlayerSequence > 0)
+                    Debug.Log($"[PERF_PLAYER_ATTACK] owner={OwnerClientId} sequence={_performancePlayerSequence} state={ReplicatedCombatState}");
             }
             if (Time.unscaledTime >= _performanceTraceAt)
             {
                 _performanceTraceAt = Time.unscaledTime + 1f;
-                Debug.Log($"[PERF_COMBAT_TRACE] owner={OwnerClientId} health={Health:F1} downed={IsDowned} defeated={PartyDefeated} position={transform.position}");
+                Debug.Log($"[PERF_COMBAT_TRACE] owner={OwnerClientId} health={Health:F1} downed={IsDowned} defeated={PartyDefeated} position={transform.position} time={Time.realtimeSinceStartupAsDouble.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)}");
             }
             if (!IsOwner) return;
             var boss = PerformanceWarden();
             if (boss != null && boss.AttackSequence != _performanceBossSequence)
             {
                 _performanceBossSequence = boss.AttackSequence;
-                Debug.Log($"[PERF_WARDEN_ATTACK] sequence={boss.AttackSequence} kind={boss.ReplicatedAttack} health={boss.Health:F1}");
+                if (boss.AttackSequence > 0)
+                    Debug.Log($"[PERF_WARDEN_ATTACK] sequence={boss.AttackSequence} kind={boss.ReplicatedAttack} health={boss.Health:F1}");
             }
         }
     }
