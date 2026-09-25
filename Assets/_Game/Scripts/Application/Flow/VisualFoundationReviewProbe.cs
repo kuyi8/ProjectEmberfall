@@ -58,6 +58,7 @@ namespace Emberfall.Application.Flow
             if (!Environment.GetCommandLineArgs().Contains("-emberfall-visual-review") &&
                 !Environment.GetCommandLineArgs().Contains("-emberfall-style-lab") &&
                 !Environment.GetCommandLineArgs().Contains("-emberfall-impact-review") &&
+                !Environment.GetCommandLineArgs().Contains("-emberfall-boundary-review") &&
                 !Environment.GetCommandLineArgs().Contains("-emberfall-production-review")) return;
             if (UnityEngine.Application.isBatchMode)
                 throw new InvalidOperationException("Use a graphics Development player without -batchmode: batch screenshots can be black.");
@@ -120,6 +121,13 @@ namespace Emberfall.Application.Flow
             _target.Create();
             _completionPixel = new Texture2D(1, 1, TextureFormat.RGB24, false);
             Physics.SyncTransforms();
+            if (Environment.GetCommandLineArgs().Contains("-emberfall-boundary-review"))
+            {
+                SetMode("no-ssao");
+                yield return new BoundaryArtReviewCapture().Run(_camera, _target);
+                UnityEngine.Application.Quit(0);
+                yield break;
+            }
             if (Environment.GetCommandLineArgs().Contains("-emberfall-impact-review"))
             {
                 // Development builds retain the SSAO A/B variant; production deliberately disables it.
