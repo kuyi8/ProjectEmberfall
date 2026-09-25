@@ -13,7 +13,8 @@ namespace Emberfall.Editor.Setup
         public const string GuardBreakPath = Root + "P_M6_Impact_GuardBreak.prefab";
         public const string ExecutionPath = Root + "P_M6_Impact_Execution.prefab";
         public const string SweepPath = Root + "P_M6_Impact_Sweep.prefab";
-        private const string Slash = "Assets/_Game/Art/DownloadResources/Matthew Guz/Slash Effects FREE/Prefab/Multiple Slash 2 .prefab";
+        public const string ExecutionMeshPath = Root + "M_ExecutionCrescent.asset";
+        public const string ExecutionMaterialPath = "Assets/_Game/Art/Materials/M6Art/M_ExecutionCrescent.mat";
 
         public static void EnsureAssets(bool rebuild = false)
         {
@@ -22,11 +23,7 @@ namespace Emberfall.Editor.Setup
                 Add(root, Root + "P_M6_Impact_Guard.prefab", .8f, Vector3.zero, new Color(1f, .65f, .18f));
                 CreateContactBurst(root);
             }, rebuild);
-            Create(ExecutionPath, root =>
-            {
-                Add(root, Slash, .42f, new Vector3(0, 0, 30), new Color(1f, .4f, .18f));
-                Add(root, Root + "P_M6_Impact_Steel.prefab", .7f, Vector3.zero, new Color(1f, .65f, .35f));
-            }, rebuild);
+            Create(ExecutionPath, CreateExecution, rebuild);
             Create(SweepPath, root =>
             {
                 var particle = CreateAccent(root, "ConfirmedRangeArc", true, 1, .4f);
@@ -44,6 +41,58 @@ namespace Emberfall.Editor.Setup
         {
             EnsureAssets(true);
             AssetDatabase.SaveAssets();
+        }
+
+        public static void RebuildExecutionAccent()
+        {
+            // Do not regenerate the already-reviewed Sweep/GuardBreak assets or their file IDs.
+            Create(ExecutionPath, CreateExecution, true);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void CreateExecution(GameObject root)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(ExecutionMaterialPath);
+            if (material == null)
+            {
+                material = new Material(Shader.Find("Emberfall/M6ExecutionCrescent"));
+                AssetDatabase.CreateAsset(material, ExecutionMaterialPath);
+            }
+            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(ExecutionMeshPath);
+            if (mesh == null)
+            {
+                // Baked presentation mesh, not an attack range and not a runtime allocation.
+                const int segments = 40;
+                var vertices = new Vector3[(segments + 1) * 2];
+                var uv = new Vector2[vertices.Length];
+                var triangles = new int[segments * 6];
+                for (int i = 0; i <= segments; i++)
+                {
+                    float t = i / (float)segments;
+                    float angle = Mathf.Lerp(-80, 80, t) * Mathf.Deg2Rad;
+                    float width = .015f + .245f * Mathf.Sin(t * Mathf.PI);
+                    var direction = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0);
+                    vertices[i * 2] = direction * (.9f - width) - Vector3.up * .4f;
+                    vertices[i * 2 + 1] = direction * .9f - Vector3.up * .4f;
+                    uv[i * 2] = new Vector2(t, 0); uv[i * 2 + 1] = new Vector2(t, 1);
+                    if (i == segments) continue;
+                    int v = i * 2, index = i * 6;
+                    triangles[index] = v; triangles[index + 1] = v + 1; triangles[index + 2] = v + 2;
+                    triangles[index + 3] = v + 1; triangles[index + 4] = v + 3; triangles[index + 5] = v + 2;
+                }
+                mesh = new Mesh { name = "ExecutionCrescent", vertices = vertices, uv = uv, triangles = triangles };
+                mesh.RecalculateBounds();
+                AssetDatabase.CreateAsset(mesh, ExecutionMeshPath);
+            }
+            var slash = CreateAccent(root, "ExecutionCrescent", true, 1, .32f);
+            slash.transform.localPosition = new Vector3(0, .15f, -.34f);
+            slash.transform.localRotation = Quaternion.Euler(0, 0, -35);
+            var main = slash.main; main.startSize = 1; main.startSpeed = 0; main.startColor = Color.white;
+            var renderer = slash.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Mesh;
+            renderer.alignment = ParticleSystemRenderSpace.Local;
+            renderer.mesh = mesh; renderer.sharedMaterial = material;
+            Add(root, Root + "P_M6_Impact_Steel.prefab", .7f, Vector3.zero, new Color(1f, .65f, .35f));
         }
 
         private static void CreateContactBurst(GameObject root)

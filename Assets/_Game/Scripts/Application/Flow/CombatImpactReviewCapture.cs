@@ -17,7 +17,8 @@ namespace Emberfall.Application.Flow
     /// <summary>Explicit Development-only evidence. Attacks resolve through the production combat actor.</summary>
     public sealed class CombatImpactReviewCapture
     {
-        private static readonly string Output = Environment.GetCommandLineArgs().Contains("-emberfall-impact-contact-refined")
+        private static readonly string Output = Environment.GetCommandLineArgs().Contains("-emberfall-impact-execution")
+            ? "Builds/ArtReview/0.9.2-impact-execution" : Environment.GetCommandLineArgs().Contains("-emberfall-impact-contact-refined")
             ? "Builds/ArtReview/0.9.2-impact-geometry-contact-refined" : Environment.GetCommandLineArgs().Contains("-emberfall-impact-geometry")
             ? "Builds/ArtReview/0.9.2-impact-geometry-contact" : Environment.GetCommandLineArgs().Contains("-emberfall-impact-refined")
             ? "Builds/ArtReview/0.9.2-impact-layered-refined" : "Builds/ArtReview/0.9.2-impact-layered-baseline";
