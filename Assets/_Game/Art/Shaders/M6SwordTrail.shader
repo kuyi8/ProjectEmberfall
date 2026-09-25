@@ -56,13 +56,17 @@ Shader "Emberfall/VFX/SwordTrail"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half rootFade = smoothstep(0.02h, 0.23h, input.uv.y);
-                half tipFade = 1.0h - smoothstep(0.9h, 1.0h, input.uv.y);
-                half bladeMask = saturate(rootFade * (0.45h + 0.55h * tipFade));
-                half timeGlow = lerp(0.55h, 1.0h, input.uv.x);
+                // Keep a luminous outer-blade ribbon, not a translucent sheet from grip to tip.
+                // Geometry/anchors and authoritative attack timing are unchanged.
+                half innerEdge = smoothstep(0.62h, 0.82h, input.uv.y);
+                half outerEdge = 1.0h - smoothstep(0.94h, 1.0h, input.uv.y);
+                half bladeMask = innerEdge * outerEdge;
+                half core = 1.0h - smoothstep(0.02h, 0.10h, abs(input.uv.y - 0.88h));
+                half tailFade = smoothstep(0.0h, 0.30h, input.uv.x);
+                half timeGlow = lerp(0.65h, 1.0h, input.uv.x);
                 half4 color = _BaseColor * input.color;
-                color.rgb *= timeGlow;
-                color.a *= bladeMask;
+                color.rgb *= timeGlow * lerp(0.85h, 2.4h, core);
+                color.a *= bladeMask * tailFade;
                 return color;
             }
             ENDHLSL

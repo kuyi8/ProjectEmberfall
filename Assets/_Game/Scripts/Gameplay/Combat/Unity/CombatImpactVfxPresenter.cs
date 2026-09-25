@@ -24,6 +24,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         private int _lastSweepAttack = int.MinValue;
         public int PresentedCount { get; private set; }
         public int DroppedCount { get; private set; }
+        public float GradeLifetimeSeconds => _gradeLifetime;
 
         public void ConfigureGradeEffects(GameObject guardBreak, GameObject execution, GameObject sweep)
         {

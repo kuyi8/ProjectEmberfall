@@ -17,9 +17,29 @@ namespace Emberfall.Application.Flow
     /// <summary>Explicit Development-only evidence. Attacks resolve through the production combat actor.</summary>
     public sealed class CombatImpactReviewCapture
     {
-        private const string Output = "Builds/ArtReview/0.9.2-impact-runtime";
+        private static readonly string Output = Environment.GetCommandLineArgs().Contains("-emberfall-impact-refined")
+            ? "Builds/ArtReview/0.9.2-impact-layered-refined" : "Builds/ArtReview/0.9.2-impact-layered-baseline";
+        private static readonly float[] SampleSeconds = { .02f, .08f, .16f, .25f, .40f };
         private CombatImpactPresentationEvent _last;
         private readonly List<Confirmation> _confirmations = new List<Confirmation>();
+        private readonly List<VisualSample> _samples = new List<VisualSample>();
+
+        [Serializable] private sealed class RendererRecord
+        {
+            public string path, type, material, layer;
+            public bool enabled, forceRenderingOff;
+            public Vector3 worldPosition, boundsMin, boundsMax;
+            public float simulationSpeed;
+            public int particleCount;
+        }
+        [Serializable] private sealed class VisualSample
+        {
+            public string grade, layer, image;
+            public float requestedSimulationSeconds, scaledSceneTime, poolLifetimeSeconds;
+            public int captureFrame;
+            public Vector3 cameraPosition, cameraEuler, attackerPosition, targetPosition, impactPosition;
+            public RendererRecord[] renderers;
+        }
 
         [Serializable] private sealed class Confirmation
         {
@@ -34,9 +54,11 @@ namespace Emberfall.Application.Flow
             public bool fullVisualAcceptance = false, presentedFpsMeasured = false, gpuTimeMeasured = false;
             public bool ssaoActive, postProcessing;
             public float renderScale;
-            public float particleSampleSeconds = .08f;
+            public float[] particleSampleSeconds = SampleSeconds;
+            public string sampling = "ParticleSystem.Simulate requested time; each system retains its recorded simulationSpeed; seed 42; pose and sword trail frozen at confirmation, NOT natural animation or contact timing";
             public bool poseFrozenAtConfirmation = true;
             public Confirmation[] confirmations;
+            public VisualSample[] samples;
             public string measurement = "Frozen scene, synchronous camera-render/readback wall time; not ordinary gameplay FPS or GPU time";
             public double baselineMedianMs, baselineP95Ms, burstsMedianMs, burstsP95Ms;
             public int stressBursts;
@@ -74,18 +96,18 @@ namespace Emberfall.Application.Flow
                 Physics.SyncTransforms();
                 player.Model.Submit(CombatCommand.Sweep);
                 yield return WaitFor(HitFeedbackGrade.Sweep);
-                yield return Capture("sweep", target);
+                yield return Capture("sweep", target, camera, player, enemy);
                 yield return Recover(player);
                 player.transform.SetPositionAndRotation(enemy.transform.position + new Vector3(0, 1f, -1.35f), Quaternion.identity);
                 Physics.SyncTransforms();
                 enemy.ApplyNeutralPostureDamage(Mathf.Max(0, enemy.Brain.Posture.Current - 1));
                 player.Model.Submit(CombatCommand.LightAttack);
                 yield return WaitFor(HitFeedbackGrade.GuardBreak);
-                yield return Capture("guard-break", target);
+                yield return Capture("guard-break", target, camera, player, enemy);
                 yield return Recover(player);
                 if (!player.TryHandleExecutionInput()) throw new InvalidOperationException("Execution input not handled.");
                 yield return WaitFor(HitFeedbackGrade.Execution);
-                yield return Capture("execution", target);
+                yield return Capture("execution", target, camera, player, enemy);
                 yield return Recover(player);
                 yield return new WaitForSeconds(1);
 
@@ -109,6 +131,7 @@ namespace Emberfall.Application.Flow
                 }
                 yield return Measure(value => { report.burstsMedianMs = value[0]; report.burstsP95Ms = value[1]; });
                 report.confirmations = _confirmations.ToArray();
+                report.samples = _samples.ToArray();
                 File.WriteAllText(Path.Combine(Output, "evidence.json"), JsonUtility.ToJson(report, true));
                 Debug.Log("[IMPACT_REVIEW_COMPLETE] realGrades=3 stressBursts=" + report.stressBursts + " measurement=offscreen-wall-not-fps");
             }
@@ -129,25 +152,76 @@ namespace Emberfall.Application.Flow
             if (player.Model.State != CombatState.Locomotion) throw new InvalidOperationException("Attack did not recover.");
         }
 
-        private static IEnumerator Capture(string label, RenderTexture target)
+        private IEnumerator Capture(string label, RenderTexture target, Camera camera, PlayerCombatActor player, MeleeEnemyActor enemy)
         {
             Time.timeScale = 0;
-            foreach (var pool in UnityEngine.Object.FindObjectsOfType<CombatBurstVfxPool>())
-            foreach (var particle in pool.GetComponentsInChildren<ParticleSystem>())
-            {
-                particle.useAutoRandomSeed = false; particle.randomSeed = 42;
-                particle.Simulate(.08f, false, true, true); particle.Pause(false);
-            }
+            // Finish the confirmation frame's LateUpdate before selecting the real active renderers.
             yield return null; yield return null;
+            var pools = UnityEngine.Object.FindObjectsOfType<CombatBurstVfxPool>();
+            var particles = pools.SelectMany(x => x.GetComponentsInChildren<ParticleSystem>()).ToArray();
+            var impactRenderers = pools.SelectMany(x => x.GetComponentsInChildren<Renderer>()).ToArray();
+            var trailRenderers = player.GetComponentsInChildren<MeshRenderer>()
+                .Where(x => x.name == "SwordTrail_Runtime").Cast<Renderer>().ToArray();
+            var renderers = impactRenderers.Concat(trailRenderers).ToArray();
+            var originalHidden = renderers.Select(x => x.forceRenderingOff).ToArray();
+            var presenter = player.GetComponent<CombatImpactVfxPresenter>();
             var image = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
             var previous = RenderTexture.active;
             try
             {
-                RenderTexture.active = target;
-                image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0); image.Apply();
-                File.WriteAllBytes(Path.Combine(Output, label + ".png"), image.EncodeToPNG());
+                foreach (float seconds in SampleSeconds)
+                {
+                    foreach (var particle in particles)
+                    {
+                        particle.useAutoRandomSeed = false; particle.randomSeed = 42;
+                        particle.Simulate(seconds, false, true, true); particle.Pause(false);
+                    }
+                    foreach (string layer in new[] { "full", "impact-only", "trail-only" })
+                    {
+                        // Only rendering changes: never deactivate a pool slot, invoke OnDisable, or clear the trail.
+                        for (int i = 0; i < renderers.Length; i++)
+                            renderers[i].forceRenderingOff = originalHidden[i] ||
+                                (i < impactRenderers.Length ? layer == "trail-only" : layer == "impact-only");
+                        yield return null; yield return null;
+                        string file = label + "-" + Mathf.RoundToInt(seconds * 1000).ToString("D3") + "ms-" + layer + ".png";
+                        RenderTexture.active = target;
+                        image.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0); image.Apply();
+                        File.WriteAllBytes(Path.Combine(Output, file), image.EncodeToPNG());
+                        _samples.Add(new VisualSample
+                        {
+                            grade = label, layer = layer, image = file,
+                            requestedSimulationSeconds = seconds, scaledSceneTime = Time.time,
+                            poolLifetimeSeconds = presenter.GradeLifetimeSeconds, captureFrame = Time.frameCount,
+                            cameraPosition = camera.transform.position, cameraEuler = camera.transform.eulerAngles,
+                            attackerPosition = player.transform.position, targetPosition = enemy.transform.position,
+                            impactPosition = _last.Position,
+                            renderers = renderers.Select(x => Describe(x, impactRenderers.Contains(x) ? "impact" : "trail")).ToArray()
+                        });
+                    }
+                }
             }
-            finally { RenderTexture.active = previous; UnityEngine.Object.Destroy(image); Time.timeScale = 1; }
+            finally
+            {
+                for (int i = 0; i < renderers.Length; i++) if (renderers[i] != null) renderers[i].forceRenderingOff = originalHidden[i];
+                RenderTexture.active = previous; UnityEngine.Object.Destroy(image); Time.timeScale = 1;
+            }
+        }
+
+        private static RendererRecord Describe(Renderer renderer, string layer)
+        {
+            string path = renderer.name;
+            for (var parent = renderer.transform.parent; parent != null; parent = parent.parent)
+                path = parent.name + "/" + path;
+            var particle = renderer.GetComponent<ParticleSystem>();
+            return new RendererRecord
+            {
+                path = path, layer = layer, type = renderer.GetType().Name,
+                material = renderer.sharedMaterial != null ? renderer.sharedMaterial.name : "none",
+                enabled = renderer.enabled, forceRenderingOff = renderer.forceRenderingOff,
+                worldPosition = renderer.transform.position, boundsMin = renderer.bounds.min, boundsMax = renderer.bounds.max,
+                simulationSpeed = particle != null ? particle.main.simulationSpeed : 0,
+                particleCount = particle != null ? particle.particleCount : 0
+            };
         }
 
         private static IEnumerator Measure(Action<double[]> receive)
