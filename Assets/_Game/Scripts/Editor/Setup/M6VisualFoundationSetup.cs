@@ -23,6 +23,7 @@ namespace Emberfall.Editor.Setup
 
         // Preserve accepted Release and authored assets while verifying Development-only timing code.
         public static void BuildPerformanceProbePlayers() => BuildDiagnosticPlayers("0.9.0-Development", "Performance-ReleaseGuard");
+        public static void BuildCombatPerformancePlayers() => BuildDiagnosticPlayers("0.9.2-Performance-Development", "0.9.2-Performance-ReleaseGuard");
 
         private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder)
         {

@@ -17,7 +17,7 @@ namespace Emberfall.Application.Flow
         private float _next;
         private string _trigger, _output;
         private double _started = -1, _nextTriggerCheck;
-        private int _seconds = 60, _unfocused;
+        private int _seconds = 60, _unfocused, _expectedVSync;
         private bool _complete, _invalidSettings;
         private readonly List<double> _intervals = new List<double>(30000);
         private readonly List<double> _cpu = new List<double>(30000);
@@ -52,11 +52,12 @@ namespace Emberfall.Application.Flow
             if (UnityEngine.Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 throw new InvalidOperationException("Presented timing requires a normal graphics window.");
             QualitySettings.SetQualityLevel(5, true);
-            QualitySettings.vSyncCount = Argument("-emberfall-perf-vsync") == "1" ? 1 : 0;
+            QualitySettings.vSyncCount = Argument("-emberfall-perf-vsync") == "0" ? 0 : 1;
             UnityEngine.Application.targetFrameRate = -1;
             var root = new GameObject("Development Presented Performance Metadata");
             DontDestroyOnLoad(root);
             var probe = root.AddComponent<PresentedPerformanceProbe>();
+            probe._expectedVSync = QualitySettings.vSyncCount;
             probe._trigger = Argument("-emberfall-frame-start-file");
             probe._output = Argument("-emberfall-frame-output");
             if (int.TryParse(Argument("-emberfall-frame-seconds"), out int seconds)) probe._seconds = Mathf.Clamp(seconds, 3, 60);
@@ -91,11 +92,15 @@ namespace Emberfall.Application.Flow
             }
             var pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             _invalidSettings |= Screen.width != 1920 || Screen.height != 1080 ||
-                QualitySettings.GetQualityLevel() != 5 || pipeline == null || Mathf.Abs(pipeline.renderScale - 1f) > .001f;
+                QualitySettings.GetQualityLevel() != 5 || QualitySettings.vSyncCount != _expectedVSync ||
+                pipeline == null || Mathf.Abs(pipeline.renderScale - 1f) > .001f;
             if (now - _started >= _seconds)
             {
                 _complete = true;
                 var result = new Result {
+                    scope = Environment.GetCommandLineArgs().Contains("-emberfall-performance-combat")
+                        ? "Scripted two-player Sanctum light/block combat; consult activity audit. No network Sweep/Execution, no worst-case proof."
+                        : "Scripted scene residency; no historical comparison and no worst-case combat proof.",
                     accepted = !_invalidSettings && _intervals.Count >= 100,
                     version = UnityEngine.Application.version, scene = SceneManager.GetActiveScene().name,
                     device = SystemInfo.graphicsDeviceName, frameTimingEnabled = FrameTimingManager.IsFeatureEnabled(),

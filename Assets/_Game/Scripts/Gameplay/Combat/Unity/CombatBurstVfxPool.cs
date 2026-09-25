@@ -18,6 +18,10 @@ namespace Emberfall.Gameplay.Combat.Unity
         private const int KindCount = 7;
         private static readonly Dictionary<int, CombatBurstVfxPool> Pools = new Dictionary<int, CombatBurstVfxPool>();
         private static readonly int[] Active = new int[KindCount];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly bool PerformanceTelemetry = Array.Exists(Environment.GetCommandLineArgs(),
+            x => x == "-emberfall-performance-combat");
+#endif
         private readonly Slot[] _slots = new Slot[KindCount * PerKindLimit];
         private Transform _inactiveRoot;
         private int _sceneHandle;
@@ -93,6 +97,9 @@ namespace Emberfall.Gameplay.Combat.Unity
                 slot.Instance.transform.SetPositionAndRotation(position, rotation);
                 slot.Instance.SetActive(true);
                 foreach (var particle in slot.Particles) particle.Play(false);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (PerformanceTelemetry) Debug.Log($"[PERF_VFX_SPAWN] kind={kind}");
+#endif
                 return true;
             }
             DroppedCount++;

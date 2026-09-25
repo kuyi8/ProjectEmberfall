@@ -14,7 +14,7 @@ namespace Emberfall.Networking
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(NetworkObject), typeof(CharacterController))]
-    public sealed class NetworkGymPlayer : NetworkBehaviour
+    public sealed partial class NetworkGymPlayer : NetworkBehaviour
     {
         private const float SendInterval = 0.05f;
         private const float RescueSendInterval = 0.1f;
@@ -450,6 +450,9 @@ namespace Emberfall.Networking
                 _ownerCameraRig.SetLookInputBlocked(_inputSuppressed.Value);
             _worldObjective ??= NetworkGymSceneController.Find()?.WorldObjective;
             if (IsServer) TickServerCombat();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            TickPerformanceCombatTelemetry();
+#endif
             UpdateCombatPresentation();
             PresentReplicatedActionEvents();
             if (TryRunDisconnectAfterWorldSealSmoke()) return;
@@ -570,6 +573,10 @@ namespace Emberfall.Networking
 
             Vector2 move;
             bool useCameraRelativeMovement = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (TryPerformanceCombatMovement(out move)) { }
+            else
+#endif
             if (_autoRescue && OwnerClientId == NetworkManager.ServerClientId &&
                 NetworkGymSceneController.Find()?.TryGetNearestDownedTeammatePosition(this, out Vector3 rescueTarget) == true)
             {
@@ -630,6 +637,9 @@ namespace Emberfall.Networking
 
         private void CaptureCombatInput()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (TryPerformanceCombatInput()) return;
+#endif
             if (_autoAttackSuite && OwnerClientId != NetworkManager.ServerClientId &&
                 TryAdvanceAutoAttackSuite()) return;
 
@@ -1453,7 +1463,11 @@ namespace Emberfall.Networking
             // The command-line world-objective smoke owns movement while it is active.
             // Keep that deterministic harness isolated from the independently verified
             // combat bot so an AI hit reaction cannot stall the interaction route.
-            if ((_autoWorld && !_autoCombat) || _autoRescue || _autoEncounterPoint) return DamageResult.Ignored;
+            bool routeSmokeImmunity = _autoWorld && !_autoCombat;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (PerformanceCombatActive) routeSmokeImmunity = false;
+#endif
+            if (routeSmokeImmunity || _autoRescue || _autoEncounterPoint) return DamageResult.Ignored;
             DamageResult result = _combat.ReceiveDamage(request);
             PublishCombatState();
             if (result.Invulnerable)
