@@ -515,9 +515,15 @@ namespace Emberfall.AI.Unity
 
         private void UpdatePresentation()
         {
+            bool projectileReleased = _brain.State == RangedEnemyState.Release &&
+                                      _brain.CurrentAttack == RangedAttackKind.Projectile;
             bool telegraphVisible = _brain.State == RangedEnemyState.Windup ||
-                                    _brain.State == RangedEnemyState.Release;
+                                    (_brain.State == RangedEnemyState.Release && !projectileReleased);
             SetTelegraphVisible(telegraphVisible);
+            // The charged sphere shares the muzzle with the real projectile. No release fade:
+            // even a short residual sphere would conceal the authoritative projectile birth.
+            if (projectileReleased && _telegraphRoot != null)
+                _telegraphRoot.localScale = Vector3.zero;
             if (telegraphVisible && _telegraphRoot != null)
             {
                 float normalized = _brain.State == RangedEnemyState.Windup

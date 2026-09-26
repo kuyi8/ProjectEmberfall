@@ -17,6 +17,47 @@ namespace Emberfall.Tests.PlayMode
     public sealed class PriestProjectilePresentationTests
     {
         [UnityTest]
+        public IEnumerator TelegraphHidesOnlyForProjectileReleaseAndRestoresNextWindup()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return SceneManager.LoadSceneAsync("10_EmberValley", LoadSceneMode.Single);
+            yield return null;
+            var actor = Object.FindObjectsOfType<RangedEnemyActor>(true).First(a => a.isActiveAndEnabled);
+            actor.enabled = false;
+            var telegraph = (Transform)typeof(RangedEnemyActor)
+                .GetField("_telegraphRoot", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(actor);
+            var update = typeof(RangedEnemyActor).GetMethod("UpdatePresentation", BindingFlags.Instance | BindingFlags.NonPublic);
+            var brain = actor.Brain;
+            var perception = new RangedEnemyPerception(true, true, 7f, 0);
+            brain.Reset();
+            brain.Tick(0, perception);
+            // Controlled contract test only; natural visual evidence is captured separately.
+            for (int attack = 0; attack < 2; attack++)
+            {
+                Assert.That(brain.State, Is.EqualTo(RangedEnemyState.Windup));
+                Assert.That(brain.CurrentAttack, Is.EqualTo(attack == 0 ? RangedAttackKind.Projectile : RangedAttackKind.GroundRune));
+                float finalScale = attack == 0 ? 1f : 1.35f;
+                for (int sample = 0; sample < 3; sample++)
+                {
+                    update.Invoke(actor, null);
+                    Assert.That(telegraph.gameObject.activeSelf, Is.True);
+                    Assert.That(telegraph.localScale.x, Is.EqualTo(Mathf.Lerp(.35f, finalScale,
+                        brain.StateElapsed / brain.CurrentWindupDuration)).Within(.0001f));
+                    brain.Tick(brain.CurrentWindupDuration / 3f, perception);
+                }
+                if (brain.State == RangedEnemyState.Windup) brain.Tick(.0001f, perception);
+                Assert.That(brain.State, Is.EqualTo(RangedEnemyState.Release));
+                update.Invoke(actor, null);
+                Assert.That(telegraph.gameObject.activeSelf, Is.EqualTo(attack != 0));
+                Assert.That(telegraph.localScale, Is.EqualTo(Vector3.one * (attack == 0 ? 0 : 1.35f)));
+                brain.Tick(brain.CurrentReleaseDuration, perception);
+                update.Invoke(actor, null);
+                Assert.That(telegraph.gameObject.activeSelf, Is.False);
+                brain.Tick(brain.CurrentRecoveryDuration, perception);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator CroppedClipsShareActualHumanoidBoundaryPose()
         {
             M2LaunchIntent.RequestNewGame();

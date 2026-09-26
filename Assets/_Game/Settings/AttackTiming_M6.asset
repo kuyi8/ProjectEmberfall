@@ -105,13 +105,13 @@ MonoBehaviour:
     observedClipHash: 
   - actionId: priest.projectile
     clip: {fileID: 7400000, guid: 96492a11678ee6048b66473726c8eb63, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    contactSeconds: 0
+    sourceFrame: 0
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-26
+    evidencePath: Builds/ArtReview/0.9.3-priest-natural-20260926-102523-676/observation.json
+    observation: Natural Update f94 visibly shows small projectile at Release0 and next clip entry0; f95 shows flight. Windup sphere intact f93; no residual sphere at birth. Release point only, not later impact. Raw frames and measured max gap11.3464ms reviewed; other22 remain unconfirmed.
+    observedClipHash: 3f01985c048d6de6a2be5c7f2fb6256c
   - actionId: priest.rune
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1

@@ -143,7 +143,8 @@ namespace Emberfall.Tests.PlayMode
             public float deltaTime, timeScale, captureDeltaTime, stateElapsed, animatorSpeed;
             public float currentNormalized, nextNormalized, transitionNormalized, health;
             public string state, attack, currentClip, nextClip, aiEvent;
-            public bool transition, projectilePresent;
+            public bool transition, projectilePresent, telegraphActive;
+            public Vector3 telegraphScale;
             public Vector3 actorPosition, castOrigin, projectilePosition, rightHand, playerPosition, playerAim;
         }
         [Serializable] public sealed class Report
@@ -161,6 +162,7 @@ namespace Emberfall.Tests.PlayMode
         private PlayerCombatActor _player;
         private Animator _animator;
         private Transform _origin;
+        private Transform _telegraph;
         private Camera _camera;
         private RenderTexture _target;
         private List<Texture2D> _textures;
@@ -175,6 +177,7 @@ namespace Emberfall.Tests.PlayMode
         {
             _priest = priest; _player = player; _animator = animator; _origin = origin;
             _camera = camera; _target = target; _textures = textures; _initialHealth = player.Model.Health.Current;
+            _telegraph = (Transform)typeof(RangedEnemyActor).GetField("_telegraphRoot", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(priest);
         }
         public void RenderWarmup() => RenderPipeline.SubmitRenderRequest(_camera, new RenderPipeline.StandardRequest { destination = _target });
         private void LateUpdate()
@@ -195,6 +198,7 @@ namespace Emberfall.Tests.PlayMode
                 transition = _animator.IsInTransition(0), transitionNormalized = _animator.GetAnimatorTransitionInfo(0).normalizedTime,
                 currentClip = _current.Count > 0 ? _current[0].clip.name : "", nextClip = _next.Count > 0 ? _next[0].clip.name : "",
                 projectilePresent = projectile != null, projectileId = projectile != null ? projectile.GetInstanceID() : 0,
+                telegraphActive = _telegraph.gameObject.activeInHierarchy, telegraphScale = _telegraph.localScale,
                 projectilePosition = projectile != null ? projectile.transform.position : Vector3.zero,
                 actorPosition = _priest.transform.position, castOrigin = _origin.position,
                 playerPosition = _player.transform.position, playerAim = _player.AimPoint.position,
