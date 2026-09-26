@@ -15,13 +15,21 @@ MonoBehaviour:
   contacts:
   - actionId: player.light1
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
-    contactSeconds: 0.24648422002792358
+    contactSeconds: 0.24648422
     sourceFrame: 7
     confirmed: 1
     observedBy: Codex visual review 2026-09-26
     evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
-    observation: f27 blade visibly intersects front face/upper torso; f26 approaches and f28 continues across. Current attack clip, no transition. Contact is inside positive-width domain window. Damage already happened at f19; narrow window criterion is met, not same-frame damage/contact or full feel acceptance.
+    observation: f27 blade visibly intersects front face/upper torso; f26 approaches
+      and f28 continues across. Current attack clip, no transition. Contact is inside
+      positive-width domain window. Damage already happened at f19; narrow window
+      criterion is met, not same-frame damage/contact or full feel acceptance.
     observedClipHash: 3c4b45dc5dea082ca650679d4ab3d872
+    synchronizationObserved: 1
+    naturalContactTime: 0.2348464
+    firstDamageTime: 0.1500284
+    maxSampleGap: 0.0224261
+    observedTimingHash: 9199352d85df01f5e274d5ba3f751147
   - actionId: player.light2
     clip: {fileID: 7400000, guid: 5628458b3d5ee374c8f90c7efce657c4, type: 2}
     contactSeconds: -1
@@ -31,15 +39,28 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: player.light3
     clip: {fileID: 7400000, guid: 8658390e444c824478b2b615e0e67832, type: 2}
-    contactSeconds: 0.6496813893318176
+    contactSeconds: 0.6496814
     sourceFrame: 19
     confirmed: 1
     observedBy: Codex visual review 2026-09-26
     evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
-    observation: f104 actual blade crosses target torso (not merely cyan trail); f103 approaches, f105 exits. Current LightAttack3 clip and open window. Earlier f95 damage/freeze precedes this by about74ms domain time. Window-only confirmation, not impact synchrony.
+    observation: f104 actual blade crosses target torso (not merely cyan trail);
+      f103 approaches, f105 exits. Current LightAttack3 clip and open window. Earlier
+      f95 damage/freeze precedes this by about74ms domain time. Window-only confirmation,
+      not impact synchrony.
     observedClipHash: 806a4f8414693d182b6a4051fd53d8df
+    synchronizationObserved: 1
+    naturalContactTime: 0.2844254
+    firstDamageTime: 0.21052489
+    maxSampleGap: 0.0224261
+    observedTimingHash: ff5c7685c57b8de2f99f81b7026ac416
   - actionId: player.heavy
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
@@ -49,15 +70,28 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: player.sweep
     clip: {fileID: 7400000, guid: 37c0b11c392d1dc4e915b3c37aca607b, type: 2}
-    contactSeconds: 0.3133333921432495
-    sourceFrame: 9
+    contactSeconds: 0.17435483634471893
+    sourceFrame: 5
     confirmed: 1
     observedBy: Codex visual review 2026-09-26
-    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
-    observation: f52 new single-swing blade visibly crosses upper torso in .24-.48 window, after actual runtime knockback. Damage/knockback already at f30, about188ms domain time earlier. Confirms window contact only, not synchronized knockback or subjective acceptance.
-    observedClipHash: 32cba3e08b1526b81c6dcb1a3a8eec30
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-144758-196/observation.json
+    observation: f29 blade reaches front upper torso, f28 approaches and f30 crosses;
+      first damage f32 is 26.55ms AFTER contact, preserving knockback. Contact precedes
+      window open by19.75ms; static conversion precedes by29.26ms, both within existing
+      one-thirtieth window tolerance, NOT strictly inside. Fixed close target only.
+    observedClipHash: 5c6344c94fa7c5b041c56f659c4e3fa3
+    synchronizationObserved: 1
+    naturalContactTime: 0.23524510860443115
+    firstDamageTime: 0.2617950141429901
+    maxSampleGap: 0.0228416994214058
+    observedTimingHash: 5bb3f2dbaaaf066940a940d94c4c6014
   - actionId: player.knife
     clip: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
     contactSeconds: -1
@@ -67,6 +101,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: player.execution
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
@@ -76,6 +115,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: fogwalker.quick
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
     contactSeconds: -1
@@ -85,6 +129,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: fogwalker.combo1
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
@@ -94,6 +143,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: fogwalker.combo2
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
@@ -103,6 +157,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: priest.projectile
     clip: {fileID: 7400000, guid: 96492a11678ee6048b66473726c8eb63, type: 2}
     contactSeconds: 0
@@ -110,8 +169,16 @@ MonoBehaviour:
     confirmed: 1
     observedBy: Codex visual review 2026-09-26
     evidencePath: Builds/ArtReview/0.9.3-priest-natural-20260926-102523-676/observation.json
-    observation: Natural Update f94 visibly shows small projectile at Release0 and next clip entry0; f95 shows flight. Windup sphere intact f93; no residual sphere at birth. Release point only, not later impact. Raw frames and measured max gap11.3464ms reviewed; other22 remain unconfirmed.
+    observation: Natural Update f94 visibly shows small projectile at Release0 and
+      next clip entry0; f95 shows flight. Windup sphere intact f93; no residual sphere
+      at birth. Release point only, not later impact. Raw frames and measured max
+      gap11.3464ms reviewed; other22 remain unconfirmed.
     observedClipHash: 3f01985c048d6de6a2be5c7f2fb6256c
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: priest.rune
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1
@@ -121,6 +188,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: guard.sword
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
@@ -130,6 +202,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: guard.bash
     clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
     contactSeconds: -1
@@ -139,6 +216,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: scorched.sword
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
@@ -148,6 +230,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: scorched.bash
     clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
     contactSeconds: -1
@@ -157,6 +244,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: scorched.burst
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1
@@ -166,6 +258,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: warden.combo1
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
@@ -175,6 +272,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: warden.combo2
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
@@ -184,6 +286,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: warden.bash
     clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
     contactSeconds: -1
@@ -193,6 +300,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: warden.rune
     clip: {fileID: 7400000, guid: 148e0346e86e08548811e784ad7fa967, type: 2}
     contactSeconds: -1
@@ -202,6 +314,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: warden.blast
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1
@@ -211,6 +328,11 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:
   - actionId: warden.charge
     clip: {fileID: 7400000, guid: 69dcb8741ded8ce44871f5b3924144f6, type: 2}
     contactSeconds: -1
@@ -220,3 +342,8 @@ MonoBehaviour:
     evidencePath: 
     observation: 
     observedClipHash: 
+    synchronizationObserved: 0
+    naturalContactTime: -1
+    firstDamageTime: -1
+    maxSampleGap: -1
+    observedTimingHash:

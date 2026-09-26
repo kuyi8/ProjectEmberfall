@@ -221,8 +221,8 @@ namespace Emberfall.Editor.Setup
             serialized.FindProperty("_sweepStaminaCost").floatValue = 30f;
             serialized.FindProperty("_sweepCooldown").floatValue = 4.5f;
             serialized.FindProperty("_sweepDuration").floatValue = 0.82f;
-            serialized.FindProperty("_sweepDamageOpen").floatValue = 0.24f;
-            serialized.FindProperty("_sweepDamageClose").floatValue = 0.48f;
+            serialized.FindProperty("_sweepDamageOpen").floatValue = 0.255f;
+            serialized.FindProperty("_sweepDamageClose").floatValue = 0.495f;
             serialized.FindProperty("_sweepRadius").floatValue = 2.7f;
             serialized.FindProperty("_sweepAngle").floatValue = 240f;
             serialized.ApplyModifiedPropertiesWithoutUndo();

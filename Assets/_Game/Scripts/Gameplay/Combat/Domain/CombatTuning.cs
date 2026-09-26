@@ -70,8 +70,8 @@ namespace Emberfall.Gameplay.Combat.Domain
             float sweepStaminaCost = 30f,
             float sweepCooldown = 4.5f,
             float sweepDuration = 0.82f,
-            float sweepDamageOpen = 0.24f,
-            float sweepDamageClose = 0.48f,
+            float sweepDamageOpen = 0.255f,
+            float sweepDamageClose = 0.495f,
             float sweepRadius = 2.7f,
             float sweepAngle = 240f)
         {

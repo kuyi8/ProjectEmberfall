@@ -19,6 +19,12 @@ namespace Emberfall.Editor.Setup
             public string evidencePath;
             public string observation;
             public string observedClipHash;
+            // Natural domain-clock measurements, NOT converted clip timestamps.
+            public bool synchronizationObserved;
+            public float naturalContactTime = -1f;
+            public float firstDamageTime = -1f;
+            public float maxSampleGap = -1f;
+            public string observedTimingHash;
         }
 
         public List<Contact> contacts = new List<Contact>();

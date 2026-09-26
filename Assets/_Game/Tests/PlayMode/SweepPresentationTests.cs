@@ -36,7 +36,7 @@ namespace Emberfall.Tests.PlayMode
             update.Invoke(presenter, null);
             animator.Update(0);
             Assert.That(animator.GetNextAnimatorStateInfo(0).IsName("Sweep"), Is.True);
-            Assert.That(animator.speed, Is.EqualTo((23f / 30f) / .82f).Within(.0001f));
+            Assert.That(animator.speed, Is.EqualTo((19f / 30f) / .82f).Within(.0001f));
             // Step the real Presenter/Animator in isolation: not a natural input/contact acceptance test.
             int openEdges = 0;
             bool wasOpen = false;

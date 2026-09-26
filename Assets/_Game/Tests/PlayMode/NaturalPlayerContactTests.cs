@@ -40,6 +40,8 @@ namespace Emberfall.Tests.PlayMode
                 UnityEngine.Application.targetFrameRate = 120;
                 foreach (string scenario in new[] { "light-combo", "heavy", "sweep", "knife", "execution" })
                 {
+                    if (Environment.GetCommandLineArgs().Contains("-emberfall-sweep-only") && scenario != "sweep") continue;
+                    bool referenceOnly = Environment.GetCommandLineArgs().Contains("-emberfall-reference-only");
                     yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
                     yield return null;
                     yield return null;
@@ -61,6 +63,22 @@ namespace Emberfall.Tests.PlayMode
                     motor.ResetAfterTeleport();
                     controller.enabled = true;
                     enemy.Brain.Reset();
+                    GameObject referenceObject = null;
+                    Collider referenceBody = null;
+                    if (referenceOnly)
+                    {
+                        // A non-damageable copy of the SAME target volume. No target authority in its parents.
+                        // Setup only: never move the reference or manually evaluate animation during capture.
+                        var body = (CapsuleCollider)Field<Collider>(enemy, "_bodyCollider");
+                        referenceObject = new GameObject("Non-damageable target volume");
+                        referenceObject.transform.SetPositionAndRotation(body.transform.position, body.transform.rotation);
+                        referenceObject.transform.localScale = body.transform.lossyScale;
+                        var capsule = referenceObject.AddComponent<CapsuleCollider>();
+                        capsule.center = body.center; capsule.radius = body.radius;
+                        capsule.height = body.height; capsule.direction = body.direction; capsule.isTrigger = true;
+                        referenceBody = capsule;
+                        foreach (var collider in enemy.GetComponentsInChildren<Collider>()) collider.enabled = false;
+                    }
                     if (scenario == "execution")
                         enemy.ReceiveDamage(new DamageRequest(player.CombatantId, 901,
                             enemy.Brain.Health.Maximum * .93f + enemy.Definition.Armor, 0, AttackTag.Light));
@@ -80,7 +98,7 @@ namespace Emberfall.Tests.PlayMode
                     var target = new RenderTexture(960, 540, 24, RenderTextureFormat.ARGB32);
                     target.Create();
                     var recorder = cameraObject.AddComponent<NaturalPlayerContactRecorder>();
-                    recorder.Initialize(player, enemy, camera, target);
+                    recorder.Initialize(player, enemy, camera, target, referenceBody);
                     try
                     {
                         for (int i = 0; i < 60; i++) { recorder.Render(); yield return null; }
@@ -107,7 +125,8 @@ namespace Emberfall.Tests.PlayMode
                             yield return null;
                         }
                         recorder.Recording = false;
-                        var report = recorder.Save(root, scenario);
+                        var report = recorder.Save(root, scenario, referenceOnly);
+                        if (referenceOnly) Assert.That(report.frames.Select(f => f.targetHealth).Distinct().Count(), Is.EqualTo(1));
                         Assert.That(report.frames.All(f => f.timeScale == 1 && f.captureDeltaTime == 0), Is.True);
                         // A production hit stop is allowed and recorded, unlike artificial time stepping.
                         Assert.That(report.frames.Any(f => scenario == "execution" ? f.executionSequence > 0 : f.sequence > 0), Is.True);
@@ -119,6 +138,7 @@ namespace Emberfall.Tests.PlayMode
                         target.Release();
                         Object.Destroy(target);
                         Object.Destroy(cameraObject);
+                        if (referenceObject != null) Object.Destroy(referenceObject);
                     }
                 }
             }
@@ -145,6 +165,8 @@ namespace Emberfall.Tests.PlayMode
         {
             public string scope = "Real PlayerCombatActor/Motor/Presenter and damage queries through natural PlayerLoop; fixture target AI disabled, actors positioned before warmup only. Production hit stop retained. No manual Tick/Animator.Update/Simulate/timeScale. Offscreen observer, not human gameplay/FPS; no automatic contact acceptance.";
             public string scenario, targetName;
+            public string tuningHash;
+            public bool referenceOnly;
             public float maxActionGap;
             public Frame[] frames;
             public ClipBinding[] clips;
@@ -161,14 +183,14 @@ namespace Emberfall.Tests.PlayMode
         private readonly List<Texture2D> _images = new List<Texture2D>();
         private readonly List<AnimatorClipInfo> _current = new List<AnimatorClipInfo>();
         private readonly List<AnimatorClipInfo> _next = new List<AnimatorClipInfo>();
-        public void Initialize(PlayerCombatActor player, MeleeEnemyActor enemy, Camera camera, RenderTexture target)
+        public void Initialize(PlayerCombatActor player, MeleeEnemyActor enemy, Camera camera, RenderTexture target, Collider reference = null)
         {
             _player = player; _enemy = enemy; _camera = camera; _target = target;
             _animator = player.GetComponentInChildren<Animator>();
             var trail = player.GetComponent<SwordTrailPresenter>();
             _bladeRoot = NaturalPlayerContactTests.Field<Transform>(trail, "_bladeRoot");
             _bladeTip = NaturalPlayerContactTests.Field<Transform>(trail, "_bladeTip");
-            _body = NaturalPlayerContactTests.Field<Collider>(enemy, "_bodyCollider");
+            _body = reference != null ? reference : NaturalPlayerContactTests.Field<Collider>(enemy, "_bodyCollider");
         }
         public void Render() => RenderPipeline.SubmitRenderRequest(_camera, new RenderPipeline.StandardRequest { destination = _target });
         private void LateUpdate()
@@ -210,15 +232,16 @@ namespace Emberfall.Tests.PlayMode
             finally { RenderTexture.active = old; }
             _images.Add(texture);
         }
-        public Report Save(string root, string scenario)
+        public Report Save(string root, string scenario, bool referenceOnly)
         {
             string output = Path.Combine(root, scenario);
             Directory.CreateDirectory(output);
-            var report = new Report { scenario = scenario, targetName = _enemy.name, frames = _frames.ToArray() };
+            var report = new Report { scenario = scenario, targetName = _enemy.name, frames = _frames.ToArray(), referenceOnly = referenceOnly };
             for (int i = 1; i < _frames.Count; i++)
                 if (_frames[i].state != "Locomotion") report.maxActionGap = Mathf.Max(report.maxActionGap,
                     _frames[i].deltaTime, (float)(_frames[i].realtime - _frames[i - 1].realtime));
 #if UNITY_EDITOR
+            report.tuningHash = UnityEditor.AssetDatabase.GetAssetDependencyHash("Assets/_Game/Settings/CombatTuning_M1.asset").ToString();
             var set = NaturalPlayerContactTests.Field<PlayerAnimationSet>(_player.GetComponent<PlayerAnimationPresenter>(), "_animationSet");
             report.clips = new[] { CombatState.LightAttack1, CombatState.LightAttack2, CombatState.LightAttack3,
                 CombatState.HeavyAttack, CombatState.Sweep, CombatState.RangedAttack, CombatState.Execution }.Select(s => {

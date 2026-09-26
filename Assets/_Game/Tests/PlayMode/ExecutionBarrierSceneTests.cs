@@ -205,7 +205,7 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(gate.GetComponent<Collider>().enabled, Is.True);
             Assert.That(barrier.LastFeedbackTextId, Is.EqualTo("text:barrier.closed"));
             yield return new WaitForSeconds(0.6f);
-            Assert.That(barrier.VisualOpacity, Is.EqualTo(1f));
+            Assert.That(barrier.VisualOpacity, Is.EqualTo(1f).Within(.000001f)); // Float lerp can yield 0.99999994.
             setActive.Invoke(flow, new object[] { false });
             Assert.That(gate.GetComponent<Collider>().enabled, Is.False);
             Assert.That(barrier.IsTransitioning, Is.True);

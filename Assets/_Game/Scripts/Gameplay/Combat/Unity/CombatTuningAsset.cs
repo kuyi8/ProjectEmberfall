@@ -79,8 +79,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, Min(0.1f)] private float _sweepStaminaCost = 30f;
         [SerializeField, Min(0.1f)] private float _sweepCooldown = 4.5f;
         [SerializeField, Min(0.1f)] private float _sweepDuration = 0.82f;
-        [SerializeField, Min(0f)] private float _sweepDamageOpen = 0.24f;
-        [SerializeField, Min(0.01f)] private float _sweepDamageClose = 0.48f;
+        [SerializeField, Min(0f)] private float _sweepDamageOpen = 0.255f;
+        [SerializeField, Min(0.01f)] private float _sweepDamageClose = 0.495f;
         [SerializeField, Min(0.1f)] private float _sweepRadius = 2.7f;
         [SerializeField, Range(1f, 360f)] private float _sweepAngle = 240f;
 

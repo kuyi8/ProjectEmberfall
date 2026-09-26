@@ -15,19 +15,20 @@ namespace Emberfall.Editor.Setup
         private float _seconds;
         private Animator _actor;
         private bool _ownsSampling;
-        private float _sampledSeconds = -1f;
         private string _evidence = "", _observer = "", _observation = "";
+        private bool _naturalReviewed;
+        private float _naturalContact = -1, _firstDamage = -1, _sampleGap = -1;
 
         [MenuItem("Emberfall/Review/Attack Timing/Observe Contact")]
         private static void Open() => GetWindow<AttackTimingReviewWindow>("Attack Contact");
 
         private void OnGUI()
         {
-            EditorGUILayout.HelpBox("Editor-only observation. Sample the authored pose; confirm only after visual review. No AnimationEvent or runtime damage ownership.", MessageType.Info);
+            EditorGUILayout.HelpBox("Pose preview is not natural contact proof. Confirm only with reviewed natural frames. Synchronization uses domain timestamps, not converted clip seconds. No runtime authority changes.", MessageType.Info);
             if (EditorApplication.isPlayingOrWillChangePlaymode) { StopSampling(); return; }
             var maps = AttackTimingAudit.ReadMappings();
             int selected = EditorGUILayout.Popup("Action", _selected, maps.Select(m => m.id).ToArray());
-            if (selected != _selected) { StopSampling(); _seconds = 0; _selected = selected; }
+            if (selected != _selected) { StopSampling(); _seconds = 0; _selected = selected; _naturalReviewed = false; _naturalContact = _firstDamage = _sampleGap = -1; }
             var map = maps[_selected];
             Animator actor = (Animator)EditorGUILayout.ObjectField("Scene actor Animator", _actor, typeof(Animator), true);
             if (actor != _actor) { StopSampling(); _actor = actor; }
@@ -36,6 +37,13 @@ namespace Emberfall.Editor.Setup
             _evidence = EditorGUILayout.TextField("Evidence file", _evidence);
             _observer = EditorGUILayout.TextField("Observed by", _observer);
             _observation = EditorGUILayout.TextField("What crosses target", _observation);
+            _naturalReviewed = EditorGUILayout.Toggle("Natural evidence reviewed", _naturalReviewed);
+            if (AttackTimingAudit.RequiresSynchronization(map))
+            {
+                _naturalContact = EditorGUILayout.FloatField("Natural contact (domain sec)", _naturalContact);
+                _firstDamage = EditorGUILayout.FloatField("First damage (domain sec)", _firstDamage);
+                _sampleGap = EditorGUILayout.FloatField("Maximum sample gap (sec)", _sampleGap);
+            }
             using (new EditorGUI.DisabledScope(_actor == null || !_actor.gameObject.scene.IsValid() ||
                 EditorUtility.IsPersistent(_actor)))
             {
@@ -47,12 +55,11 @@ namespace Emberfall.Editor.Setup
                     AnimationMode.BeginSampling();
                     try { AnimationMode.SampleAnimationClip(_actor.gameObject, map.clip, _seconds); }
                     finally { AnimationMode.EndSampling(); }
-                    _sampledSeconds = _seconds;
                     SceneView.RepaintAll();
                 }
             }
             if (GUILayout.Button("Stop preview / restore scene")) StopSampling();
-            using (new EditorGUI.DisabledScope(!_ownsSampling || !Mathf.Approximately(_sampledSeconds, _seconds) || !File.Exists(_evidence) ||
+            using (new EditorGUI.DisabledScope(!_naturalReviewed || !File.Exists(_evidence) ||
                        string.IsNullOrWhiteSpace(_observer) || string.IsNullOrWhiteSpace(_observation)))
             {
                 if (GUILayout.Button("Confirm observed contact in annotation asset"))
@@ -69,6 +76,11 @@ namespace Emberfall.Editor.Setup
                     contact.evidencePath = _evidence;
                     contact.observedClipHash = AttackTimingAudit.ClipHash(map.clip);
                     contact.confirmed = true;
+                    contact.synchronizationObserved = AttackTimingAudit.RequiresSynchronization(map) && _naturalReviewed;
+                    contact.naturalContactTime = _naturalContact;
+                    contact.firstDamageTime = _firstDamage;
+                    contact.maxSampleGap = _sampleGap;
+                    contact.observedTimingHash = AttackTimingAudit.TimingHash(map);
                     EditorUtility.SetDirty(asset);
                     AssetDatabase.SaveAssets();
                 }
@@ -80,7 +92,6 @@ namespace Emberfall.Editor.Setup
         {
             if (_ownsSampling) AnimationMode.StopAnimationMode();
             _ownsSampling = false;
-            _sampledSeconds = -1f;
         }
         private void OnDisable() => StopSampling();
 

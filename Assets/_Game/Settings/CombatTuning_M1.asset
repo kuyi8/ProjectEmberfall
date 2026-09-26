@@ -89,7 +89,7 @@ MonoBehaviour:
   _sweepStaminaCost: 30
   _sweepCooldown: 4.5
   _sweepDuration: 0.82
-  _sweepDamageOpen: 0.24
-  _sweepDamageClose: 0.48
+  _sweepDamageOpen: 0.255
+  _sweepDamageClose: 0.495
   _sweepRadius: 2.7
   _sweepAngle: 240

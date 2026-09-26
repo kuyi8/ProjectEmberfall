@@ -10,7 +10,9 @@ namespace Emberfall.Editor.Setup
     public static class SweepAnimationSetup
     {
         // Observed second swing: after the uppercut, before the jumping third strike.
-        public const float SourceStart = 12f / 30f;
+        // Integer source frames preserve Humanoid's baked sampling grid. The matching
+        // .255s damage window starts just after natural contact, before hit stop.
+        public const float SourceStart = 16f / 30f;
         public const float SourceEnd = 35f / 30f;
         public const string SourcePath = M1AnimationSetup.DerivedFolder + "/A_Player_Sweep_InPlace.anim";
         public const string CandidatePath = M1AnimationSetup.DerivedFolder + "/A_Player_Sweep_SingleSwing.anim";
@@ -44,9 +46,12 @@ namespace Emberfall.Editor.Setup
             set.ConfigureSweep(clip);
             var annotations = AssetDatabase.LoadAssetAtPath<AttackTimingAnnotations>(AttackTimingAudit.AnnotationPath);
             var contact = annotations?.contacts.SingleOrDefault(c => c.actionId == "player.sweep");
-            if (contact != null && !contact.confirmed)
+            if (contact != null)
             {
                 contact.clip = clip;
+                // Preserve old evidence text/path for provenance, but changed clips require a NEW natural capture.
+                if (contact.observedClipHash != AttackTimingAudit.ClipHash(clip))
+                { contact.confirmed = false; contact.synchronizationObserved = false; }
                 EditorUtility.SetDirty(annotations);
             }
             EditorUtility.SetDirty(state);

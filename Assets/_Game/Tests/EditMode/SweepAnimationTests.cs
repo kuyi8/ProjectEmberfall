@@ -22,7 +22,7 @@ namespace Emberfall.Tests.EditMode
         public void SingleSwingPreservesOnlyObservedMiddleRange()
         {
             Assert.That(Source.length, Is.EqualTo(3).Within(.0001f));
-            Assert.That(Candidate.length, Is.EqualTo(23f / 30f).Within(.0001f));
+            Assert.That(Candidate.length, Is.EqualTo(19f / 30f).Within(.0001f));
             Assert.That(Candidate.events, Is.Empty);
             Assert.That(AnimationUtility.GetAnimationClipSettings(Candidate).loopTime, Is.False);
             Assert.That(AnimationUtility.GetAnimationClipSettings(Candidate).keepOriginalOrientation, Is.True);
@@ -77,7 +77,7 @@ namespace Emberfall.Tests.EditMode
                 float maxDistance = 0, maxAngle = 0;
                 for (int frame = 0; frame <= 23; frame++)
                 {
-                    float t = Mathf.Min(frame / 30f, Candidate.length);
+                    float t = Candidate.length * frame / 23f;
                     Sample(original, SweepAnimationSetup.SourceStart + t);
                     var positions = bones.Select(b => b.position).ToArray();
                     var rotations = bones.Select(b => b.rotation).ToArray();
@@ -107,9 +107,10 @@ namespace Emberfall.Tests.EditMode
             var map = AttackTimingAudit.ReadMappings().Single(m => m.id == "player.sweep");
             var row = AttackTimingAudit.Evaluate(map, null);
             Assert.That(map.duration, Is.EqualTo(.82f).Within(.0001f));
-            Assert.That(map.windowStart, Is.EqualTo(.24f).Within(.0001f));
-            Assert.That(map.windowEnd, Is.EqualTo(.48f).Within(.0001f));
-            Assert.That(row.requiredSpeed, Is.EqualTo((23f / 30f) / .82f).Within(.0001f));
+            Assert.That(map.windowStart, Is.EqualTo(.255f).Within(.0001f));
+            Assert.That(map.windowEnd, Is.EqualTo(.495f).Within(.0001f));
+            Assert.That(map.windowEnd - map.windowStart, Is.EqualTo(.24f).Within(.0001f));
+            Assert.That(row.requiredSpeed, Is.EqualTo((19f / 30f) / .82f).Within(.0001f));
             Assert.That(row.failures, Does.Not.Contain("speed-clamped"));
             Assert.That(row.failures, Does.Contain("contact-unconfirmed"));
             Assert.That(row.accepted, Is.False);

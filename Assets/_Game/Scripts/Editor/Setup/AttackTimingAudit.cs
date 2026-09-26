@@ -21,6 +21,7 @@ namespace Emberfall.Editor.Setup
         public const string EnemyPath = "Assets/_Game/Data/M2/enemies.v1.json";
         public const string TuningPath = "Assets/_Game/Settings/CombatTuning_M1.asset";
         public const float Tolerance = 1f / 30f;
+        public const float SynchronizationTolerance = .033f;
 
         public sealed class Mapping
         {
@@ -33,17 +34,19 @@ namespace Emberfall.Editor.Setup
 
         [Serializable] public sealed class Row
         {
-            public string actionId, clipPath, clipName, dataSource, note;
+            public string actionId, clipPath, clipName, dataSource, note, timingHash;
             public float clipLength, clipStart, clipEnd, duration, playbackDuration;
             public float contactSeconds = -1, unclampedContactTime = -1, actualContactTime = -1;
             public float windowStart, windowEnd, requiredSpeed, clampedSpeed, deviationMs = -1;
             public bool pointEvent, speedInRange, finishesInTime, confirmed, accepted;
+            public bool windowAccepted, synchronizationRequired, synchronizationAccepted;
+            public float naturalContactTime = -1, firstDamageTime = -1, synchronizationDeltaMs = -1, maxSampleGap = -1;
             public string[] failures;
         }
 
         [Serializable] public sealed class Report
         {
-            public string scope = "Offline authored baseline, no freeze/crossfade/network latency simulation. Not runtime contact proof.";
+            public string scope = "Offline mapping plus separately annotated natural contact/damage synchronization. No inferred runtime contact from clip conversion; no network acceptance.";
             public string createdUtc, tuningHash, enemyHash, animationSetHash;
             public bool accepted;
             public string[] coverageErrors;
@@ -166,7 +169,8 @@ namespace Emberfall.Editor.Setup
             var row = new Row { actionId = map.id, clipName = map.clip != null ? map.clip.name : "MISSING",
                 clipPath = map.clip != null ? AssetDatabase.GetAssetPath(map.clip) : "", clipLength = length,
                 clipStart = map.clipStart, clipEnd = map.clipEnd, duration = map.duration, playbackDuration = map.playbackDuration,
-                windowStart = map.windowStart, windowEnd = map.windowEnd, pointEvent = map.pointEvent, dataSource = map.source, note = map.note };
+                windowStart = map.windowStart, windowEnd = map.windowEnd, pointEvent = map.pointEvent, dataSource = map.source, note = map.note,
+                timingHash = TimingHash(map) };
             if (!valid) errors.Add("invalid-playback-mapping");
             else {
                 row.requiredSpeed = effective / map.playbackDuration;
@@ -193,6 +197,31 @@ namespace Emberfall.Editor.Setup
                 row.deviationMs = 1000 * Mathf.Max(map.windowStart - row.actualContactTime, row.actualContactTime - map.windowEnd, 0);
                 if (row.deviationMs > Tolerance * 1000 + .001f) errors.Add("contact-outside-window");
             }
+            row.windowAccepted = errors.Count == 0;
+            row.synchronizationRequired = RequiresSynchronization(map);
+            if (row.synchronizationRequired && row.confirmed)
+            {
+                if (!contact.synchronizationObserved)
+                    errors.Add("synchronization-unobserved");
+                else if (!Finite(contact.naturalContactTime) || contact.naturalContactTime < 0 ||
+                    !Finite(contact.firstDamageTime) || contact.firstDamageTime < 0 ||
+                    !Finite(contact.maxSampleGap) || contact.maxSampleGap <= 0 || contact.maxSampleGap > Tolerance ||
+                    contact.observedTimingHash != TimingHash(map))
+                    errors.Add("invalid-or-stale-synchronization");
+                else
+                {
+                    row.naturalContactTime = contact.naturalContactTime;
+                    row.firstDamageTime = contact.firstDamageTime;
+                    row.maxSampleGap = contact.maxSampleGap;
+                    // Negative = damage early. Positive = damage after the visible strike.
+                    row.synchronizationDeltaMs = (contact.firstDamageTime - contact.naturalContactTime) * 1000;
+                    bool inside = WithinWindow(map, contact.naturalContactTime) && WithinWindow(map, contact.firstDamageTime);
+                    if (!inside) errors.Add("natural-contact-or-damage-outside-window");
+                    bool synchronized = Mathf.Abs(row.synchronizationDeltaMs) <= SynchronizationTolerance * 1000 + .001f;
+                    if (!synchronized) errors.Add("damage-contact-desynchronized");
+                    row.synchronizationAccepted = row.windowAccepted && inside && synchronized;
+                }
+            }
             row.failures = errors.ToArray();
             row.accepted = errors.Count == 0;
             return row;
@@ -200,6 +229,11 @@ namespace Emberfall.Editor.Setup
 
         public static string ClipHash(AnimationClip clip) => clip == null ? "" :
             AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(clip)).ToString();
+        // Execution resolves damage immediately. Projectile/cast release points do not measure later flight/fuse hits.
+        public static bool RequiresSynchronization(Mapping map) => !map.pointEvent || map.id == "player.execution";
+        public static string TimingHash(Mapping map) => Hash128.Compute(FormattableString.Invariant(
+            $"{map.id}|{ClipHash(map.clip)}|{AssetDatabase.GetAssetDependencyHash(map.source)}|{map.duration:R}|{map.playbackDuration:R}|{map.clipStart:R}|{map.clipEnd:R}|{map.minSpeed:R}|{map.maxSpeed:R}|{map.windowStart:R}|{map.windowEnd:R}|{map.pointEvent}")).ToString();
+        private static bool WithinWindow(Mapping map, float time) => time >= map.windowStart - Tolerance && time <= map.windowEnd + Tolerance;
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
         [MenuItem("Emberfall/Review/Attack Timing/Create Missing Annotations")]
@@ -237,6 +271,10 @@ namespace Emberfall.Editor.Setup
             foreach (var r in report.rows)
                 md.AppendLine(FormattableString.Invariant($"| {r.actionId} | {r.clipName} / {r.clipLength:F4} | {r.clipStart:F4}–{r.clipEnd:F4} | {r.playbackDuration:F4} / {r.duration:F4} | {r.contactSeconds:F4} | {r.unclampedContactTime:F4} / {r.actualContactTime:F4} | {r.windowStart:F4}–{r.windowEnd:F4}{(r.pointEvent ? " (点事件)" : "")} | {r.deviationMs:F2} | {r.requiredSpeed:F4} / {r.clampedSpeed:F4} | {r.finishesInTime} | {string.Join(",", r.failures)} |"));
             md.AppendLine("\n-1 表示尚无有效观察，不是接触发生在负时间。\n");
+            md.AppendLine("## 自然播放同步门禁\n\n首次实际扣血与可见接触相差≤33ms。负差=先扣血。窗口内不等于同步通过；释放点不拿飞行/延时命中来比较。\n");
+            md.AppendLine("| 动作 | 窗口检查 | 自然接触秒 | 首次伤害秒 | 伤害−接触ms | 同步 | 总结论 |\n| --- | --- | --- | --- | --- | --- | --- |");
+            foreach (var r in report.rows)
+                md.AppendLine(FormattableString.Invariant($"| {r.actionId} | {r.windowAccepted} | {r.naturalContactTime:F6} | {r.firstDamageTime:F6} | {(r.naturalContactTime < 0 ? "未观察" : r.synchronizationDeltaMs.ToString("F2", CultureInfo.InvariantCulture))} | {(r.synchronizationRequired ? r.synchronizationAccepted.ToString() : "n/a 释放点")} | {r.accepted} |"));
             foreach (var r in report.rows.Where(r => !string.IsNullOrEmpty(r.note))) md.AppendLine("- " + r.actionId + ": " + r.note);
             File.WriteAllText(output + "/alignment.md", md.ToString(), Encoding.UTF8);
             Debug.Log($"[ATTACK_TIMING_AUDIT] rows={report.rows.Length} accepted={report.accepted} output={output}");

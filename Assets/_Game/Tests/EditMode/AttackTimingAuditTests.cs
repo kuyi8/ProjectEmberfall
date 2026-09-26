@@ -14,7 +14,9 @@ namespace Emberfall.Tests.EditMode
             return new AttackTimingAnnotations.Contact { actionId = map.id, clip = map.clip,
                 contactSeconds = map.clipStart + domainTime * (map.clipEnd - map.clipStart) / map.playbackDuration,
                 confirmed = true, observedBy = "Unit test fixture", observation = "Synthetic conversion test only",
-                evidencePath = AttackTimingAudit.TuningPath, observedClipHash = AttackTimingAudit.ClipHash(map.clip) };
+                evidencePath = AttackTimingAudit.TuningPath, observedClipHash = AttackTimingAudit.ClipHash(map.clip),
+                synchronizationObserved = true, naturalContactTime = domainTime, firstDamageTime = domainTime,
+                maxSampleGap = .01f, observedTimingHash = AttackTimingAudit.TimingHash(map) };
         }
 
         [Test] public void CatalogCoversEveryRequiredActionWithoutDuplicates()
@@ -113,6 +115,59 @@ namespace Emberfall.Tests.EditMode
         {
             var map = Heavy(); map.clipStart = .2f;
             Assert.That(AttackTimingAudit.Evaluate(map, Fixture(map, .4f)).actualContactTime, Is.EqualTo(.4f).Within(.00001));
+        }
+
+        [TestCase(-.034f, false)] [TestCase(-.033f, true)] [TestCase(.033f, true)] [TestCase(.034f, false)]
+        public void NaturalDamageMustBeWithinThirtyThreeMilliseconds(float delta, bool accepted)
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f); contact.firstDamageTime += delta;
+            var row = AttackTimingAudit.Evaluate(map, contact);
+            Assert.That(row.windowAccepted, Is.True);
+            Assert.That(row.synchronizationAccepted, Is.EqualTo(accepted));
+            Assert.That(row.accepted, Is.EqualTo(accepted));
+            Assert.That(row.synchronizationDeltaMs, Is.EqualTo(delta * 1000).Within(.001f));
+        }
+        [Test] public void StaticWindowPassCannotSubstituteForNaturalObservation()
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f); contact.synchronizationObserved = false;
+            Assert.That(AttackTimingAudit.Evaluate(map, contact).failures, Does.Contain("synchronization-unobserved"));
+        }
+        [Test] public void TimingChangeInvalidatesNaturalEvidence()
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f); map.windowStart += .01f;
+            Assert.That(AttackTimingAudit.Evaluate(map, contact).failures, Does.Contain("invalid-or-stale-synchronization"));
+        }
+        [TestCase(-1f)] [TestCase(float.NaN)] [TestCase(float.PositiveInfinity)]
+        public void InvalidNaturalTimesFail(float invalid)
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f); contact.naturalContactTime = invalid;
+            Assert.That(AttackTimingAudit.Evaluate(map, contact).accepted, Is.False);
+            contact = Fixture(map, .4f); contact.firstDamageTime = invalid;
+            Assert.That(AttackTimingAudit.Evaluate(map, contact).accepted, Is.False);
+        }
+        [TestCase(-1f)] [TestCase(0f)] [TestCase(.034f)] [TestCase(float.NaN)] [TestCase(float.PositiveInfinity)]
+        public void MissingOrSparseNaturalSamplingFails(float gap)
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f); contact.maxSampleGap = gap;
+            Assert.That(AttackTimingAudit.Evaluate(map, contact).accepted, Is.False);
+        }
+        [Test] public void SynchronizedButOutsideWindowStillFails()
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f);
+            contact.naturalContactTime = contact.firstDamageTime = .7f;
+            Assert.That(AttackTimingAudit.Evaluate(map, contact).failures, Does.Contain("natural-contact-or-damage-outside-window"));
+        }
+        [Test] public void ExecutionRequiresSynchronizationButProjectileReleaseDoesNot()
+        {
+            var maps = AttackTimingAudit.ReadMappings();
+            foreach (string id in new[] { "player.execution", "priest.projectile" })
+            {
+                var map = maps.Single(m => m.id == id); var contact = Fixture(map, map.windowStart);
+                contact.synchronizationObserved = false;
+                var row = AttackTimingAudit.Evaluate(map, contact);
+                Assert.That(row.synchronizationRequired, Is.EqualTo(id == "player.execution"));
+                Assert.That(row.accepted, Is.EqualTo(id != "player.execution"));
+            }
         }
     }
 }
