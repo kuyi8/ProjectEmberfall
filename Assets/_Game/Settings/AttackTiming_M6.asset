@@ -1,0 +1,222 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d47c43622d52be46964ad6ea7120b53, type: 3}
+  m_Name: AttackTiming_M6
+  m_EditorClassIdentifier: 
+  contacts:
+  - actionId: player.light1
+    clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: player.light2
+    clip: {fileID: 7400000, guid: 5628458b3d5ee374c8f90c7efce657c4, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: player.light3
+    clip: {fileID: 7400000, guid: 8658390e444c824478b2b615e0e67832, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: player.heavy
+    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: player.sweep
+    clip: {fileID: 7400000, guid: 6bbf59957562ffa47825257641261d98, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: player.knife
+    clip: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: player.execution
+    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: fogwalker.quick
+    clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: fogwalker.combo1
+    clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: fogwalker.combo2
+    clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: priest.projectile
+    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: priest.rune
+    clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: guard.sword
+    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: guard.bash
+    clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: scorched.sword
+    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: scorched.bash
+    clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: scorched.burst
+    clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: warden.combo1
+    clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: warden.combo2
+    clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: warden.bash
+    clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: warden.rune
+    clip: {fileID: 7400000, guid: 148e0346e86e08548811e784ad7fa967, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: warden.blast
+    clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
+  - actionId: warden.charge
+    clip: {fileID: 7400000, guid: 69dcb8741ded8ce44871f5b3924144f6, type: 2}
+    contactSeconds: -1
+    sourceFrame: -1
+    confirmed: 0
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 

@@ -879,7 +879,7 @@ namespace Emberfall.Editor.Setup
             return clip;
         }
 
-        private static void CaptureActorCloseup(
+        internal static void CaptureActorCloseup(
             string outputPath,
             GameObject actor,
             float facingSign = 1f,
