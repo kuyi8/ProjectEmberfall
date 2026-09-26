@@ -102,6 +102,8 @@ namespace Emberfall.Gameplay.Animation
         }
 
 #if UNITY_EDITOR
+        public void ConfigureSweep(AnimationClip clip) => _sweep = clip;
+
         public void ConfigurePriestProjectile(AnimationClip windup, AnimationClip release)
         {
             _priestProjectileWindup = windup;

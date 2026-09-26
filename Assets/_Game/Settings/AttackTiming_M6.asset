@@ -50,7 +50,7 @@ MonoBehaviour:
     observation: 
     observedClipHash: 
   - actionId: player.sweep
-    clip: {fileID: 7400000, guid: 6bbf59957562ffa47825257641261d98, type: 2}
+    clip: {fileID: 7400000, guid: 37c0b11c392d1dc4e915b3c37aca607b, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0

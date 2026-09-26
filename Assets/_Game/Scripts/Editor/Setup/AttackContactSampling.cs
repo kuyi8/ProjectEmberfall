@@ -20,6 +20,35 @@ namespace Emberfall.Editor.Setup
     public static class AttackContactSampling
     {
         private static readonly Dictionary<string, Vector3[]> SampledPoses = new Dictionary<string, Vector3[]>();
+        public static void CaptureSweepCandidate()
+        {
+            if (!UnityEngine.Application.isBatchMode) throw new InvalidOperationException("Isolated batch entry only.");
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            string output = Path.GetFullPath("Builds/ArtReview/0.9.3-sweep-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
+            Directory.CreateDirectory(output);
+            SampledPoses.Clear();
+            try
+            {
+                var scene = EditorSceneManager.OpenScene("Assets/_Game/Scenes/10_EmberValley.unity");
+                var actor = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<PlayerCombatActor>(true)).First();
+                var source = AssetDatabase.LoadAssetAtPath<AnimationClip>(SweepAnimationSetup.SourcePath);
+                var candidate = AssetDatabase.LoadAssetAtPath<AnimationClip>(SweepAnimationSetup.CandidatePath);
+                var seconds = Enumerable.Range(0, 24).Select(i => Mathf.Min(i / 30f, candidate.length)).ToArray();
+                CaptureSequence(output, "sweep.candidate", actor.gameObject, candidate, seconds,
+                    "Second swing only. Static pose candidate, not runtime contact proof.", source);
+                CaptureSequence(output, "sweep.source-range", actor.gameObject, source,
+                    seconds.Select(t => t + SweepAnimationSetup.SourceStart).ToArray(),
+                    "Unchanged source at corresponding absolute times.", source);
+            }
+            finally
+            {
+                if (previous.Any(s => s.isLoaded && s.isActive && !string.IsNullOrEmpty(s.path)))
+                    EditorSceneManager.RestoreSceneManagerSetup(previous);
+                else EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
+            Debug.Log("[SWEEP_SAMPLING] " + output);
+        }
+
         public static void Capture()
         {
             if (!UnityEngine.Application.isBatchMode)

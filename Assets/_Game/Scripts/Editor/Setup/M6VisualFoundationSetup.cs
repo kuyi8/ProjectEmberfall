@@ -32,6 +32,14 @@ namespace Emberfall.Editor.Setup
             Debug.Log($"[PRIEST_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
         }
 
+        public static void BuildSweepTimingPlayers()
+        {
+            BuildDiagnosticPlayers("0.9.3-Sweep-Development", "0.9.3-sweep");
+            var cleanup = Emberfall.Infrastructure.Build.BuildArtifactCleaner.RemoveDoNotShipDirectories(
+                System.IO.Path.GetFullPath("Builds/Windows/0.9.3-sweep"));
+            Debug.Log($"[SWEEP_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
+        }
+
         public static void BuildSceneBoundsPlayers()
         {
             BuildDiagnosticPlayers("0.9.2-Bounds-Development", "0.9.2-bounds");
