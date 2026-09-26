@@ -15,13 +15,13 @@ MonoBehaviour:
   contacts:
   - actionId: player.light1
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    contactSeconds: 0.24648422002792358
+    sourceFrame: 7
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-26
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
+    observation: f27 blade visibly intersects front face/upper torso; f26 approaches and f28 continues across. Current attack clip, no transition. Contact is inside positive-width domain window. Damage already happened at f19; narrow window criterion is met, not same-frame damage/contact or full feel acceptance.
+    observedClipHash: 3c4b45dc5dea082ca650679d4ab3d872
   - actionId: player.light2
     clip: {fileID: 7400000, guid: 5628458b3d5ee374c8f90c7efce657c4, type: 2}
     contactSeconds: -1
@@ -33,13 +33,13 @@ MonoBehaviour:
     observedClipHash: 
   - actionId: player.light3
     clip: {fileID: 7400000, guid: 8658390e444c824478b2b615e0e67832, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    contactSeconds: 0.6496813893318176
+    sourceFrame: 19
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-26
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
+    observation: f104 actual blade crosses target torso (not merely cyan trail); f103 approaches, f105 exits. Current LightAttack3 clip and open window. Earlier f95 damage/freeze precedes this by about74ms domain time. Window-only confirmation, not impact synchrony.
+    observedClipHash: 806a4f8414693d182b6a4051fd53d8df
   - actionId: player.heavy
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
@@ -51,13 +51,13 @@ MonoBehaviour:
     observedClipHash: 
   - actionId: player.sweep
     clip: {fileID: 7400000, guid: 37c0b11c392d1dc4e915b3c37aca607b, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    contactSeconds: 0.3133333921432495
+    sourceFrame: 9
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-26
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
+    observation: f52 new single-swing blade visibly crosses upper torso in .24-.48 window, after actual runtime knockback. Damage/knockback already at f30, about188ms domain time earlier. Confirms window contact only, not synchronized knockback or subjective acceptance.
+    observedClipHash: 32cba3e08b1526b81c6dcb1a3a8eec30
   - actionId: player.knife
     clip: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
     contactSeconds: -1
