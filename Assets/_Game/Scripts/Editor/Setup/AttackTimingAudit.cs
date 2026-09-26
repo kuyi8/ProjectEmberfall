@@ -55,7 +55,8 @@ namespace Emberfall.Editor.Setup
             "player.light1", "player.light2", "player.light3", "player.heavy", "player.sweep",
             "player.knife", "player.execution", "fogwalker.quick", "fogwalker.combo1", "fogwalker.combo2",
             "priest.projectile", "priest.rune", "guard.bash", "warden.combo1", "warden.combo2",
-            "warden.rune", "warden.charge"
+            "warden.rune", "warden.charge", "guard.sword", "scorched.sword", "scorched.bash",
+            "scorched.burst", "warden.bash", "warden.blast"
         };
 
         public static List<Mapping> ReadMappings()
@@ -69,12 +70,12 @@ namespace Emberfall.Editor.Setup
             var boss = WardenDefinitionJsonLoader.Load(json).GetRequired(new ContentId("boss:ember-warden"));
             var rows = new List<Mapping>();
             Mapping Add(string id, AnimationClip clip, float duration, float open, float close, string source,
-                float stateStart = 0, bool point = false)
+                float stateStart = 0)
             {
                 if (clip == null) throw new InvalidDataException("Missing mapped clip: " + id);
                 var row = new Mapping { id = id, clip = clip, duration = duration, playbackDuration = duration,
                     clipEnd = clip.length, windowStart = open, windowEnd = close, stateStart = stateStart,
-                    stateEnd = duration, source = source, pointEvent = point, note = "" };
+                    stateEnd = duration, source = source, pointEvent = open == close, note = "" };
                 rows.Add(row);
                 return row;
             }
@@ -93,9 +94,9 @@ namespace Emberfall.Editor.Setup
             Add("player.sweep", set.GetClip(CombatState.Sweep), tuning.SweepDuration,
                 tuning.SweepDamageOpen, tuning.SweepDamageClose, TuningPath).minSpeed = .35f;
             Add("player.knife", set.GetClip(CombatState.RangedAttack), tuning.RangedDuration,
-                tuning.RangedReleaseTime, tuning.RangedReleaseTime, TuningPath, point: true).minSpeed = .35f;
+                tuning.RangedReleaseTime, tuning.RangedReleaseTime, TuningPath).minSpeed = .35f;
             Add("player.execution", set.GetClip(CombatState.Execution), tuning.ExecutionDuration,
-                tuning.ExecutionResolveTime, tuning.ExecutionResolveTime, TuningPath, point: true).minSpeed = .35f;
+                tuning.ExecutionResolveTime, tuning.ExecutionResolveTime, TuningPath).minSpeed = .35f;
             Add("fogwalker.quick", set.GetClip(CombatState.LightAttack1), melee.WindupDuration + melee.AttackDuration,
                 melee.WindupDuration + melee.DamageWindowStart, melee.WindupDuration + melee.DamageWindowEnd,
                 EnemyPath, melee.WindupDuration);
@@ -107,10 +108,10 @@ namespace Emberfall.Editor.Setup
                 EnemyPath, melee.ComboWindupDuration);
             // Release is consumed on entering Release, not at the middle of the release animation.
             Add("priest.projectile", set.GetClip(CombatState.HeavyAttack), ranged.ReleaseDuration,
-                0, 0, EnemyPath, point: true).minSpeed = .35f;
+                0, 0, EnemyPath).minSpeed = .35f;
             Add("priest.rune", set.GetEnemyClip(EnemyAnimationAction.RuneCast), ranged.GroundRuneWindupDuration + ranged.GroundRuneReleaseDuration,
                 ranged.GroundRuneWindupDuration, ranged.GroundRuneWindupDuration, EnemyPath,
-                ranged.GroundRuneWindupDuration, true).minSpeed = .35f;
+                ranged.GroundRuneWindupDuration).minSpeed = .35f;
             foreach (string kind in new[] { "guard", "scorched" })
             {
                 var g = guards.GetRequired(new ContentId(kind == "guard" ? "enemy:ruin-guard" : "enemy:ruin-guard-scorched"));
@@ -120,7 +121,7 @@ namespace Emberfall.Editor.Setup
                     g.BashWindupDuration + g.BashDamageWindowStart, g.BashWindupDuration + g.BashDamageWindowEnd, EnemyPath, g.BashWindupDuration);
                 if (g.ScorchedBurstEnabled)
                     Add(kind + ".burst", set.GetEnemyClip(EnemyAnimationAction.RuneCast), g.ScorchedBurstWindupDuration + g.ScorchedBurstAttackDuration,
-                        g.ScorchedBurstWindupDuration, g.ScorchedBurstWindupDuration, EnemyPath, g.ScorchedBurstWindupDuration, true)
+                        g.ScorchedBurstWindupDuration, g.ScorchedBurstWindupDuration, EnemyPath, g.ScorchedBurstWindupDuration)
                         .note = "Marks cast release only; delayed area damage follows fuse, not this clip.";
             }
             void Boss(string id, WardenAttackDefinition attack, AnimationClip clip, bool second = false)
@@ -136,11 +137,13 @@ namespace Emberfall.Editor.Setup
             Boss("warden.blast", boss.DelayedBlast, set.GetEnemyClip(EnemyAnimationAction.RuneCast));
             var charge = Add("warden.charge", set.GetEnemyClip(EnemyAnimationAction.WardenCharge), boss.Charge.AttackDuration,
                 boss.Charge.FirstWindowStart, boss.Charge.FirstWindowEnd, EnemyPath);
-            // CrossFadeInFixedTime's fourth argument is seconds; current code passes literal .24.
-            // Speed uses .54 of clip length. Preserve this discrepancy in the audit, never silently normalize it.
-            charge.clipStart = .24f;
+            // Travel owns 24-78% of the clip; convert both boundaries to clip seconds.
+            // Unity 2022.3 measured entry = fixedTimeOffset * Animator.speed / clip.length.
+            // Current literal offset is preserved pending Harness's ruling on speed compensation.
+            float chargeSpeed = Mathf.Clamp(charge.clip.length * (.78f - .24f) / charge.duration, .25f, 3f);
+            charge.clipStart = .24f * chargeSpeed;
             charge.clipEnd = charge.clipStart + charge.clip.length * (.78f - .24f);
-            charge.note = "Actual fixed-time offset=.24 seconds, speed fraction=.54; naming in presenter says normalized. Contact depends on spatial collision during travel.";
+            charge.note = "Intended domain travel phase 24-78%, but actual fixed-time entry is speed-scaled; engine probe pending Harness. Contact remains unconfirmed and spatially dependent.";
             return rows;
         }
 
@@ -247,7 +250,8 @@ namespace Emberfall.Editor.Setup
             var asset = AssetDatabase.LoadAssetAtPath<AttackTimingAnnotations>(AnnotationPath);
             if (asset == null) throw new InvalidDataException("Contact annotations missing.");
             var maps = ReadMappings();
-            string[] coverage = CoverageErrors(asset.contacts.Select(c => c.actionId));
+            string[] coverage = CoverageErrors(maps.Select(m => m.id))
+                .Concat(CoverageErrors(asset.contacts.Select(c => c.actionId))).ToArray();
             if (coverage.Length > 0) throw new InvalidDataException(string.Join(";", coverage));
             foreach (var map in maps) {
                 var row = Evaluate(map, asset.contacts.FirstOrDefault(c => c.actionId == map.id));

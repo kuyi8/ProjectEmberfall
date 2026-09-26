@@ -1103,7 +1103,7 @@ namespace Emberfall.Editor.Setup
             CaptureScene(scene, outputPath, cameraPosition, lookAt, fieldOfView);
         }
 
-        private static Scene CreateReviewScene()
+        internal static Scene CreateReviewScene()
         {
             Scene active = SceneManager.GetActiveScene();
             if (!active.IsValid() || string.IsNullOrEmpty(active.path))
@@ -1236,7 +1236,7 @@ namespace Emberfall.Editor.Setup
             instance.transform.position = groundPosition + new Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
         }
 
-        private static void SetLayerRecursively(Transform root, int layer)
+        internal static void SetLayerRecursively(Transform root, int layer)
         {
             root.gameObject.layer = layer;
             for (int i = 0; i < root.childCount; i++) SetLayerRecursively(root.GetChild(i), layer);
@@ -1278,7 +1278,7 @@ namespace Emberfall.Editor.Setup
                 $"humanoid={(animator != null && animator.isHuman)} materials=[{materialNames}]");
         }
 
-        private static void CaptureScene(
+        internal static void CaptureScene(
             Scene scene,
             string outputPath,
             Vector3 cameraPosition,
@@ -1322,11 +1322,12 @@ namespace Emberfall.Editor.Setup
                 RenderTexture.active = previous;
                 UnityEngine.Object.DestroyImmediate(image);
                 UnityEngine.Object.DestroyImmediate(target);
+                UnityEngine.Object.DestroyImmediate(cameraObject);
                 if (closeScene) CloseReviewScene(scene);
             }
         }
 
-        private static void CloseReviewScene(Scene scene)
+        internal static void CloseReviewScene(Scene scene)
         {
             Scene fallback = default;
             for (int i = 0; i < SceneManager.sceneCount; i++)

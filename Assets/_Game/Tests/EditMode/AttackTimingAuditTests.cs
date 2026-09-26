@@ -22,6 +22,17 @@ namespace Emberfall.Tests.EditMode
             var maps = AttackTimingAudit.ReadMappings();
             Assert.That(AttackTimingAudit.CoverageErrors(maps.Select(m => m.id)), Is.Empty);
             Assert.That(maps.All(m => m.clip != null), Is.True);
+            Assert.That(maps.Count, Is.EqualTo(23));
+            Assert.That(AttackTimingAudit.RequiredIds.Length, Is.EqualTo(23));
+        }
+
+        [Test] public void PointKindsAreDerivedFromDomainReleaseFields()
+        {
+            var maps = AttackTimingAudit.ReadMappings();
+            Assert.That(maps.Where(m => m.pointEvent).Select(m => m.id), Is.EquivalentTo(new[] {
+                "player.knife", "player.execution", "priest.projectile", "priest.rune", "scorched.burst" }));
+            foreach (var map in maps)
+                Assert.That(map.pointEvent, Is.EqualTo(map.windowStart == map.windowEnd), map.id);
         }
 
         [TestCaseSource(nameof(RequiredIds))]
