@@ -35,3 +35,5 @@ MonoBehaviour:
   _wardenCharge: {fileID: 7400000, guid: 69dcb8741ded8ce44871f5b3924144f6, type: 2}
   _wardenPhaseBreak: {fileID: 7400000, guid: d3f40b1bb5295c543917dab811facb42, type: 2}
   _wardenRuneCleave: {fileID: 7400000, guid: 148e0346e86e08548811e784ad7fa967, type: 2}
+  _priestProjectileWindup: {fileID: 7400000, guid: 212ac4758af16ca4aafb258d4ac43aea, type: 2}
+  _priestProjectileRelease: {fileID: 7400000, guid: 96492a11678ee6048b66473726c8eb63, type: 2}

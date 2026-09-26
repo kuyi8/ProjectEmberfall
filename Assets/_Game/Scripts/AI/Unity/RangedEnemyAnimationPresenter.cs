@@ -89,11 +89,14 @@ namespace Emberfall.AI.Unity
                 return 1f;
             }
 
-            if (state == PresentationState.Release)
+            if (state == PresentationState.Release || state == PresentationState.Windup)
             {
-                AnimationClip clip = _animationSet.GetClip(CombatState.HeavyAttack);
+                bool release = state == PresentationState.Release;
+                AnimationClip clip = _animationSet.GetEnemyClip(release
+                    ? EnemyAnimationAction.PriestProjectileRelease : EnemyAnimationAction.PriestProjectileWindup);
+                float duration = release ? _actor.Definition.ReleaseDuration : _actor.Definition.WindupDuration;
                 return clip != null
-                    ? Mathf.Clamp(clip.length / _actor.Definition.ReleaseDuration, 0.35f, 3f)
+                    ? Mathf.Clamp(clip.length / duration, 0.35f, 3f)
                     : 1f;
             }
 
@@ -137,9 +140,9 @@ namespace Emberfall.AI.Unity
             switch (state)
             {
                 case PresentationState.Windup:
-                    return CombatState.HeavyCharge.ToString();
+                    return "PriestProjectileWindup";
                 case PresentationState.Release:
-                    return CombatState.HeavyAttack.ToString();
+                    return "PriestProjectileRelease";
                 case PresentationState.GroundRune:
                     return "EnemyRuneCast";
                 case PresentationState.HitReact:

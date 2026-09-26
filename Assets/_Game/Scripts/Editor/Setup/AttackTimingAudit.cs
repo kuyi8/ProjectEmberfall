@@ -107,7 +107,7 @@ namespace Emberfall.Editor.Setup
                 melee.ComboWindupDuration + melee.ComboDamageWindow2Start, melee.ComboWindupDuration + melee.ComboDamageWindow2End,
                 EnemyPath, melee.ComboWindupDuration);
             // Release is consumed on entering Release, not at the middle of the release animation.
-            Add("priest.projectile", set.GetClip(CombatState.HeavyAttack), ranged.ReleaseDuration,
+            Add("priest.projectile", set.GetEnemyClip(EnemyAnimationAction.PriestProjectileRelease), ranged.ReleaseDuration,
                 0, 0, EnemyPath).minSpeed = .35f;
             Add("priest.rune", set.GetEnemyClip(EnemyAnimationAction.RuneCast), ranged.GroundRuneWindupDuration + ranged.GroundRuneReleaseDuration,
                 ranged.GroundRuneWindupDuration, ranged.GroundRuneWindupDuration, EnemyPath,

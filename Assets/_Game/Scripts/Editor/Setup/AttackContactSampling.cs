@@ -40,17 +40,24 @@ namespace Emberfall.Editor.Setup
                 var player = roots.SelectMany(r => r.GetComponentsInChildren<PlayerCombatActor>(true)).First();
                 var priest = roots.SelectMany(r => r.GetComponentsInChildren<RangedEnemyActor>(true)).First();
                 var maps = AttackTimingAudit.ReadMappings();
+                var set = AssetDatabase.LoadAssetAtPath<PlayerAnimationSet>(M1AnimationSetup.AnimationSetPath);
+                var priestReference = set.GetClip(CombatState.HeavyAttack);
                 foreach (string id in new[] { "player.sweep", "priest.projectile" })
                 {
                     var map = maps.Single(m => m.id == id);
                     float[] seconds = Enumerable.Range(0, Mathf.RoundToInt(map.clip.length * 30) + 1)
                         .Select(frame => Mathf.Min(frame / 30f, map.clip.length)).ToArray();
                     CaptureSequence(output, id, id.StartsWith("player.") ? player.gameObject : priest.gameObject,
-                        map.clip, seconds, "Source poses at 30fps. Fixed target reference, not a physical hit or confirmed contact.");
+                        map.clip, seconds, "Source poses at 30fps. Fixed target reference, not a physical hit or confirmed contact.",
+                        id.StartsWith("priest.") ? priestReference : null);
                 }
-                var set = AssetDatabase.LoadAssetAtPath<PlayerAnimationSet>(M1AnimationSetup.AnimationSetPath);
-                CaptureSequence(output, "priest.windup", priest.gameObject, set.GetClip(CombatState.HeavyCharge),
-                    new[] { 0f, .1f, .2f }, "Existing projectile windup = HeavyCharge; source poses only.");
+                var priestWindup = set.GetEnemyClip(EnemyAnimationAction.PriestProjectileWindup);
+                CaptureSequence(output, "priest.windup", priest.gameObject, priestWindup,
+                    Enumerable.Range(0,14).Select(f=>f/30f).ToArray(), "Authored projectile windup; source poses only.", priestReference);
+                CaptureSequence(output, "priest.before.windup", priest.gameObject, set.GetClip(CombatState.HeavyCharge),
+                    new[] { 0f, .1f, .2f }, "Before: idle windup. Same grounding reference.", priestReference);
+                CaptureSequence(output, "priest.before.release", priest.gameObject, priestReference,
+                    new[] {0f,.2f,.4f,.8f,1.3f}, "Before: full HeavyAttack on Release entry. Same grounding reference.", priestReference);
                 // Offline Warden is authored in the valley; Sanctum is the additive network arena shell.
                 scene = EditorSceneManager.OpenScene("Assets/_Game/Scenes/10_EmberValley.unity");
                 var warden = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<WardenActor>(true)).First();
@@ -95,7 +102,7 @@ namespace Emberfall.Editor.Setup
         }
 
         private static void CaptureSequence(string output, string id, GameObject actor, AnimationClip clip,
-            float[] seconds, string scope)
+            float[] seconds, string scope, AnimationClip groundingClip = null)
         {
             Scene review = M6ArtReviewTool.CreateReviewScene();
             Material referenceMaterial = null;
@@ -123,7 +130,11 @@ namespace Emberfall.Editor.Setup
                 var playable = AnimationClipPlayable.Create(graph, clip);
                 playable.SetApplyFootIK(false);
                 playable.SetApplyPlayableIK(false);
-                AnimationPlayableOutput.Create(graph, "Pose", animator).SetSourcePlayable(playable);
+                var poseOutput = AnimationPlayableOutput.Create(graph, "Pose", animator);
+                var referencePlayable = groundingClip != null ? AnimationClipPlayable.Create(graph, groundingClip) : playable;
+                referencePlayable.SetApplyFootIK(false);
+                referencePlayable.SetApplyPlayableIK(false);
+                poseOutput.SetSourcePlayable(referencePlayable);
                 graph.Play();
                 playable.SetTime(0);
                 graph.Evaluate(0);
@@ -133,6 +144,7 @@ namespace Emberfall.Editor.Setup
                 if (visible.Length == 0) throw new InvalidDataException("No actor renderers: " + actor.name);
                 float baselineBottom = visible.Min(r => r.bounds.min.y);
                 clone.transform.position += Vector3.up * -baselineBottom;
+                poseOutput.SetSourcePlayable(playable);
                 // Render the explicitly sampled pose, not a potentially one-frame-old skinning buffer.
                 var skins = clone.GetComponentsInChildren<SkinnedMeshRenderer>(true).Where(r => r.enabled).ToArray();
                 foreach (var skin in skins)

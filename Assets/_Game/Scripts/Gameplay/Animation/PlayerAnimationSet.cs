@@ -29,6 +29,8 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _wardenCharge;
         [SerializeField] private AnimationClip _wardenPhaseBreak;
         [SerializeField] private AnimationClip _wardenRuneCleave;
+        [SerializeField] private AnimationClip _priestProjectileWindup;
+        [SerializeField] private AnimationClip _priestProjectileRelease;
 
         public RuntimeAnimatorController Controller => _controller;
 
@@ -93,11 +95,19 @@ namespace Emberfall.Gameplay.Animation
                 EnemyAnimationAction.WardenCharge => _wardenCharge,
                 EnemyAnimationAction.WardenPhaseBreak => _wardenPhaseBreak,
                 EnemyAnimationAction.WardenRuneCleave => _wardenRuneCleave,
+                EnemyAnimationAction.PriestProjectileWindup => _priestProjectileWindup,
+                EnemyAnimationAction.PriestProjectileRelease => _priestProjectileRelease,
                 _ => null
             };
         }
 
 #if UNITY_EDITOR
+        public void ConfigurePriestProjectile(AnimationClip windup, AnimationClip release)
+        {
+            _priestProjectileWindup = windup;
+            _priestProjectileRelease = release;
+        }
+
         public void Configure(
             RuntimeAnimatorController controller,
             AnimationClip lightAttack1,

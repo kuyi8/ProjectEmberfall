@@ -24,6 +24,14 @@ namespace Emberfall.Editor.Setup
         // Preserve accepted Release and authored assets while verifying Development-only timing code.
         public static void BuildPerformanceProbePlayers() => BuildDiagnosticPlayers("0.9.0-Development", "Performance-ReleaseGuard");
         public static void BuildCombatPerformancePlayers() => BuildDiagnosticPlayers("0.9.2-Performance-Development", "0.9.2-Performance-ReleaseGuard");
+        public static void BuildPriestTimingPlayers()
+        {
+            BuildDiagnosticPlayers("0.9.3-Priest-Development", "0.9.3-priest");
+            var cleanup = Emberfall.Infrastructure.Build.BuildArtifactCleaner.RemoveDoNotShipDirectories(
+                System.IO.Path.GetFullPath("Builds/Windows/0.9.3-priest"));
+            Debug.Log($"[PRIEST_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
+        }
+
         public static void BuildSceneBoundsPlayers()
         {
             BuildDiagnosticPlayers("0.9.2-Bounds-Development", "0.9.2-bounds");

@@ -104,7 +104,7 @@ MonoBehaviour:
     observation: 
     observedClipHash: 
   - actionId: priest.projectile
-    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+    clip: {fileID: 7400000, guid: 96492a11678ee6048b66473726c8eb63, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0

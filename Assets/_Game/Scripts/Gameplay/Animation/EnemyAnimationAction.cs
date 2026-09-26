@@ -8,6 +8,8 @@ namespace Emberfall.Gameplay.Animation
         ShieldBash,
         WardenCharge,
         WardenPhaseBreak,
-        WardenRuneCleave
+        WardenRuneCleave,
+        PriestProjectileWindup,
+        PriestProjectileRelease
     }
 }
