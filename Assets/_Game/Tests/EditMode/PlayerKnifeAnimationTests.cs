@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using Emberfall.Editor.Setup;
 using Emberfall.Gameplay.Animation;
@@ -65,12 +66,21 @@ namespace Emberfall.Tests.EditMode
         {
             string Hash(string path) => AssetDatabase.GetAssetDependencyHash(path).ToString();
             var sourceBefore = Hash(PlayerKnifeAnimationSetup.SourcePath);
-            var clipBefore = Hash(PlayerKnifeAnimationSetup.CandidatePath);
-            var setBefore = Hash(SetPath);
+            // Unity restores trailing spaces on empty YAML values after repository formatting.
+            // Compare every serialized field first, then require exact dependency-hash stability
+            // on a second generation. Do not let formatting mask curve/configuration changes.
+            string Canonical(string path) => string.Join("\n", File.ReadAllLines(path).Select(line => line.TrimEnd()));
+            var set = AssetDatabase.LoadAssetAtPath<PlayerAnimationSet>(SetPath);
+            var paths = new[] { PlayerKnifeAnimationSetup.CandidatePath, SetPath,
+                AssetDatabase.GetAssetPath(set.Controller), AttackTimingAudit.AnnotationPath };
+            var before = paths.Select(Canonical).ToArray();
             PlayerKnifeAnimationSetup.Apply();
             Assert.That(Hash(PlayerKnifeAnimationSetup.SourcePath), Is.EqualTo(sourceBefore));
-            Assert.That(Hash(PlayerKnifeAnimationSetup.CandidatePath), Is.EqualTo(clipBefore));
-            Assert.That(Hash(SetPath), Is.EqualTo(setBefore));
+            for (int i = 0; i < paths.Length; i++) Assert.That(Canonical(paths[i]), Is.EqualTo(before[i]), paths[i]);
+            var once = paths.Select(Hash).ToArray();
+            PlayerKnifeAnimationSetup.Apply();
+            Assert.That(Hash(PlayerKnifeAnimationSetup.SourcePath), Is.EqualTo(sourceBefore));
+            for (int i = 0; i < paths.Length; i++) Assert.That(Hash(paths[i]), Is.EqualTo(once[i]), paths[i]);
         }
     }
 }
