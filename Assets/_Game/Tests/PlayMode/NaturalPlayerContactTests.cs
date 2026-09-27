@@ -41,6 +41,7 @@ namespace Emberfall.Tests.PlayMode
                 foreach (string scenario in new[] { "light-combo", "heavy", "sweep", "knife", "execution" })
                 {
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-sweep-only") && scenario != "sweep") continue;
+                    if (Environment.GetCommandLineArgs().Contains("-emberfall-light-only") && scenario != "light-combo") continue;
                     bool referenceOnly = Environment.GetCommandLineArgs().Contains("-emberfall-reference-only");
                     yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
                     yield return null;

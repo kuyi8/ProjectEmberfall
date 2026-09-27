@@ -1,7 +1,10 @@
 using System;
 using System.Linq;
 using Emberfall.Editor.Setup;
+using Emberfall.Gameplay.Combat.Unity;
 using NUnit.Framework;
+using UnityEditor;
+using UnityEngine;
 
 namespace Emberfall.Tests.EditMode
 {
@@ -136,6 +139,49 @@ namespace Emberfall.Tests.EditMode
         {
             var map = Heavy(); var contact = Fixture(map, .4f); map.windowStart += .01f;
             Assert.That(AttackTimingAudit.Evaluate(map, contact).failures, Does.Contain("invalid-or-stale-synchronization"));
+        }
+        [Test] public void UnconfirmedContactCannotPassSynchronizationEvenWithPlausibleMeasurements()
+        {
+            var map = Heavy(); var contact = Fixture(map, .4f); contact.confirmed = false;
+            var row = AttackTimingAudit.Evaluate(map, contact);
+            Assert.That(row.failures, Does.Contain("contact-unconfirmed"));
+            Assert.That(row.synchronizationAccepted, Is.False);
+            Assert.That(row.accepted, Is.False);
+        }
+        [Test] public void StateBoundsArePartOfActionFingerprint()
+        {
+            var map = Heavy(); string hash = AttackTimingAudit.TimingHash(map);
+            map.stateStart += .01f;
+            Assert.That(AttackTimingAudit.TimingHash(map), Is.Not.EqualTo(hash));
+            map.stateStart -= .01f; map.stateEnd -= .01f;
+            Assert.That(AttackTimingAudit.TimingHash(map), Is.Not.EqualTo(hash));
+        }
+        [Test] public void UnrelatedActionEditDoesNotInvalidateEvidence()
+        {
+            string path = "Assets/_Game/Tests/TimingFingerprint-" + Guid.NewGuid().ToString("N") + ".asset";
+            var asset = ScriptableObject.CreateInstance<CombatTuningAsset>();
+            try
+            {
+                AssetDatabase.CreateAsset(asset, path);
+                AssetDatabase.SaveAssets();
+                var map = Heavy(); map.source = path;
+                var contact = Fixture(map, .4f);
+                string before = AssetDatabase.GetAssetDependencyHash(path).ToString();
+                var serialized = new SerializedObject(asset);
+                serialized.FindProperty("_sweepDamageOpen").floatValue += .01f;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(asset); AssetDatabase.SaveAssets();
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                Assert.That(AssetDatabase.GetAssetDependencyHash(path).ToString(), Is.Not.EqualTo(before));
+                Assert.That(AttackTimingAudit.TimingHash(map), Is.EqualTo(contact.observedTimingHash));
+                Assert.That(AttackTimingAudit.Evaluate(map, contact).accepted, Is.True);
+            }
+            finally
+            {
+                // Only this test's uniquely named asset is removed; production assets are never edited.
+                AssetDatabase.DeleteAsset(path);
+                if (asset != null) UnityEngine.Object.DestroyImmediate(asset);
+            }
         }
         [TestCase(-1f)] [TestCase(float.NaN)] [TestCase(float.PositiveInfinity)]
         public void InvalidNaturalTimesFail(float invalid)

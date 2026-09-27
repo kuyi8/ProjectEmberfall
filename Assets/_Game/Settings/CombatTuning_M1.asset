@@ -27,13 +27,13 @@ MonoBehaviour:
   - 0.62
   - 0.72
   _lightDamageOpen:
-  - 0.15
+  - 0.185
   - 0.17
-  - 0.21
+  - 0.25
   _lightDamageClose:
-  - 0.29
+  - 0.325
   - 0.32
-  - 0.4
+  - 0.44
   _lightComboOpen:
   - 0.28
   - 0.3

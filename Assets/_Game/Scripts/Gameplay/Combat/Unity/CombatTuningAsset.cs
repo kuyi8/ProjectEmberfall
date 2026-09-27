@@ -17,8 +17,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField] private float[] _lightDamage = { 22f, 26f, 34f };
         [SerializeField, Min(0.1f)] private float _lightStaminaCost = 10f;
         [SerializeField] private float[] _lightDuration = { 0.58f, 0.62f, 0.72f };
-        [SerializeField] private float[] _lightDamageOpen = { 0.15f, 0.17f, 0.21f };
-        [SerializeField] private float[] _lightDamageClose = { 0.29f, 0.32f, 0.40f };
+        [SerializeField] private float[] _lightDamageOpen = { 0.185f, 0.17f, 0.25f };
+        [SerializeField] private float[] _lightDamageClose = { 0.325f, 0.32f, 0.44f };
         [SerializeField] private float[] _lightComboOpen = { 0.28f, 0.30f, 0.34f };
         [SerializeField] private float[] _lightComboClose = { 0.50f, 0.54f, 0.62f };
         [SerializeField] private float[] _lightDodgeCancelOpen = { 0.36f, 0.39f, 0.46f };

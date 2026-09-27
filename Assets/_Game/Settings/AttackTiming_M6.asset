@@ -15,21 +15,21 @@ MonoBehaviour:
   contacts:
   - actionId: player.light1
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
-    contactSeconds: 0.24648422
+    contactSeconds: 0.24719608
     sourceFrame: 7
     confirmed: 1
-    observedBy: Codex visual review 2026-09-26
-    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
-    observation: f27 blade visibly intersects front face/upper torso; f26 approaches
-      and f28 continues across. Current attack clip, no transition. Contact is inside
-      positive-width domain window. Damage already happened at f19; narrow window
-      criterion is met, not same-frame damage/contact or full feel acceptance.
+    observedBy: Codex visual review 2026-09-27
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-033043-273/observation.json
+    observation: f17 blade crosses front face, f16 approaches and f18 rises. First
+      damage f19 follows by19.09ms. Contact precedes window by11.83ms, static conversion
+      by25.27ms; existing one-thirtieth tolerance passes, NOT strict inclusion.
+      Unchanged clip/controller/recovery; same close fixture only, not all distances.
     observedClipHash: 3c4b45dc5dea082ca650679d4ab3d872
     synchronizationObserved: 1
-    naturalContactTime: 0.2348464
-    firstDamageTime: 0.1500284
-    maxSampleGap: 0.0224261
-    observedTimingHash: 9199352d85df01f5e274d5ba3f751147
+    naturalContactTime: 0.17316619
+    firstDamageTime: 0.19225357
+    maxSampleGap: 0.0274559
+    observedTimingHash: action-v2:4839e97667eeaba33736d25ec5a6b2e3
   - actionId: player.light2
     clip: {fileID: 7400000, guid: 5628458b3d5ee374c8f90c7efce657c4, type: 2}
     contactSeconds: -1
@@ -46,21 +46,21 @@ MonoBehaviour:
     observedTimingHash:
   - actionId: player.light3
     clip: {fileID: 7400000, guid: 8658390e444c824478b2b615e0e67832, type: 2}
-    contactSeconds: 0.6496814
+    contactSeconds: 0.63489604
     sourceFrame: 19
     confirmed: 1
-    observedBy: Codex visual review 2026-09-26
-    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260926-133033-200/observation.json
-    observation: f104 actual blade crosses target torso (not merely cyan trail);
-      f103 approaches, f105 exits. Current LightAttack3 clip and open window. Earlier
-      f95 damage/freeze precedes this by about74ms domain time. Window-only confirmation,
-      not impact synchrony.
+    observedBy: Codex visual review 2026-09-27
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-033043-273/observation.json
+    observation: f77 blade crosses front helmet/face; f76 approaches and f78 exits.
+      Capsule sampling gap23.68mm is auxiliary, visible mesh contact is reviewed.
+      First damage f79 follows by21.91ms. Contact precedes window by21.44ms within
+      existing one-thirtieth tolerance, NOT strict inclusion. Unchanged clip/poses.
     observedClipHash: 806a4f8414693d182b6a4051fd53d8df
     synchronizationObserved: 1
-    naturalContactTime: 0.2844254
-    firstDamageTime: 0.21052489
-    maxSampleGap: 0.0224261
-    observedTimingHash: ff5c7685c57b8de2f99f81b7026ac416
+    naturalContactTime: 0.22856262
+    firstDamageTime: 0.25046822
+    maxSampleGap: 0.0274559
+    observedTimingHash: action-v2:bd6394f49797b01868890882569be6f9
   - actionId: player.heavy
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
@@ -91,7 +91,7 @@ MonoBehaviour:
     naturalContactTime: 0.23524510860443115
     firstDamageTime: 0.2617950141429901
     maxSampleGap: 0.0228416994214058
-    observedTimingHash: 5bb3f2dbaaaf066940a940d94c4c6014
+    observedTimingHash: action-v2:31089796fc83b4bca4733697eb69e715
   - actionId: player.knife
     clip: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
     contactSeconds: -1

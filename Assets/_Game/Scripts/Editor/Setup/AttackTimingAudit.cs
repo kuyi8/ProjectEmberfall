@@ -231,8 +231,10 @@ namespace Emberfall.Editor.Setup
             AssetDatabase.GetAssetDependencyHash(AssetDatabase.GetAssetPath(clip)).ToString();
         // Execution resolves damage immediately. Projectile/cast release points do not measure later flight/fuse hits.
         public static bool RequiresSynchronization(Mapping map) => !map.pointEvent || map.id == "player.execution";
-        public static string TimingHash(Mapping map) => Hash128.Compute(FormattableString.Invariant(
-            $"{map.id}|{ClipHash(map.clip)}|{AssetDatabase.GetAssetDependencyHash(map.source)}|{map.duration:R}|{map.playbackDuration:R}|{map.clipStart:R}|{map.clipEnd:R}|{map.minSpeed:R}|{map.maxSpeed:R}|{map.windowStart:R}|{map.windowEnd:R}|{map.pointEvent}")).ToString();
+        // Bind the effective action mapping, not unrelated fields in a shared tuning asset.
+        // Whole-asset hashes remain in Report for provenance. Versioning requires explicit migration.
+        public static string TimingHash(Mapping map) => "action-v2:" + Hash128.Compute(FormattableString.Invariant(
+            $"{map.id}|{ClipHash(map.clip)}|{map.source}|{map.duration:R}|{map.playbackDuration:R}|{map.clipStart:R}|{map.clipEnd:R}|{map.minSpeed:R}|{map.maxSpeed:R}|{map.windowStart:R}|{map.windowEnd:R}|{map.stateStart:R}|{map.stateEnd:R}|{map.pointEvent}")).ToString();
         private static bool WithinWindow(Mapping map, float time) => time >= map.windowStart - Tolerance && time <= map.windowEnd + Tolerance;
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 

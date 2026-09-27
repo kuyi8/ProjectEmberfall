@@ -196,6 +196,11 @@ namespace Emberfall.Editor.Setup
         private static void ConfigureGuardAndPostureTuning(CombatTuningAsset tuning)
         {
             var serialized = new SerializedObject(tuning);
+            // Natural contact calibration: shift only these two windows, preserving their widths.
+            serialized.FindProperty("_lightDamageOpen").GetArrayElementAtIndex(0).floatValue = 0.185f;
+            serialized.FindProperty("_lightDamageClose").GetArrayElementAtIndex(0).floatValue = 0.325f;
+            serialized.FindProperty("_lightDamageOpen").GetArrayElementAtIndex(2).floatValue = 0.25f;
+            serialized.FindProperty("_lightDamageClose").GetArrayElementAtIndex(2).floatValue = 0.44f;
             serialized.FindProperty("_maxPosture").floatValue = 100f;
             serialized.FindProperty("_postureRegenPerSecond").floatValue = 34f;
             serialized.FindProperty("_postureRegenDelay").floatValue = 1.2f;
