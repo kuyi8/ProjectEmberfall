@@ -54,6 +54,7 @@ namespace Emberfall.Tests.PlayMode
                         ? Quaternion.Euler(0, -30f, 0) * Vector3.back * fixtureDistance
                         : Vector3.back * fixtureDistance;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-sweep-only") && scenario != "sweep") continue;
+                    if (Environment.GetCommandLineArgs().Contains("-emberfall-knife-only") && scenario != "knife") continue;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-light-only") && scenario != "light-combo") continue;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-heavy-execution-only") && scenario != "heavy" && scenario != "execution") continue;
                     bool referenceOnly = Environment.GetCommandLineArgs().Contains("-emberfall-reference-only");

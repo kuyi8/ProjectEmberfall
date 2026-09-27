@@ -234,7 +234,7 @@ namespace Emberfall.Editor.Setup
             }
         }
 
-        private static void SnapshotSkin(SkinnedMeshRenderer skin, Mesh snapshot, Transform root)
+        internal static void SnapshotSkin(SkinnedMeshRenderer skin, Mesh snapshot, Transform root)
         {
             // Explicit CPU skinning in clone space avoids both stale GPU poses and importer-scale
             // ambiguity in BakeMesh. This adapter uses the current sources' four-weight skinning;
