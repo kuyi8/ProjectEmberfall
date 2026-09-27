@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c5fd8c48db99ad40b8308880ee780dd, type: 3}
   m_Name: PlayerAnimationSet_M1
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   _controller: {fileID: 9100000, guid: bd959ec01bdda4e4fb3ce6afae8d08e2, type: 2}
   _lightAttack1: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
   _lightAttack1Recovery: {fileID: 7400000, guid: 12397868f4a2ec64d9afa862ba9e15ff, type: 2}
@@ -22,6 +22,7 @@ MonoBehaviour:
   _heavyAttack: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
   _offlineHeavyAttack: {fileID: 7400000, guid: 9f6f6a0d2d4823143813ccccf4c00b89, type: 2}
   _offlineExecution: {fileID: 7400000, guid: b4147bd9ceb8eea43bdf055deb550f6b, type: 2}
+  _offlineRangedAttack: {fileID: 7400000, guid: 7e21c926670c0534aaec3a3c9d701f0e, type: 2}
   _sweep: {fileID: 7400000, guid: 37c0b11c392d1dc4e915b3c37aca607b, type: 2}
   _rangedAttack: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
   _dodge: {fileID: 7400000, guid: ff9d351b02162824f94060698541529e, type: 2}

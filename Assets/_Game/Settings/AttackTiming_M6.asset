@@ -68,11 +68,11 @@ MonoBehaviour:
     confirmed: 1
     observedBy: Codex visual review 2026-09-27
     evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-065610-485/observation.json
-    observation: f95 blade enters front helmet, f94 approaches and f96 crosses.
-      First damage f97 follows by16.42ms, or24.15ms from preceding frame. Contact
-      precedes window by10.44ms, static conversion by18.80ms; existing one-thirtieth
-      tolerance passes, NOT strict inclusion. Full source poses preserved in dedicated
-      offline clip; fixed close fixture only, not all distances or network presentation.
+    observation: f95 blade enters front helmet, f94 approaches and f96 crosses. First
+      damage f97 follows by16.42ms, or24.15ms from preceding frame. Contact precedes
+      window by10.44ms, static conversion by18.80ms; existing one-thirtieth tolerance
+      passes, NOT strict inclusion. Full source poses preserved in dedicated offline
+      clip; fixed close fixture only, not all distances or network presentation.
     observedClipHash: 53e5c6e278b841a7badf07c6932471ed
     synchronizationObserved: 1
     naturalContactTime: 0.22456132
@@ -97,7 +97,7 @@ MonoBehaviour:
     maxSampleGap: 0.0228417
     observedTimingHash: action-v2:31089796fc83b4bca4733697eb69e715
   - actionId: player.knife
-    clip: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
+    clip: {fileID: 7400000, guid: 7e21c926670c0534aaec3a3c9d701f0e, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
@@ -117,11 +117,11 @@ MonoBehaviour:
     confirmed: 1
     observedBy: Codex visual review 2026-09-27
     evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-065610-485/observation.json
-    observation: f25 blade enters front face, f24 approaches and f26 crosses.
-      First damage f26 follows by11.43ms, or18.76ms from preceding frame. Contact
-      precedes settlement by10.76ms, static conversion by20.25ms; existing one-thirtieth
-      tolerance passes, NOT exact coincidence. Actual execution input and target claim;
-      full source poses preserved in dedicated offline clip. Fixed close fixture only.
+    observation: f25 blade enters front face, f24 approaches and f26 crosses. First
+      damage f26 follows by11.43ms, or18.76ms from preceding frame. Contact precedes
+      settlement by10.76ms, static conversion by20.25ms; existing one-thirtieth tolerance
+      passes, NOT exact coincidence. Actual execution input and target claim; full
+      source poses preserved in dedicated offline clip. Fixed close fixture only.
     observedClipHash: 4fda477110a6f304d27005f72c6cba3d
     synchronizationObserved: 1
     naturalContactTime: 0.19924378

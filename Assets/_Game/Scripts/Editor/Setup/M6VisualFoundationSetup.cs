@@ -81,6 +81,14 @@ namespace Emberfall.Editor.Setup
             Debug.Log($"[HEAVY_EXECUTION_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
         }
 
+        public static void BuildKnifeTimingPlayers()
+        {
+            BuildDiagnosticPlayers("0.9.3-Knife-Development", "0.9.3-knife");
+            var cleanup = Emberfall.Infrastructure.Build.BuildArtifactCleaner.RemoveDoNotShipDirectories(
+                System.IO.Path.GetFullPath("Builds/Windows/0.9.3-knife"));
+            Debug.Log($"[KNIFE_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
+        }
+
         private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder)
         {
             foreach (bool development in new[] { true, false })

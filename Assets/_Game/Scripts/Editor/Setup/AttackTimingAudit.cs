@@ -96,7 +96,7 @@ namespace Emberfall.Editor.Setup
                 tuning.HeavyDamageOpen, tuning.HeavyDamageClose, TuningPath).minSpeed = .35f;
             Add("player.sweep", set.GetClip(CombatState.Sweep), tuning.SweepDuration,
                 tuning.SweepDamageOpen, tuning.SweepDamageClose, TuningPath).minSpeed = .35f;
-            Add("player.knife", set.GetClip(CombatState.RangedAttack), tuning.RangedDuration,
+            Add("player.knife", set.GetOfflineClip(CombatState.RangedAttack), tuning.RangedDuration,
                 tuning.RangedReleaseTime, tuning.RangedReleaseTime, TuningPath).minSpeed = .35f;
             Add("player.execution", set.GetOfflineClip(CombatState.Execution), tuning.ExecutionDuration,
                 tuning.ExecutionResolveTime, tuning.ExecutionResolveTime, TuningPath).minSpeed = .35f;

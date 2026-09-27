@@ -59,9 +59,11 @@ namespace Emberfall.Tests.EditMode
 
         [TestCase(PlayerStrikeAnimationSetup.HeavyPath)]
         [TestCase(PlayerStrikeAnimationSetup.ExecutionPath)]
+        [TestCase(PlayerKnifeAnimationSetup.CandidatePath)]
         public void FullSourceAvatarPosesArePreserved(string path)
         {
-            var source = AssetDatabase.LoadAssetAtPath<AnimationClip>(PlayerStrikeAnimationSetup.SourcePath);
+            var source = AssetDatabase.LoadAssetAtPath<AnimationClip>(path == PlayerKnifeAnimationSetup.CandidatePath
+                ? PlayerKnifeAnimationSetup.SourcePath : PlayerStrikeAnimationSetup.SourcePath);
             var candidate = AssetDatabase.LoadAssetAtPath<AnimationClip>(path);
             var scene = EditorSceneManager.NewPreviewScene();
             var graph = PlayableGraph.Create("Dedicated strike pose regression");
@@ -90,7 +92,7 @@ namespace Emberfall.Tests.EditMode
                 float maxDistance = 0, maxAngle = 0;
                 for (int frame = 0; frame < 24; frame++)
                 {
-                    float time = source.length * frame / 23f;
+                    float time = candidate.length * frame / 23f;
                     Sample(original, time);
                     var positions = bones.Select(b => b.position).ToArray();
                     var rotations = bones.Select(b => b.rotation).ToArray();

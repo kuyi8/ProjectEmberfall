@@ -16,6 +16,7 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _heavyAttack;
         [SerializeField] private AnimationClip _offlineHeavyAttack;
         [SerializeField] private AnimationClip _offlineExecution;
+        [SerializeField] private AnimationClip _offlineRangedAttack;
         [SerializeField] private AnimationClip _sweep;
         [SerializeField] private AnimationClip _rangedAttack;
         [SerializeField] private AnimationClip _dodge;
@@ -41,6 +42,7 @@ namespace Emberfall.Gameplay.Animation
         {
             CombatState.HeavyAttack when _offlineHeavyAttack != null => _offlineHeavyAttack,
             CombatState.Execution when _offlineExecution != null => _offlineExecution,
+            CombatState.RangedAttack when _offlineRangedAttack != null => _offlineRangedAttack,
             _ => GetClip(state)
         };
 
@@ -48,6 +50,7 @@ namespace Emberfall.Gameplay.Animation
         {
             CombatState.HeavyAttack when _offlineHeavyAttack != null => "PlayerHeavyAttack",
             CombatState.Execution when _offlineExecution != null => "PlayerExecution",
+            CombatState.RangedAttack when _offlineRangedAttack != null => "PlayerRangedAttack",
             _ => state.ToString()
         };
 
@@ -119,6 +122,8 @@ namespace Emberfall.Gameplay.Animation
         }
 
 #if UNITY_EDITOR
+        public void ConfigureOfflineRangedAttack(AnimationClip clip) => _offlineRangedAttack = clip;
+
         public void ConfigureOfflineStrikes(AnimationClip heavy, AnimationClip execution)
         {
             _offlineHeavyAttack = heavy;
