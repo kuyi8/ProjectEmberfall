@@ -73,6 +73,14 @@ namespace Emberfall.Editor.Setup
             Debug.Log($"[BOUNDS_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
         }
 
+        public static void BuildHeavyExecutionPlayers()
+        {
+            BuildDiagnosticPlayers("0.9.3-HeavyExecution-Development", "0.9.3-heavy-execution");
+            var cleanup = Emberfall.Infrastructure.Build.BuildArtifactCleaner.RemoveDoNotShipDirectories(
+                System.IO.Path.GetFullPath("Builds/Windows/0.9.3-heavy-execution"));
+            Debug.Log($"[HEAVY_EXECUTION_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
+        }
+
         private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder)
         {
             foreach (bool development in new[] { true, false })

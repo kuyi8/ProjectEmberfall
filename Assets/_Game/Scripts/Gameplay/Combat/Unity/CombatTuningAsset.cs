@@ -28,8 +28,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, Min(0.1f)] private float _heavyStaminaCost = 28f;
         [SerializeField, Min(0.1f)] private float _heavyFullChargeSeconds = 0.55f;
         [SerializeField, Min(0.1f)] private float _heavyDuration = 0.82f;
-        [SerializeField, Min(0f)] private float _heavyDamageOpen = 0.28f;
-        [SerializeField, Min(0.01f)] private float _heavyDamageClose = 0.52f;
+        [SerializeField, Min(0f)] private float _heavyDamageOpen = 0.235f;
+        [SerializeField, Min(0.01f)] private float _heavyDamageClose = 0.475f;
 
         [Header("Throwing knife")]
         [SerializeField, Min(1f)] private float _rangedDamage = 30f;
@@ -72,7 +72,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, Min(0.1f)] private float _sprintStaminaPerSecond = 12f;
         [SerializeField, Min(0.1f)] private float _executionStaminaCost = 22f;
         [SerializeField, Min(0.1f)] private float _executionDuration = 0.72f;
-        [SerializeField, Min(0.01f)] private float _executionResolveTime = 0.32f;
+        [SerializeField, Min(0.01f)] private float _executionResolveTime = 0.21f;
 
         [Header("Wide sweep (offline)")]
         [SerializeField, Min(1f)] private float _sweepDamage = 44f;

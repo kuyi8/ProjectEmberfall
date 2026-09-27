@@ -119,6 +119,7 @@ namespace Emberfall.Editor.Setup
             EditorUtility.SetDirty(animationSet);
             PriestProjectileAnimationSetup.Apply();
             SweepAnimationSetup.Apply();
+            PlayerStrikeAnimationSetup.Apply();
             AssetDatabase.SaveAssets();
             Debug.Log("M1 player animation setup completed with CC0 Humanoid clips and root motion disabled.");
             return animationSet;

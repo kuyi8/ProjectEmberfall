@@ -20,6 +20,8 @@ MonoBehaviour:
   _lightAttack3: {fileID: 7400000, guid: 8658390e444c824478b2b615e0e67832, type: 2}
   _heavyCharge: {fileID: -7788140712200663775, guid: 9d6061ab0edd5e947873d08dcccc631a, type: 3}
   _heavyAttack: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
+  _offlineHeavyAttack: {fileID: 7400000, guid: 9f6f6a0d2d4823143813ccccf4c00b89, type: 2}
+  _offlineExecution: {fileID: 7400000, guid: b4147bd9ceb8eea43bdf055deb550f6b, type: 2}
   _sweep: {fileID: 7400000, guid: 37c0b11c392d1dc4e915b3c37aca607b, type: 2}
   _rangedAttack: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
   _dodge: {fileID: 7400000, guid: ff9d351b02162824f94060698541529e, type: 2}

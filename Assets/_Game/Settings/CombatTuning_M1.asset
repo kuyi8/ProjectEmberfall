@@ -50,8 +50,8 @@ MonoBehaviour:
   _heavyStaminaCost: 28
   _heavyFullChargeSeconds: 0.55
   _heavyDuration: 0.82
-  _heavyDamageOpen: 0.28
-  _heavyDamageClose: 0.52
+  _heavyDamageOpen: 0.235
+  _heavyDamageClose: 0.475
   _rangedDamage: 30
   _rangedPostureDamage: 14
   _rangedCooldown: 3.5
@@ -84,7 +84,7 @@ MonoBehaviour:
   _sprintStaminaPerSecond: 12
   _executionStaminaCost: 22
   _executionDuration: 0.72
-  _executionResolveTime: 0.32
+  _executionResolveTime: 0.21
   _sweepDamage: 44
   _sweepStaminaCost: 30
   _sweepCooldown: 4.5

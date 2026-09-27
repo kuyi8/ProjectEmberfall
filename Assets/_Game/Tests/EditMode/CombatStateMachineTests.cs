@@ -368,7 +368,7 @@ namespace Emberfall.Tests.EditMode
             Assert.That(machine.ReceiveDamage(
                 new DamageRequest(7, 1, 999f, 0f, AttackTag.Heavy)).Invulnerable, Is.True);
 
-            machine.Tick(0.31f);
+            machine.Tick(CombatTuning.CreateDefault().ExecutionResolveTime - 0.01f);
             Assert.That(machine.ExecutionResolveSequence, Is.Zero);
             machine.Tick(0.02f);
             Assert.That(machine.ExecutionResolveSequence, Is.EqualTo(1));

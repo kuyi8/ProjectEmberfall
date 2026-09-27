@@ -14,6 +14,8 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _lightAttack3;
         [SerializeField] private AnimationClip _heavyCharge;
         [SerializeField] private AnimationClip _heavyAttack;
+        [SerializeField] private AnimationClip _offlineHeavyAttack;
+        [SerializeField] private AnimationClip _offlineExecution;
         [SerializeField] private AnimationClip _sweep;
         [SerializeField] private AnimationClip _rangedAttack;
         [SerializeField] private AnimationClip _dodge;
@@ -33,6 +35,21 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _priestProjectileRelease;
 
         public RuntimeAnimatorController Controller => _controller;
+
+        // Existing GetClip/state names remain the shared enemy/network contract.
+        public AnimationClip GetOfflineClip(CombatState state) => state switch
+        {
+            CombatState.HeavyAttack when _offlineHeavyAttack != null => _offlineHeavyAttack,
+            CombatState.Execution when _offlineExecution != null => _offlineExecution,
+            _ => GetClip(state)
+        };
+
+        public string GetOfflineStateName(CombatState state) => state switch
+        {
+            CombatState.HeavyAttack when _offlineHeavyAttack != null => "PlayerHeavyAttack",
+            CombatState.Execution when _offlineExecution != null => "PlayerExecution",
+            _ => state.ToString()
+        };
 
         public AnimationClip GetClip(CombatState state)
         {
@@ -102,6 +119,12 @@ namespace Emberfall.Gameplay.Animation
         }
 
 #if UNITY_EDITOR
+        public void ConfigureOfflineStrikes(AnimationClip heavy, AnimationClip execution)
+        {
+            _offlineHeavyAttack = heavy;
+            _offlineExecution = execution;
+        }
+
         public void ConfigureSweep(AnimationClip clip) => _sweep = clip;
 
         public void ConfigurePriestProjectile(AnimationClip windup, AnimationClip release)

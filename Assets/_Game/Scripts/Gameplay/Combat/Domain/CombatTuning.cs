@@ -248,12 +248,12 @@ namespace Emberfall.Gameplay.Combat.Domain
             new[] { 0.28f, 0.30f, 0.34f },
             new[] { 0.50f, 0.54f, 0.62f },
             new[] { 0.36f, 0.39f, 0.46f },
-            55f, 28f, 0.55f, 0.82f, 0.28f, 0.52f,
+            55f, 28f, 0.55f, 0.82f, 0.235f, 0.475f,
             30f, 14f, 3.5f, 0.56f, 0.22f, 19f, 16f,
             24f, 0.52f, 0.43f, 4.5f, 0.18f, 20f, 12f, 18f, 0.42f,
             100f, 34f, 1.2f, 0.72f, 0.20f, 0.15f, 60f, 0.78f,
             2, 1.05f, 0.78f, 0.45f,
-            0.5f, 12f, 22f, 0.72f, 0.32f);
+            0.5f, 12f, 22f, 0.72f, 0.21f);
 
         private static void ValidateTriplet(float[] values, string name)
         {

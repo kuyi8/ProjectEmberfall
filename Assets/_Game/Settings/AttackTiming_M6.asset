@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d47c43622d52be46964ad6ea7120b53, type: 3}
   m_Name: AttackTiming_M6
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   contacts:
   - actionId: player.light1
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
@@ -22,8 +22,8 @@ MonoBehaviour:
     evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-033043-273/observation.json
     observation: f17 blade crosses front face, f16 approaches and f18 rises. First
       damage f19 follows by19.09ms. Contact precedes window by11.83ms, static conversion
-      by25.27ms; existing one-thirtieth tolerance passes, NOT strict inclusion.
-      Unchanged clip/controller/recovery; same close fixture only, not all distances.
+      by25.27ms; existing one-thirtieth tolerance passes, NOT strict inclusion. Unchanged
+      clip/controller/recovery; same close fixture only, not all distances.
     observedClipHash: 3c4b45dc5dea082ca650679d4ab3d872
     synchronizationObserved: 1
     naturalContactTime: 0.17316619
@@ -35,10 +35,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -62,22 +62,26 @@ MonoBehaviour:
     maxSampleGap: 0.0274559
     observedTimingHash: action-v2:bd6394f49797b01868890882569be6f9
   - actionId: player.heavy
-    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
-    synchronizationObserved: 0
-    naturalContactTime: -1
-    firstDamageTime: -1
-    maxSampleGap: -1
-    observedTimingHash:
+    clip: {fileID: 7400000, guid: 9f6f6a0d2d4823143813ccccf4c00b89, type: 2}
+    contactSeconds: 0.40428296
+    sourceFrame: 12
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-27
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-065610-485/observation.json
+    observation: f95 blade enters front helmet, f94 approaches and f96 crosses.
+      First damage f97 follows by16.42ms, or24.15ms from preceding frame. Contact
+      precedes window by10.44ms, static conversion by18.80ms; existing one-thirtieth
+      tolerance passes, NOT strict inclusion. Full source poses preserved in dedicated
+      offline clip; fixed close fixture only, not all distances or network presentation.
+    observedClipHash: 53e5c6e278b841a7badf07c6932471ed
+    synchronizationObserved: 1
+    naturalContactTime: 0.22456132
+    firstDamageTime: 0.24097782
+    maxSampleGap: 0.0244077
+    observedTimingHash: action-v2:ea19b4e84ece783305547b27645cbb0c
   - actionId: player.sweep
     clip: {fileID: 7400000, guid: 37c0b11c392d1dc4e915b3c37aca607b, type: 2}
-    contactSeconds: 0.17435483634471893
+    contactSeconds: 0.17435484
     sourceFrame: 5
     confirmed: 1
     observedBy: Codex visual review 2026-09-26
@@ -88,47 +92,51 @@ MonoBehaviour:
       one-thirtieth window tolerance, NOT strictly inside. Fixed close target only.
     observedClipHash: 5c6344c94fa7c5b041c56f659c4e3fa3
     synchronizationObserved: 1
-    naturalContactTime: 0.23524510860443115
-    firstDamageTime: 0.2617950141429901
-    maxSampleGap: 0.0228416994214058
+    naturalContactTime: 0.23524511
+    firstDamageTime: 0.261795
+    maxSampleGap: 0.0228417
     observedTimingHash: action-v2:31089796fc83b4bca4733697eb69e715
   - actionId: player.knife
     clip: {fileID: 7400000, guid: 8352a550d0f2e6d4692f791598ff3595, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
     observedTimingHash:
   - actionId: player.execution
-    clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
-    synchronizationObserved: 0
-    naturalContactTime: -1
-    firstDamageTime: -1
-    maxSampleGap: -1
-    observedTimingHash:
+    clip: {fileID: 7400000, guid: b4147bd9ceb8eea43bdf055deb550f6b, type: 2}
+    contactSeconds: 0.4041036
+    sourceFrame: 12
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-27
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260927-065610-485/observation.json
+    observation: f25 blade enters front face, f24 approaches and f26 crosses.
+      First damage f26 follows by11.43ms, or18.76ms from preceding frame. Contact
+      precedes settlement by10.76ms, static conversion by20.25ms; existing one-thirtieth
+      tolerance passes, NOT exact coincidence. Actual execution input and target claim;
+      full source poses preserved in dedicated offline clip. Fixed close fixture only.
+    observedClipHash: 4fda477110a6f304d27005f72c6cba3d
+    synchronizationObserved: 1
+    naturalContactTime: 0.19924378
+    firstDamageTime: 0.21067019
+    maxSampleGap: 0.0134905
+    observedTimingHash: action-v2:f16cdf32b7abea986fb75539c5547a91
   - actionId: fogwalker.quick
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -139,10 +147,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -153,10 +161,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -184,10 +192,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -198,10 +206,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -212,10 +220,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -226,10 +234,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -240,10 +248,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -254,10 +262,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -268,10 +276,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -282,10 +290,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -296,10 +304,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -310,10 +318,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -324,10 +332,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
@@ -338,10 +346,10 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy: 
-    evidencePath: 
-    observation: 
-    observedClipHash: 
+    observedBy:
+    evidencePath:
+    observation:
+    observedClipHash:
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1

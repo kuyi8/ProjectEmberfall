@@ -42,6 +42,7 @@ namespace Emberfall.Tests.PlayMode
                 {
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-sweep-only") && scenario != "sweep") continue;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-light-only") && scenario != "light-combo") continue;
+                    if (Environment.GetCommandLineArgs().Contains("-emberfall-heavy-execution-only") && scenario != "heavy" && scenario != "execution") continue;
                     bool referenceOnly = Environment.GetCommandLineArgs().Contains("-emberfall-reference-only");
                     yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
                     yield return null;
@@ -108,7 +109,13 @@ namespace Emberfall.Tests.PlayMode
                         recorder.Recording = true;
                         yield return null;
                         double started = Time.realtimeSinceStartupAsDouble;
-                        if (scenario == "execution") Assert.That(player.TryHandleExecutionInput(), Is.True);
+                        if (scenario == "execution")
+                        {
+                            // Reference has no authoritative target: play the same domain/presenter state,
+                            // without claiming/holding/damaging an enemy. Normal evidence uses real input.
+                            Assert.That(referenceOnly ? player.Model.Submit(CombatCommand.Execution) :
+                                player.TryHandleExecutionInput(), Is.True);
+                        }
                         else Assert.That(player.Model.Submit(scenario == "light-combo" ? CombatCommand.LightAttack :
                             scenario == "heavy" ? CombatCommand.HeavyPressed : scenario == "sweep" ? CombatCommand.Sweep :
                             CombatCommand.RangedAttack), Is.True);
@@ -246,7 +253,7 @@ namespace Emberfall.Tests.PlayMode
             var set = NaturalPlayerContactTests.Field<PlayerAnimationSet>(_player.GetComponent<PlayerAnimationPresenter>(), "_animationSet");
             report.clips = new[] { CombatState.LightAttack1, CombatState.LightAttack2, CombatState.LightAttack3,
                 CombatState.HeavyAttack, CombatState.Sweep, CombatState.RangedAttack, CombatState.Execution }.Select(s => {
-                var clip = set.GetClip(s); string path = UnityEditor.AssetDatabase.GetAssetPath(clip);
+                var clip = set.GetOfflineClip(s); string path = UnityEditor.AssetDatabase.GetAssetPath(clip);
                 return new ClipBinding { state = s.ToString(), path = path, length = clip.length, hash = UnityEditor.AssetDatabase.GetAssetDependencyHash(path).ToString() };
             }).ToArray();
 #endif

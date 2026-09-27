@@ -221,7 +221,9 @@ namespace Emberfall.Editor.Setup
             serialized.FindProperty("_sprintStaminaPerSecond").floatValue = 12f;
             serialized.FindProperty("_executionStaminaCost").floatValue = 22f;
             serialized.FindProperty("_executionDuration").floatValue = 0.72f;
-            serialized.FindProperty("_executionResolveTime").floatValue = 0.32f;
+            serialized.FindProperty("_executionResolveTime").floatValue = 0.21f;
+            serialized.FindProperty("_heavyDamageOpen").floatValue = 0.235f;
+            serialized.FindProperty("_heavyDamageClose").floatValue = 0.475f;
             serialized.FindProperty("_sweepDamage").floatValue = 44f;
             serialized.FindProperty("_sweepStaminaCost").floatValue = 30f;
             serialized.FindProperty("_sweepCooldown").floatValue = 4.5f;

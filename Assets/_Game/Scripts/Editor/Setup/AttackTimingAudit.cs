@@ -92,13 +92,13 @@ namespace Emberfall.Editor.Setup
                     row.note = "Offline strike ends at LightRecoveryStart; separate recovery clip follows. Network currently differs.";
                 }
             }
-            Add("player.heavy", set.GetClip(CombatState.HeavyAttack), tuning.HeavyDuration,
+            Add("player.heavy", set.GetOfflineClip(CombatState.HeavyAttack), tuning.HeavyDuration,
                 tuning.HeavyDamageOpen, tuning.HeavyDamageClose, TuningPath).minSpeed = .35f;
             Add("player.sweep", set.GetClip(CombatState.Sweep), tuning.SweepDuration,
                 tuning.SweepDamageOpen, tuning.SweepDamageClose, TuningPath).minSpeed = .35f;
             Add("player.knife", set.GetClip(CombatState.RangedAttack), tuning.RangedDuration,
                 tuning.RangedReleaseTime, tuning.RangedReleaseTime, TuningPath).minSpeed = .35f;
-            Add("player.execution", set.GetClip(CombatState.Execution), tuning.ExecutionDuration,
+            Add("player.execution", set.GetOfflineClip(CombatState.Execution), tuning.ExecutionDuration,
                 tuning.ExecutionResolveTime, tuning.ExecutionResolveTime, TuningPath).minSpeed = .35f;
             Add("fogwalker.quick", set.GetClip(CombatState.LightAttack1), melee.WindupDuration + melee.AttackDuration,
                 melee.WindupDuration + melee.DamageWindowStart, melee.WindupDuration + melee.DamageWindowEnd,

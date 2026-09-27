@@ -63,7 +63,7 @@ namespace Emberfall.Gameplay.Animation
             _presentedState = state;
             _isPlayingRecovery = false;
             AnimatorSpeedCoordinator.SetBase(_animator, GetPlaybackSpeed(state), state == CombatState.Dead);
-            _animator.CrossFadeInFixedTime(state.ToString(), CrossFadeSeconds, 0, 0f);
+            _animator.CrossFadeInFixedTime(_animationSet.GetOfflineStateName(state), CrossFadeSeconds, 0, 0f);
         }
 
         private void LateUpdate()
@@ -98,7 +98,7 @@ namespace Emberfall.Gameplay.Animation
 
         private float GetPlaybackSpeed(CombatState state)
         {
-            AnimationClip clip = _animationSet.GetClip(state);
+            AnimationClip clip = _animationSet.GetOfflineClip(state);
             float stateDuration = state == CombatState.LightAttack1 || state == CombatState.LightAttack2
                 ? _combat.Model.LightRecoveryStart
                 : _combat.Model.StateDuration;
