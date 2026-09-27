@@ -38,8 +38,21 @@ namespace Emberfall.Tests.PlayMode
             {
                 QualitySettings.vSyncCount = 0;
                 UnityEngine.Application.targetFrameRate = 120;
-                foreach (string scenario in new[] { "light-combo", "heavy", "sweep", "knife", "execution" })
+                bool lightSide = Environment.GetCommandLineArgs().Contains("-emberfall-light-side-only");
+                bool lightEnvelope = lightSide || Environment.GetCommandLineArgs().Contains("-emberfall-light-envelope");
+                var scenarios = lightSide ? new[] { "light-side-initial", "light-side" } : lightEnvelope
+                    ? new[] { "light-near", "light-middle", "light-far" }
+                    : new[] { "light-combo", "heavy", "sweep", "knife", "execution" };
+                foreach (string captureName in scenarios)
                 {
+                    string scenario = lightEnvelope ? "light-combo" : captureName;
+                    float fixtureDistance = lightSide ? 1.25f : lightEnvelope
+                        ? (captureName == "light-near" ? 1f : captureName == "light-middle" ? 1.25f : 1.65f)
+                        : (scenario == "knife" ? 4f : 1.25f);
+                    // Same radial distance as middle; target is 30 degrees to actor's left.
+                    Vector3 fixtureOffset = lightSide
+                        ? Quaternion.Euler(0, -30f, 0) * Vector3.back * fixtureDistance
+                        : Vector3.back * fixtureDistance;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-sweep-only") && scenario != "sweep") continue;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-light-only") && scenario != "light-combo") continue;
                     if (Environment.GetCommandLineArgs().Contains("-emberfall-heavy-execution-only") && scenario != "heavy" && scenario != "execution") continue;
@@ -60,7 +73,7 @@ namespace Emberfall.Tests.PlayMode
                     controller.enabled = false;
                     // Fixture setup only. From warmup onward the real Motor alone owns player displacement.
                     player.transform.SetPositionAndRotation(enemy.transform.position + Vector3.up * 1.05f +
-                        Vector3.back * (scenario == "knife" ? 4f : 1.25f), Quaternion.identity);
+                        fixtureOffset, Quaternion.identity);
                     enemy.transform.rotation = Quaternion.Euler(0, 180, 0);
                     motor.ResetAfterTeleport();
                     controller.enabled = true;
@@ -133,12 +146,12 @@ namespace Emberfall.Tests.PlayMode
                             yield return null;
                         }
                         recorder.Recording = false;
-                        var report = recorder.Save(root, scenario, referenceOnly);
+                        var report = recorder.Save(root, captureName, referenceOnly, fixtureDistance, fixtureOffset);
                         if (referenceOnly) Assert.That(report.frames.Select(f => f.targetHealth).Distinct().Count(), Is.EqualTo(1));
                         Assert.That(report.frames.All(f => f.timeScale == 1 && f.captureDeltaTime == 0), Is.True);
                         // A production hit stop is allowed and recorded, unlike artificial time stepping.
                         Assert.That(report.frames.Any(f => scenario == "execution" ? f.executionSequence > 0 : f.sequence > 0), Is.True);
-                        Debug.Log($"[NATURAL_PLAYER] scenario={scenario} frames={report.frames.Length} maxActionGap={report.maxActionGap:R} output={root}");
+                        Debug.Log($"[NATURAL_PLAYER] scenario={captureName} distance={fixtureDistance:R} frames={report.frames.Length} maxActionGap={report.maxActionGap:R} output={root}");
                     }
                     finally
                     {
@@ -175,7 +188,8 @@ namespace Emberfall.Tests.PlayMode
             public string scenario, targetName;
             public string tuningHash;
             public bool referenceOnly;
-            public float maxActionGap;
+            public float maxActionGap, fixtureDistance;
+            public Vector3 fixturePlayerOffset;
             public Frame[] frames;
             public ClipBinding[] clips;
         }
@@ -240,11 +254,12 @@ namespace Emberfall.Tests.PlayMode
             finally { RenderTexture.active = old; }
             _images.Add(texture);
         }
-        public Report Save(string root, string scenario, bool referenceOnly)
+        public Report Save(string root, string scenario, bool referenceOnly, float fixtureDistance, Vector3 fixtureOffset)
         {
             string output = Path.Combine(root, scenario);
             Directory.CreateDirectory(output);
-            var report = new Report { scenario = scenario, targetName = _enemy.name, frames = _frames.ToArray(), referenceOnly = referenceOnly };
+            var report = new Report { scenario = scenario, targetName = _enemy.name, frames = _frames.ToArray(),
+                referenceOnly = referenceOnly, fixtureDistance = fixtureDistance, fixturePlayerOffset = fixtureOffset };
             for (int i = 1; i < _frames.Count; i++)
                 if (_frames[i].state != "Locomotion") report.maxActionGap = Mathf.Max(report.maxActionGap,
                     _frames[i].deltaTime, (float)(_frames[i].realtime - _frames[i - 1].realtime));
