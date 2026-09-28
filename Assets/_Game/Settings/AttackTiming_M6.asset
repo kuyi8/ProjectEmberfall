@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d47c43622d52be46964ad6ea7120b53, type: 3}
   m_Name: AttackTiming_M6
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   contacts:
   - actionId: player.light1
     clip: {fileID: 7400000, guid: 7172d2e8e294646428bb560648066b59, type: 2}
@@ -35,15 +35,15 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: player.light3
     clip: {fileID: 7400000, guid: 8658390e444c824478b2b615e0e67832, type: 2}
     contactSeconds: 0.63489604
@@ -136,43 +136,43 @@ MonoBehaviour:
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: fogwalker.combo1
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: fogwalker.combo2
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: priest.projectile
     clip: {fileID: 7400000, guid: 96492a11678ee6048b66473726c8eb63, type: 2}
     contactSeconds: 0
@@ -189,172 +189,172 @@ MonoBehaviour:
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: priest.rune
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: guard.sword
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: guard.bash
     clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: scorched.sword
     clip: {fileID: 7400000, guid: bddbf5f3eaf416b4cb6492d3169babf8, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: scorched.bash
     clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: scorched.burst
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: warden.combo1
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: warden.combo2
     clip: {fileID: 7400000, guid: 2b45c04378888004f96e7572cb8d3c43, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: warden.bash
     clip: {fileID: 7400000, guid: 4e63c01b3fb3d6f4c858d68070bb01bd, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: warden.rune
     clip: {fileID: 7400000, guid: 148e0346e86e08548811e784ad7fa967, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: warden.blast
     clip: {fileID: 7400000, guid: 75f0f31ba49cf134a9c334df5add2b2f, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
   - actionId: warden.charge
     clip: {fileID: 7400000, guid: 69dcb8741ded8ce44871f5b3924144f6, type: 2}
     contactSeconds: -1
     sourceFrame: -1
     confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    observedBy: 
+    evidencePath: 
+    observation: 
+    observedClipHash: 
     synchronizationObserved: 0
     naturalContactTime: -1
     firstDamageTime: -1
     maxSampleGap: -1
-    observedTimingHash:
+    observedTimingHash: 
