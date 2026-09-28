@@ -8,12 +8,43 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.Playables;
 
 namespace Emberfall.Tests.EditMode
 {
     public sealed class PlayerKnifeAnimationTests
     {
         private const string SetPath = "Assets/_Game/Settings/PlayerAnimationSet_M1.asset";
+        [Test]
+        public void RangerGripIsExactlyOneSameSourceWholeHandFrame()
+        {
+            var pose = AssetDatabase.LoadAssetAtPath<KnifeGripPose>(KnifeGripPoseSetup.Path);
+            Assert.That(pose, Is.Not.Null);
+            Assert.That(pose.avatarPath, Is.EqualTo(KnifeGripPoseSetup.AvatarPath));
+            Assert.That(pose.sourcePath, Is.EqualTo(PlayerKnifeAnimationSetup.SourcePath));
+            Assert.That(pose.sourceTime, Is.EqualTo(1.3f));
+            Assert.That(pose.sourceHash, Is.EqualTo(AssetDatabase.GetAssetDependencyHash(pose.sourcePath).ToString()));
+            Assert.That(pose.joints.Length, Is.EqualTo(16));
+            Assert.That(pose.joints[0].bone, Is.EqualTo(HumanBodyBones.RightHand));
+            var clone = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(pose.avatarPath));
+            var graph = PlayableGraph.Create("Verify actual Ranger whole hand");
+            try
+            {
+                var animator = clone.GetComponentInChildren<Animator>();
+                animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
+                var playable = UnityEngine.Animations.AnimationClipPlayable.Create(graph,
+                    AssetDatabase.LoadAssetAtPath<AnimationClip>(pose.sourcePath));
+                playable.SetApplyFootIK(false); playable.SetApplyPlayableIK(false);
+                UnityEngine.Animations.AnimationPlayableOutput.Create(graph,"Pose",animator).SetSourcePlayable(playable);
+                graph.Play(); playable.SetTime(pose.sourceTime); graph.Evaluate(0);
+                foreach (var joint in pose.joints)
+                    Assert.That(Quaternion.Angle(joint.rotation,animator.GetBoneTransform(joint.bone).localRotation),
+                        Is.LessThan(.01f), joint.bone.ToString());
+            }
+            finally { graph.Destroy(); Object.DestroyImmediate(clone); }
+        }
+
         [Test]
         public void OfflineThrowHasIsolatedMappingAndPreservedSourceCurves()
         {

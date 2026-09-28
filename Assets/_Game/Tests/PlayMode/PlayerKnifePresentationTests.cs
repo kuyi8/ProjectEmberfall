@@ -27,17 +27,33 @@ namespace Emberfall.Tests.PlayMode
                 if (item is MeleeEnemyActor || item is RangedEnemyActor || item is ShieldEnemyActor) item.enabled = false;
             _actor = Object.FindObjectOfType<PlayerCombatActor>();
             _visual = _actor.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
+#if UNITY_EDITOR
+            var pose = UnityEditor.AssetDatabase.LoadAssetAtPath<KnifeGripPose>(
+                "Assets/_Game/Settings/KnifeGripPose_Ranger.asset");
+            Assert.That(pose, Is.Not.Null);
+            _visual.ConfigureGrip(pose);
+#endif
             Assert.That(_visual != null && _visual.IsConfigured, Is.True);
         }
 
         private void ObserveWithoutAuthorityWrites()
         {
+            var launcher = _actor.GetComponent<PlayerThrowingKnifeLauncher>();
+            var origin = NaturalPlayerContactTests.Field<Transform>(launcher, "_launchOrigin");
+            var animator = _actor.GetComponentInChildren<Animator>();
+            var forearm = animator.GetBoneTransform(HumanBodyBones.RightLowerArm);
+            Vector3 actorPosition = _actor.transform.position, launchPosition = origin.position;
+            Quaternion actorRotation = _actor.transform.rotation, forearmRotation = forearm.rotation;
             var projectiles = Object.FindObjectsOfType<PlayerThrowingKnifeProjectile>();
             var positions = new Vector3[projectiles.Length];
             var rotations = new Quaternion[projectiles.Length];
             for (int i = 0; i < projectiles.Length; i++)
             { positions[i] = projectiles[i].transform.position; rotations[i] = projectiles[i].transform.rotation; }
             _present.Invoke(_visual, null); // Lifecycle assertion only, NOT natural timing evidence.
+            Assert.That(_actor.transform.position, Is.EqualTo(actorPosition));
+            Assert.That(_actor.transform.rotation, Is.EqualTo(actorRotation));
+            Assert.That(origin.position, Is.EqualTo(launchPosition));
+            Assert.That(forearm.rotation, Is.EqualTo(forearmRotation));
             for (int i = 0; i < projectiles.Length; i++)
             {
                 Assert.That(projectiles[i].transform.position, Is.EqualTo(positions[i]));
@@ -116,11 +132,15 @@ namespace Emberfall.Tests.PlayMode
             yield return null;
             ObserveWithoutAuthorityWrites();
             Assert.That(_visual.HeldVisible, Is.True);
+            var joints = NaturalPlayerContactTests.Field<Transform[]>(_visual, "_handJoints");
+            var animated = (Quaternion[])NaturalPlayerContactTests.Field<Quaternion[]>(_visual, "_animatedRotations").Clone();
             int released = _actor.Model.RangedReleaseSequence;
             _actor.enabled = false;
             ObserveWithoutAuthorityWrites();
             Assert.That(_visual.HeldVisible || _visual.FlightVisible, Is.False);
             Assert.That(_visual.SwordVisible, Is.True);
+            for (int i = 0; i < joints.Length; i++)
+                Assert.That(joints[i].localRotation, Is.EqualTo(animated[i]), "Interrupted grip must restore Animator pose.");
             _actor.enabled = true;
             _actor.Model.ForceDeath();
             ObserveWithoutAuthorityWrites();

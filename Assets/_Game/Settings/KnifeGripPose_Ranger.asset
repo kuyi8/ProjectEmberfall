@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a51345f5925434b9442915210e9b8e, type: 3}
+  m_Name: KnifeGripPose_Ranger
+  m_EditorClassIdentifier:
+  joints:
+  - bone: 18
+    rotation: {x: 0.10527384, y: 0.002043602, z: -0.046309568, w: 0.99336237}
+  - bone: 39
+    rotation: {x: 0.31429958, y: 0.941293, z: 0.11455004, w: 0.045403384}
+  - bone: 40
+    rotation: {x: -0.2030876, y: 0.030112457, z: 0.070046954, w: -0.9761876}
+  - bone: 41
+    rotation: {x: -0.643954, y: 0.02567714, z: 0.2068539, w: -0.73612195}
+  - bone: 42
+    rotation: {x: 0.44791904, y: 0.57301456, z: -0.43954498, w: 0.5270893}
+  - bone: 43
+    rotation: {x: -0.6216979, y: 0.0034249565, z: -0.000014103945, w: -0.7832497}
+  - bone: 44
+    rotation: {x: -0.6217001, y: 0.0029781456, z: -0.00028631833, w: -0.78324974}
+  - bone: 45
+    rotation: {x: 0.44181776, y: 0.5565286, z: -0.44598454, w: 0.54421586}
+  - bone: 46
+    rotation: {x: -0.6214762, y: 0.0004815906, z: -0.0015482454, w: -0.7834315}
+  - bone: 47
+    rotation: {x: -0.6214811, y: 0.00087487686, z: 0.0011723338, w: -0.7834278}
+  - bone: 48
+    rotation: {x: 0.42647013, y: 0.5300763, z: -0.46056157, w: 0.5701101}
+  - bone: 49
+    rotation: {x: -0.6213458, y: 0.008994042, z: -0.005024954, w: -0.7834688}
+  - bone: 50
+    rotation: {x: -0.6213625, y: 0.008380099, z: -0.00049086654, w: -0.78347826}
+  - bone: 51
+    rotation: {x: 0.47292238, y: 0.47460943, z: -0.46749076, w: 0.57666516}
+  - bone: 52
+    rotation: {x: -0.62114775, y: -0.0014465001, z: 0.0028205283, w: -0.7836871}
+  - bone: 53
+    rotation: {x: -0.62144154, y: -0.0021304039, z: 0.0012284293, w: -0.7834567}
+  gripLocalPosition: {x: 0.034461234, y: 0.09375198, z: -0.0056218035}
+  gripLocalRotation: {x: -0.09365438, y: 0.08920806, z: 0.6693502, w: 0.73160213}
+  sourcePath: Assets/_Game/Art/Animations/Player/Derived/A_Player_RangedAttack_InPlace.anim
+  sourceHash: b12c4311b4ae4391b18e6b3c47902f49
+  avatarPath: Assets/_Game/Prefabs/Characters/M3Art/P_Player_Ranger.prefab
+  sourceTime: 1.3

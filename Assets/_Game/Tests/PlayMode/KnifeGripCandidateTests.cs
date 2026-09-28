@@ -19,6 +19,59 @@ namespace Emberfall.Tests.PlayMode
     public sealed class KnifeGripCandidateTests
     {
         [UnityTest]
+        public IEnumerator RenderResolvedWholeHandGrip()
+        {
+#if UNITY_EDITOR
+            if (!Environment.GetCommandLineArgs().Contains("-emberfall-knife-grip-resolved") ||
+                SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) Assert.Ignore("Explicit close-up only.");
+            yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
+            yield return null; yield return null;
+            foreach (var item in Object.FindObjectsOfType<MonoBehaviour>())
+                if (item is MeleeEnemyActor || item is RangedEnemyActor || item is ShieldEnemyActor) item.enabled = false;
+            var actor = Object.FindObjectOfType<PlayerCombatActor>();
+            var visual = actor.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
+            var animator = actor.GetComponentInChildren<Animator>();
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            foreach (var r in actor.GetComponentsInChildren<SkinnedMeshRenderer>()) r.updateWhenOffscreen = true;
+            var pose = UnityEditor.AssetDatabase.LoadAssetAtPath<KnifeGripPose>("Assets/_Game/Settings/KnifeGripPose_Ranger.asset");
+            Assert.That(pose, Is.Not.Null);
+            var cameraObject = new GameObject("Knife resolved grip close-up");
+            var camera = cameraObject.AddComponent<Camera>();
+            camera.CopyFrom(Camera.main); camera.enabled=false; camera.fieldOfView=30; camera.nearClipPlane=.01f;
+            var rt = new RenderTexture(960,960,24); rt.Create();
+            string output = Path.GetFullPath("Builds/ArtReview/0.9.3-knife-grip-resolved-"+DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
+            Directory.CreateDirectory(output);
+            try
+            {
+                Assert.That(actor.Model.Submit(CombatCommand.RangedAttack), Is.True);
+                while (actor.Model.StateElapsed < .13f) yield return null;
+                var hand = animator.GetBoneTransform(HumanBodyBones.RightHand);
+                Vector3 focus = hand.position;
+                camera.transform.position = focus+actor.transform.right*.85f-actor.transform.forward*.65f+Vector3.up*.2f;
+                camera.transform.LookAt(focus);
+                void Capture(string file)
+                {
+                    RenderPipeline.SubmitRenderRequest(camera,new RenderPipeline.StandardRequest {destination=rt});
+                    var old=RenderTexture.active; var texture=new Texture2D(960,960,TextureFormat.RGB24,false);
+                    try { RenderTexture.active=rt; texture.ReadPixels(new Rect(0,0,960,960),0,0); texture.Apply();
+                        File.WriteAllBytes(Path.Combine(output,file),texture.EncodeToPNG()); }
+                    finally { RenderTexture.active=old; Object.Destroy(texture); }
+                }
+                Capture("01-original.png");
+                visual.ConfigureGrip(pose);
+                yield return null;
+                Capture("02-source-whole-hand.png");
+                File.WriteAllText(Path.Combine(output,"scope.txt"),
+                    "Adjacent natural frames, static comparison only, not release timing. Real Ranger, same-source whole hand16 joints at1.3s. No individual joint tuning. Source="+pose.sourceHash);
+                Debug.Log("[KNIFE_GRIP_RESOLVED] output="+output);
+            }
+            finally { rt.Release(); Object.Destroy(rt); Object.Destroy(cameraObject); }
+#else
+            Assert.Ignore("Editor only."); yield break;
+#endif
+        }
+
+        [UnityTest]
         public IEnumerator RenderSingleSourceFingerFrameCandidate()
         {
 #if UNITY_EDITOR

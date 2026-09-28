@@ -33,6 +33,47 @@ namespace Emberfall.Gameplay.Combat.Unity
         private bool _swordTrailHidden, _swordLeased, _pendingRelease, _released;
         private int _blockedSequence = -1;
         private Slot[] _slots;
+        private KnifeGripPose _pose;
+        private Transform[] _handJoints;
+        private Quaternion[] _animatedRotations;
+        private bool _poseApplied;
+        private float _releaseTime;
+
+        public void ConfigureGrip(KnifeGripPose pose)
+        {
+            RestoreGrip();
+            _pose = pose;
+            if (pose == null) return;
+            var animator = _actor.GetComponentInChildren<Animator>();
+            _handJoints = new Transform[pose.joints.Length];
+            _animatedRotations = new Quaternion[pose.joints.Length];
+            for (int i = 0; i < pose.joints.Length; i++)
+                _handJoints[i] = animator.GetBoneTransform(pose.joints[i].bone);
+        }
+
+        // Remove last frame's override before Animator evaluates; never feed it back as base pose.
+        private void Update() => RestoreGrip();
+        private void RestoreGrip()
+        {
+            if (!_poseApplied) return;
+            for (int i = 0; i < _handJoints.Length; i++)
+                if (_handJoints[i] != null) _handJoints[i].localRotation = _animatedRotations[i];
+            _poseApplied = false;
+        }
+
+        private void ApplyGrip(bool throwing)
+        {
+            RestoreGrip();
+            if (!throwing || _pose == null) return;
+            float weight = _released ? 1f - Mathf.Clamp01((Time.time - _releaseTime) / .08f)
+                : Mathf.Clamp01(_actor.Model.StateElapsed / .06f);
+            for (int i = 0; i < _handJoints.Length; i++)
+            {
+                _animatedRotations[i] = _handJoints[i].localRotation;
+                _handJoints[i].localRotation = Quaternion.Slerp(_animatedRotations[i], _pose.joints[i].rotation, weight);
+            }
+            _poseApplied = true;
+        }
 
         public bool IsConfigured => _slots != null;
         public bool HeldVisible => _held != null && _held.gameObject.activeSelf;
@@ -41,7 +82,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         public int VisualCapacity => _slots == null ? 0 : _slots.Length;
         public float BridgeAge { get; private set; } = -1;
         public Vector3 VisualPosition { get; private set; }
-        public Vector3 GripPosition => _grip != null ? _grip.position : Vector3.zero;
+        public Vector3 GripPosition => _pose != null ? _handJoints[0].TransformPoint(_pose.gripLocalPosition)
+            : _grip != null ? _grip.position : Vector3.zero;
         public bool SwordVisible
         {
             get { if (_sword != null) foreach (var r in _sword) if (r != null && r.enabled && !r.forceRenderingOff) return true; return false; }
@@ -118,6 +160,7 @@ namespace Emberfall.Gameplay.Combat.Unity
                 _actor.Model.AttackSequence == _blockedSequence) return;
             _pendingRelease = true;
             _released = true;
+            _releaseTime = Time.time;
         }
 
         private void LateUpdate()
@@ -132,8 +175,15 @@ namespace Emberfall.Gameplay.Combat.Unity
             bool throwing = _actor.Model.State == CombatState.RangedAttack &&
                 _actor.Model.AttackSequence != _blockedSequence;
             SetSwordHidden(throwing);
+            ApplyGrip(throwing);
             Vector3 position = _grip.position + _grip.up * GripToCenter;
             Quaternion rotation = Quaternion.LookRotation(_grip.up, _grip.forward);
+            if (_pose != null)
+            {
+                Transform hand = _handJoints[0];
+                rotation = hand.rotation * _pose.gripLocalRotation;
+                position = hand.TransformPoint(_pose.gripLocalPosition) + rotation * Vector3.forward * GripToCenter;
+            }
             _held.SetPositionAndRotation(position, rotation);
             _held.gameObject.SetActive(throwing && !_released);
             if (!throwing) _released = false;
@@ -199,6 +249,7 @@ namespace Emberfall.Gameplay.Combat.Unity
 
         private void ReleaseAll()
         {
+            RestoreGrip();
             SetSwordHidden(false);
             if (_held != null) _held.gameObject.SetActive(false);
             if (_slots != null) foreach (var s in _slots) if (s != null) Release(s);

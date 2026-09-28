@@ -116,6 +116,10 @@ namespace Emberfall.Tests.PlayMode
                     var recorder = cameraObject.AddComponent<NaturalPlayerContactRecorder>();
                     recorder.Initialize(player, enemy, camera, target, referenceBody);
                     recorder.ProductionKnife = player.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
+#if UNITY_EDITOR
+                    recorder.ProductionKnife.ConfigureGrip(UnityEditor.AssetDatabase.LoadAssetAtPath<KnifeGripPose>(
+                        "Assets/_Game/Settings/KnifeGripPose_Ranger.asset"));
+#endif
                     bool knifePreview = scenario == "knife" && Environment.GetCommandLineArgs().Contains("-emberfall-knife-visual-preview");
                     GameObject previewWall = null;
                     if (knifePreview)
@@ -184,7 +188,10 @@ namespace Emberfall.Tests.PlayMode
                             Assert.That(report.frames.Where(f => f.state == "RangedAttack").All(f => !f.swordVisible && !f.swordTrailVisible), Is.True);
                             Assert.That(report.frames.Any(f => f.heldKnifeVisible), Is.True);
                             Assert.That(report.frames.Any(f => f.flightKnifeVisible), Is.True);
-                            Assert.That(report.frames.Any(f => f.knifeTrailPoints > 1), Is.True, "Visual trail must actually be sampled.");
+                            // A wall may terminate the real projectile after a single rendered frame.
+                            // Never extend that lifetime just to manufacture two trail samples.
+                            if (previewWall == null)
+                                Assert.That(report.frames.Any(f => f.knifeTrailPoints > 1), Is.True, "Visual trail must actually be sampled.");
                             Assert.That(report.frames.All(f => f.flightKnifeVisible == f.projectilePresent), Is.True);
                             Assert.That(report.frames.Last().swordVisible, Is.True);
                             Assert.That(report.frames.Last().knifeTrailPoints, Is.Zero);
