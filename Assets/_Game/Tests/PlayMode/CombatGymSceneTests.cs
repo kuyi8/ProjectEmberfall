@@ -115,12 +115,22 @@ namespace Emberfall.Tests.PlayMode
 
             PlayerCombatActor player = Object.FindObjectOfType<PlayerCombatActor>();
             PlayerThrowingKnifeLauncher launcher = player.GetComponent<PlayerThrowingKnifeLauncher>();
+            // A fixed number of load frames is not a grounding contract. Observe the real
+            // motor before aiming, without teleporting it or changing projectile authority.
+            CharacterController controller = player.GetComponent<CharacterController>();
+            float groundedDeadline = Time.realtimeSinceStartup + 2f;
+            while (!controller.isGrounded && Time.realtimeSinceStartup < groundedDeadline)
+                yield return null;
+            Assert.That(controller.isGrounded, Is.True, "Knife fixture must settle before aiming.");
             TrainingDummy dummy = Object.FindObjectsOfType<TrainingDummy>()
                 .OrderBy(item => Vector3.Distance(item.transform.position, player.transform.position))
                 .First();
             Vector3 direction = Vector3.ProjectOnPlane(dummy.AimPoint.position - player.transform.position, Vector3.up);
             player.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
             float healthBefore = dummy.HealthNormalized;
+            Debug.Log($"[KnifeFixture] expected={dummy.name}:{dummy.CombatantId} player={player.transform.position:F3} target={dummy.transform.position:F3}");
+            foreach (CombatTarget candidate in Object.FindObjectsOfType<CombatTarget>())
+                Debug.Log($"[KnifeFixture] candidate={candidate.name}:{candidate.CombatantId} position={candidate.transform.position:F3}");
 
             Assert.That(player.Model.Submit(CombatCommand.RangedAttack), Is.True);
             yield return new WaitForSeconds(0.24f);

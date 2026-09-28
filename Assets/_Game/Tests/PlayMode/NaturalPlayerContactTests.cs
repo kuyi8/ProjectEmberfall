@@ -115,21 +115,24 @@ namespace Emberfall.Tests.PlayMode
                     target.Create();
                     var recorder = cameraObject.AddComponent<NaturalPlayerContactRecorder>();
                     recorder.Initialize(player, enemy, camera, target, referenceBody);
+                    recorder.ProductionKnife = player.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
                     bool knifePreview = scenario == "knife" && Environment.GetCommandLineArgs().Contains("-emberfall-knife-visual-preview");
                     GameObject previewWall = null;
                     if (knifePreview)
                     {
+                        recorder.ProductionKnife.enabled = false;
+                        recorder.ProductionKnife = null;
                         var preview = cameraObject.AddComponent<KnifePresentationPreview>();
                         preview.Initialize(player);
                         recorder.KnifePreview = preview;
-                        if (Environment.GetCommandLineArgs().Contains("-emberfall-knife-wall-preview"))
-                        {
-                            previewWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                            previewWall.name = "Preview obstruction (fixture only)";
-                            previewWall.transform.position = new Vector3(player.transform.position.x, 1.5f, player.transform.position.z + 1f);
-                            previewWall.transform.localScale = new Vector3(2, 3, .15f);
-                            Physics.SyncTransforms();
-                        }
+                    }
+                    if (scenario == "knife" && Environment.GetCommandLineArgs().Contains("-emberfall-knife-wall-preview"))
+                    {
+                        previewWall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        previewWall.name = "Preview obstruction (fixture only)";
+                        previewWall.transform.position = new Vector3(player.transform.position.x, 1.5f, player.transform.position.z + 1f);
+                        previewWall.transform.localScale = new Vector3(2, 3, .15f);
+                        Physics.SyncTransforms();
                     }
                     try
                     {
@@ -163,7 +166,8 @@ namespace Emberfall.Tests.PlayMode
                             yield return null;
                         }
                         recorder.Recording = false;
-                        var report = recorder.Save(root, knifePreview ? captureName + (previewWall != null ? "-visual-wall-preview" : "-visual-preview") : captureName,
+                        string knifeLabel = knifePreview ? "-visual" : "-presentation";
+                        var report = recorder.Save(root, scenario == "knife" ? captureName + knifeLabel + (previewWall != null ? "-wall" : "") + (knifePreview ? "-preview" : "") : captureName,
                             referenceOnly, fixtureDistance, fixtureOffset);
                         if (knifePreview)
                         {
@@ -173,6 +177,17 @@ namespace Emberfall.Tests.PlayMode
                             Assert.That(report.frames.All(f => f.flightKnifeVisible == f.projectilePresent), Is.True, "No orphan visuals after authority finishes.");
                             Assert.That(report.frames.All(f => f.authorityMutation == 0), Is.True);
                             Assert.That(report.frames.Last().swordVisible, Is.True, "Restore sword on action exit.");
+                            if (previewWall != null) Assert.That(report.frames.Last().targetHealth, Is.EqualTo(report.frames[0].targetHealth));
+                        }
+                        else if (scenario == "knife")
+                        {
+                            Assert.That(report.frames.Where(f => f.state == "RangedAttack").All(f => !f.swordVisible && !f.swordTrailVisible), Is.True);
+                            Assert.That(report.frames.Any(f => f.heldKnifeVisible), Is.True);
+                            Assert.That(report.frames.Any(f => f.flightKnifeVisible), Is.True);
+                            Assert.That(report.frames.Any(f => f.knifeTrailPoints > 1), Is.True, "Visual trail must actually be sampled.");
+                            Assert.That(report.frames.All(f => f.flightKnifeVisible == f.projectilePresent), Is.True);
+                            Assert.That(report.frames.Last().swordVisible, Is.True);
+                            Assert.That(report.frames.Last().knifeTrailPoints, Is.Zero);
                             if (previewWall != null) Assert.That(report.frames.Last().targetHealth, Is.EqualTo(report.frames[0].targetHealth));
                         }
                         if (referenceOnly) Assert.That(report.frames.Select(f => f.targetHealth).Distinct().Count(), Is.EqualTo(1));
@@ -209,6 +224,8 @@ namespace Emberfall.Tests.PlayMode
             public bool damageWindow, transition, projectilePresent;
             public Vector3 playerPosition, playerForward, targetPosition, bladeRoot, bladeTip, projectilePosition, hand;
             public bool knifePreview, heldKnifeVisible, flightKnifeVisible, swordVisible, swordTrailVisible;
+            public bool productionKnife;
+            public int knifeTrailPoints;
             public float bridgeAge, authorityMutation;
             public Vector3 knifeVisualPosition, knifeGripPosition;
         }
@@ -221,6 +238,7 @@ namespace Emberfall.Tests.PlayMode
             public string tuningHash;
             public bool referenceOnly;
             public bool testOnlyKnifePresentation;
+            public bool productionKnifePresentation;
             public float previewBridgeDuration, previewGripToCenter;
             public float maxActionGap, fixtureDistance;
             public Vector3 fixturePlayerOffset;
@@ -229,6 +247,7 @@ namespace Emberfall.Tests.PlayMode
         }
         public bool Recording;
         public KnifePresentationPreview KnifePreview;
+        public PlayerKnifePresentation ProductionKnife;
         private PlayerCombatActor _player;
         private MeleeEnemyActor _enemy;
         private Animator _animator;
@@ -291,6 +310,19 @@ namespace Emberfall.Tests.PlayMode
                 knifeVisualPosition = KnifePreview != null ? KnifePreview.VisualPosition : Vector3.zero,
                 knifeGripPosition = KnifePreview != null ? KnifePreview.GripPosition : Vector3.zero
             });
+            if (ProductionKnife != null)
+            {
+                var frame = _frames[_frames.Count-1];
+                frame.productionKnife = true;
+                frame.heldKnifeVisible = ProductionKnife.HeldVisible;
+                frame.flightKnifeVisible = ProductionKnife.FlightVisible;
+                frame.swordVisible = ProductionKnife.SwordVisible;
+                frame.swordTrailVisible = ProductionKnife.SwordTrailVisible;
+                frame.bridgeAge = ProductionKnife.BridgeAge;
+                frame.knifeVisualPosition = ProductionKnife.VisualPosition;
+                frame.knifeGripPosition = ProductionKnife.GripPosition;
+                frame.knifeTrailPoints = ProductionKnife.TrailPointCount;
+            }
             Render();
             var texture = new Texture2D(_target.width, _target.height, TextureFormat.RGB24, false);
             var old = RenderTexture.active;
@@ -310,6 +342,13 @@ namespace Emberfall.Tests.PlayMode
                 report.previewBridgeDuration = KnifePresentationPreview.BridgeDuration;
                 report.previewGripToCenter = KnifePresentationPreview.GripToCenter;
                 report.scope += " TEST-ONLY presentation override: held knife and flight visual bridge; sword/sword trail and original projectile renderers hidden. No production integration or authority-origin change; cloned flight model has no trail. Harness visual approval pending.";
+            }
+            else if (ProductionKnife != null)
+            {
+                report.productionKnifePresentation = true;
+                report.previewBridgeDuration = PlayerKnifePresentation.BridgeDuration;
+                report.previewGripToCenter = PlayerKnifePresentation.GripToCenter;
+                report.scope += " Runtime offline PlayerKnifePresentation candidate, including leased visual trail; explicitly assembled by fixture, NOT default production wiring. No test visual override. Not network evidence or performance acceptance.";
             }
             for (int i = 1; i < _frames.Count; i++)
                 if (_frames[i].state != "Locomotion") report.maxActionGap = Mathf.Max(report.maxActionGap,

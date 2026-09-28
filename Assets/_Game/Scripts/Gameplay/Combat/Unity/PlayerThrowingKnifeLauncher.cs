@@ -56,6 +56,23 @@ namespace Emberfall.Gameplay.Combat.Unity
             if (_actor != null) _actor.RangedAttackReleased += HandleRelease;
         }
 
+        // Explicit candidate assembly seam. Do not call from Start until grip/performance gates close.
+        public PlayerKnifePresentation PreparePresentationCandidate()
+        {
+            // Offline-only launcher owns the pool. Render adapter reads its committed releases;
+            // network players use their separate existing presentation and never instantiate this.
+            if (!IsConfigured) return null;
+            var existing = GetComponent<PlayerKnifePresentation>();
+            if (existing != null) return existing;
+            Transform grip = null;
+            foreach (var candidate in _actor.GetComponentsInChildren<Transform>(true))
+                if (candidate.name == "Sword_M6_Player_Equipped") { grip = candidate; break; }
+            if (grip == null) return null;
+            var presentation = gameObject.AddComponent<PlayerKnifePresentation>();
+            presentation.Initialize(_actor, this, grip, _available.ToArray());
+            return presentation;
+        }
+
         private void OnDisable()
         {
             if (_actor != null) _actor.RangedAttackReleased -= HandleRelease;
