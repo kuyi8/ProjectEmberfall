@@ -87,6 +87,11 @@ namespace Emberfall.Gameplay.Combat.Unity
             Vector3 direction = _targeting.IsLocked
                 ? _targeting.CurrentTarget.AimPoint.position - origin
                 : ResolveUnlockedDirection(origin, release.MaximumDistance);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (KnifeQueryTrace.Observer != null)
+                KnifeQueryTrace.Record(new KnifeQueryTrace.Entry { kind = _targeting.IsLocked ? "release-locked" : "release-unlocked",
+                    sequence = release.AttackSequence, projectileId = projectile.GetInstanceID(), origin = origin, direction = direction.normalized });
+#endif
             projectile.transform.SetParent(null, true);
             projectile.gameObject.SetActive(true);
             ActiveProjectileCount++;
@@ -107,11 +112,29 @@ namespace Emberfall.Gameplay.Combat.Unity
                     mask,
                     QueryTriggerInteraction.Ignore))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TraceAssist(centerOrigin, forward, maximumDistance, true, hit);
+#endif
                 Vector3 converged = hit.point - launchOrigin;
                 if (converged.sqrMagnitude > 0.001f) return converged.normalized;
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            else TraceAssist(centerOrigin, forward, maximumDistance, false, default);
+#endif
             return forward;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void TraceAssist(Vector3 origin, Vector3 direction, float distance, bool hit, RaycastHit query)
+        {
+            if (KnifeQueryTrace.Observer == null) return;
+            var target = hit ? query.collider.GetComponentInParent<CombatTarget>() : null;
+            KnifeQueryTrace.Record(new KnifeQueryTrace.Entry { kind = "assist", sequence = _actor.Model.AttackSequence,
+                origin = origin, direction = direction, distance = distance, radius = _unlockedAimAssistRadius,
+                hit = hit, point = query.point, colliderId = hit ? query.collider.GetInstanceID() : 0,
+                colliderName = hit ? query.collider.name : null, targetId = target != null ? target.CombatantId : 0 });
+        }
+#endif
 
         private PlayerThrowingKnifeProjectile CreateProjectile()
         {

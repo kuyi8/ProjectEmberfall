@@ -89,22 +89,37 @@ namespace Emberfall.Editor.Setup
             Debug.Log($"[KNIFE_RELEASE_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
         }
 
-        private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder)
+        public static void BuildKnifePresentationProbePlayers()
         {
-            foreach (bool development in new[] { true, false })
+            var pose = AssetDatabase.LoadAssetAtPath<Emberfall.Gameplay.Combat.Unity.KnifeGripPose>(KnifeGripPoseSetup.Path);
+            if (pose == null) throw new InvalidOperationException("Bake the Ranger grip before diagnostic builds.");
+            BuildDiagnosticPlayers("0.9.3-KnifeTrail2-Development", "0.9.3-KnifeTrail2-ReleaseGuard", pose);
+        }
+
+        private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder,
+            UnityEngine.Object diagnosticPreload = null)
+        {
+            var originalPreloads = PlayerSettings.GetPreloadedAssets();
+            try
             {
-                string folder = development ? developmentFolder : releaseFolder;
-                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                foreach (bool development in new[] { true, false })
                 {
-                    scenes = EditorBuildSettings.scenes.Where(x => x.enabled).Select(x => x.path).ToArray(),
-                    locationPathName = $"Builds/Windows/{folder}/ProjectEmberfall.exe",
-                    target = BuildTarget.StandaloneWindows64,
-                    options = development ? BuildOptions.Development : BuildOptions.None
-                });
-                if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
-                    throw new InvalidOperationException("Style lab build failed: " + folder);
-                Debug.Log($"[STYLE_LAB_BUILD] folder={folder} bytes={report.summary.totalSize} warnings={report.summary.totalWarnings}");
+                    PlayerSettings.SetPreloadedAssets(development && diagnosticPreload != null
+                        ? originalPreloads.Concat(new[] { diagnosticPreload }).Distinct().ToArray() : originalPreloads);
+                    string folder = development ? developmentFolder : releaseFolder;
+                    var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                    {
+                        scenes = EditorBuildSettings.scenes.Where(x => x.enabled).Select(x => x.path).ToArray(),
+                        locationPathName = $"Builds/Windows/{folder}/ProjectEmberfall.exe",
+                        target = BuildTarget.StandaloneWindows64,
+                        options = development ? BuildOptions.Development : BuildOptions.None
+                    });
+                    if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                        throw new InvalidOperationException("Style lab build failed: " + folder);
+                    Debug.Log($"[STYLE_LAB_BUILD] folder={folder} bytes={report.summary.totalSize} warnings={report.summary.totalWarnings}");
+                }
             }
+            finally { PlayerSettings.SetPreloadedAssets(originalPreloads); }
         }
 
         [MenuItem("Emberfall/Setup/Apply 0.9.0 Visual Foundation")]

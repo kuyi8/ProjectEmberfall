@@ -38,6 +38,10 @@ namespace Emberfall.Gameplay.Combat.Unity
         private Quaternion[] _animatedRotations;
         private bool _poseApplied;
         private float _releaseTime;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // A/B only: same model/pose/authority, with native trail generation and rendering off.
+        public bool DiagnosticTrailEnabled { get; set; } = true;
+#endif
 
         public void ConfigureGrip(KnifeGripPose pose)
         {
@@ -208,6 +212,10 @@ namespace Emberfall.Gameplay.Combat.Unity
                     s.Visual.gameObject.SetActive(true);
                     s.Trail.Clear();
                     s.Trail.emitting = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    s.Trail.enabled = DiagnosticTrailEnabled;
+                    s.Trail.emitting = DiagnosticTrailEnabled;
+#endif
                 }
                 if (!s.Leased) continue;
                 if (!alive) { Release(s); continue; }

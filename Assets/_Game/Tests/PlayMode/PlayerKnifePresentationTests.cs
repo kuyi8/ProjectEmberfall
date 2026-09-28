@@ -62,6 +62,41 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator ReadOnlyTrace_RecordsRealAssistReleaseAndSweep()
+        {
+            var entries = new List<KnifeQueryTrace.Entry>();
+            System.Action<KnifeQueryTrace.Entry> observe = entry => entries.Add(entry);
+            KnifeQueryTrace.Observer += observe;
+            try
+            {
+                Assert.That(_actor.Model.Submit(CombatCommand.RangedAttack), Is.True);
+                int sequence = _actor.Model.AttackSequence;
+                yield return new WaitForSeconds(1.5f);
+                Assert.That(entries.Count, Is.GreaterThan(2));
+                Assert.That(entries[0].kind, Is.EqualTo("assist"));
+                Assert.That(entries[1].kind, Is.EqualTo("release-unlocked"));
+                Assert.That(entries[1].direction.magnitude, Is.EqualTo(1).Within(.0001f));
+                Assert.That(entries[1].sequence, Is.EqualTo(sequence));
+                int sweepCount = 0;
+                foreach (var entry in entries)
+                {
+                    Assert.That(entry.sequence, Is.EqualTo(sequence));
+                    if (entry.kind != "sweep") continue;
+                    sweepCount++;
+                    Assert.That(entry.projectileId, Is.EqualTo(entries[1].projectileId));
+                    Assert.That(entry.halfExtents.x, Is.GreaterThan(0));
+                    Assert.That(entry.distance, Is.GreaterThan(0));
+                    if (entry.hit) Assert.That(entry.colliderId, Is.Not.Zero);
+                }
+                Assert.That(sweepCount, Is.GreaterThan(0));
+                Assert.That(_actor.Model.RangedReleaseSequence, Is.EqualTo(1));
+                Assert.That(_actor.GetComponent<PlayerThrowingKnifeLauncher>().ActiveProjectileCount, Is.Zero);
+                Assert.That(_visual.TrailPointCount, Is.Zero);
+            }
+            finally { KnifeQueryTrace.Observer -= observe; }
+        }
+
+        [UnityTest]
         public IEnumerator FiveThrows_ReuseBoundedVisuals_ClearTrails_AndRestoreSword()
         {
             int capacity = _visual.VisualCapacity;

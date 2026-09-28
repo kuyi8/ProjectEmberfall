@@ -132,16 +132,28 @@ namespace Emberfall.Tests.PlayMode
             foreach (CombatTarget candidate in Object.FindObjectsOfType<CombatTarget>())
                 Debug.Log($"[KnifeFixture] candidate={candidate.name}:{candidate.CombatantId} position={candidate.transform.position:F3}");
 
-            Assert.That(player.Model.Submit(CombatCommand.RangedAttack), Is.True);
-            yield return new WaitForSeconds(0.24f);
-            Assert.That(launcher.ActiveProjectileCount, Is.EqualTo(1));
-            float timeoutAt = Time.realtimeSinceStartup + 1.25f;
-            while (launcher.ActiveProjectileCount > 0 && Time.realtimeSinceStartup < timeoutAt)
-                yield return null;
+            var trace = new System.Collections.Generic.List<KnifeQueryTrace.Entry>();
+            System.Action<KnifeQueryTrace.Entry> observe = entry => trace.Add(entry);
+            KnifeQueryTrace.Observer += observe;
+            try
+            {
+                Assert.That(player.Model.Submit(CombatCommand.RangedAttack), Is.True);
+                yield return new WaitForSeconds(0.24f);
+                Assert.That(launcher.ActiveProjectileCount, Is.EqualTo(1));
+                float timeoutAt = Time.realtimeSinceStartup + 1.25f;
+                while (launcher.ActiveProjectileCount > 0 && Time.realtimeSinceStartup < timeoutAt)
+                    yield return null;
 
-            Assert.That(launcher.ActiveProjectileCount, Is.Zero, "Throwing knife did not resolve before the bounded timeout.");
-            Assert.That(dummy.HealthNormalized, Is.LessThan(healthBefore), "Resolved throwing knife missed the aligned training target.");
-            Assert.That(player.Model.RangedCooldownRemaining, Is.GreaterThan(2f));
+                Assert.That(launcher.ActiveProjectileCount, Is.Zero, "Throwing knife did not resolve before the bounded timeout.");
+                Assert.That(dummy.HealthNormalized, Is.LessThan(healthBefore), "Resolved throwing knife missed the aligned training target.");
+                Assert.That(player.Model.RangedCooldownRemaining, Is.GreaterThan(2f));
+            }
+            finally
+            {
+                KnifeQueryTrace.Observer -= observe;
+                // Emit after resolution/failure, not during flight. Keep original assertions intact.
+                foreach (var entry in trace) Debug.Log("[KI-KNIFE-001] " + JsonUtility.ToJson(entry));
+            }
         }
 
         [UnityTest]

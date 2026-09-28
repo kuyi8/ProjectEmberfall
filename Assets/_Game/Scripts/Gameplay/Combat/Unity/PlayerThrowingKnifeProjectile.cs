@@ -84,6 +84,9 @@ namespace Emberfall.Gameplay.Combat.Unity
                     _collisionMask,
                     QueryTriggerInteraction.Ignore))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TraceSweep(castCenter, halfExtents, orientation, step, true, hit);
+#endif
                 transform.position = origin + (_direction * hit.distance);
                 CombatTarget target = hit.collider.GetComponentInParent<CombatTarget>();
                 if (target != null && target != _owner && target.IsAvailable)
@@ -107,6 +110,10 @@ namespace Emberfall.Gameplay.Combat.Unity
                 return;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            TraceSweep(castCenter, halfExtents, orientation, step, false, default);
+#endif
+
             transform.position = origin + (_direction * step);
             transform.Rotate(Vector3.forward, _spinDegreesPerSecond * Time.deltaTime, Space.Self);
             _travelled += step;
@@ -119,5 +126,18 @@ namespace Emberfall.Gameplay.Combat.Unity
             _active = false;
             _returnToPool?.Invoke(this);
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void TraceSweep(Vector3 center, Vector3 extents, Quaternion rotation, float step, bool hit, RaycastHit query)
+        {
+            if (KnifeQueryTrace.Observer == null) return;
+            var target = hit ? query.collider.GetComponentInParent<CombatTarget>() : null;
+            KnifeQueryTrace.Record(new KnifeQueryTrace.Entry { kind = "sweep", sequence = _release.AttackSequence,
+                projectileId = GetInstanceID(), origin = center, direction = _direction, halfExtents = extents,
+                orientation = rotation, distance = step, hit = hit, point = query.point,
+                colliderId = hit ? query.collider.GetInstanceID() : 0, colliderName = hit ? query.collider.name : null,
+                targetId = target != null ? target.CombatantId : 0 });
+        }
+#endif
     }
 }

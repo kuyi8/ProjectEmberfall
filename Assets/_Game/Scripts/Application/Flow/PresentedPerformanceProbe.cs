@@ -25,6 +25,8 @@ namespace Emberfall.Application.Flow
         private readonly List<Sample> _samples = new List<Sample>(30000);
         private readonly FrameTiming[] _timing = new FrameTiming[1];
         private ulong _lastTiming;
+        public bool IsSampling => _started >= 0 && !_complete;
+        public double SampleStartedAt => _started;
         [Serializable] private sealed class Sample
         {
             public int frame;
@@ -98,7 +100,9 @@ namespace Emberfall.Application.Flow
             {
                 _complete = true;
                 var result = new Result {
-                    scope = Environment.GetCommandLineArgs().Contains("-emberfall-performance-combat")
+                    scope = Environment.GetCommandLineArgs().Any(x => x.StartsWith("-emberfall-knife-performance=", StringComparison.Ordinal))
+                        ? "Offline CombatGym, identical scheduled legal throws, candidate visual trail off/on. Consult knife-workload.json; NOT network or worst-case combat."
+                        : Environment.GetCommandLineArgs().Contains("-emberfall-performance-combat")
                         ? "Scripted two-player Sanctum light/block combat; consult activity audit. No network Sweep/Execution, no worst-case proof."
                         : "Scripted scene residency; no historical comparison and no worst-case combat proof.",
                     accepted = !_invalidSettings && _intervals.Count >= 100,
