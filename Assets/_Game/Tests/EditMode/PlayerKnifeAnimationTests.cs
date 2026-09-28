@@ -7,6 +7,7 @@ using Emberfall.Gameplay.Combat.Unity;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Playables;
 
@@ -15,6 +16,36 @@ namespace Emberfall.Tests.EditMode
     public sealed class PlayerKnifeAnimationTests
     {
         private const string SetPath = "Assets/_Game/Settings/PlayerAnimationSet_M1.asset";
+        [Test]
+        public void ProductionScenesPersistGripWithoutChangingNetworkPrefabAndRewireIsIdempotent()
+        {
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            var paths = new[] { "Assets/_Game/Scenes/10_EmberValley.unity", "Assets/_Game/Scenes/90_CombatGym.unity" };
+            var bytes = paths.Select(File.ReadAllBytes).ToArray();
+            try
+            {
+                foreach (var path in paths)
+                {
+                    var scene = EditorSceneManager.OpenScene(path);
+                    var pose = AssetDatabase.LoadAssetAtPath<KnifeGripPose>(KnifeGripPoseSetup.Path);
+                    Assert.That(pose, Is.Not.Null);
+                    var launcher = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<PlayerThrowingKnifeLauncher>(true)).Single();
+                    Assert.That(launcher.PresentationGrip, Is.SameAs(pose), path);
+                }
+                KnifeGripPoseSetup.WireProduction();
+                for (int i = 0; i < paths.Length; i++) Assert.That(File.ReadAllBytes(paths[i]), Is.EqualTo(bytes[i]), paths[i]);
+                var network = AssetDatabase.LoadAssetAtPath<GameObject>(M6VisualFoundationSetup.PlayerPath);
+                Assert.That(network, Is.Not.Null);
+                Assert.That(network.GetComponentsInChildren<PlayerThrowingKnifeLauncher>(true), Is.Empty);
+                Assert.That(network.GetComponentsInChildren<PlayerKnifePresentation>(true), Is.Empty);
+            }
+            finally
+            {
+                if (previous.Any(x => x.isLoaded && x.isActive)) EditorSceneManager.RestoreSceneManagerSetup(previous);
+                else EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
+        }
+
         [Test]
         public void RangerGripIsExactlyOneSameSourceWholeHandFrame()
         {

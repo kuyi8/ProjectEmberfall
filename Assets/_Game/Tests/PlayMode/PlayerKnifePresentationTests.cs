@@ -26,14 +26,10 @@ namespace Emberfall.Tests.PlayMode
             foreach (var item in Object.FindObjectsOfType<MonoBehaviour>())
                 if (item is MeleeEnemyActor || item is RangedEnemyActor || item is ShieldEnemyActor) item.enabled = false;
             _actor = Object.FindObjectOfType<PlayerCombatActor>();
-            _visual = _actor.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
-#if UNITY_EDITOR
-            var pose = UnityEditor.AssetDatabase.LoadAssetAtPath<KnifeGripPose>(
-                "Assets/_Game/Settings/KnifeGripPose_Ranger.asset");
-            Assert.That(pose, Is.Not.Null);
-            _visual.ConfigureGrip(pose);
-#endif
+            _visual = _actor.GetComponent<PlayerKnifePresentation>();
+            Assert.That(_actor.GetComponent<PlayerThrowingKnifeLauncher>().PresentationGrip, Is.Not.Null);
             Assert.That(_visual != null && _visual.IsConfigured, Is.True);
+            Assert.That(NaturalPlayerContactTests.Field<Transform[]>(_visual, "_handJoints").Length, Is.EqualTo(16));
         }
 
         private void ObserveWithoutAuthorityWrites()

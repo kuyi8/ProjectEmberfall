@@ -12,6 +12,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField] private LockOnTargeting _targeting;
         [SerializeField] private Transform _launchOrigin;
         [SerializeField] private GameObject _projectilePrefab;
+        [SerializeField] private KnifeGripPose _presentationGrip;
         [SerializeField, Range(1, 8)] private int _prewarmCount = 4;
         [SerializeField, Range(0f, 0.25f)] private float _unlockedAimAssistRadius = 0.1f;
 
@@ -22,6 +23,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         public bool IsConfigured =>
             _actor != null && _targeting != null && _launchOrigin != null && _projectilePrefab != null;
         public int ActiveProjectileCount { get; private set; }
+        public KnifeGripPose PresentationGrip => _presentationGrip;
+        public void ConfigurePresentation(KnifeGripPose grip) => _presentationGrip = grip;
 
         public void Configure(
             PlayerCombatActor actor,
@@ -56,7 +59,14 @@ namespace Emberfall.Gameplay.Combat.Unity
             if (_actor != null) _actor.RangedAttackReleased += HandleRelease;
         }
 
-        // Explicit candidate assembly seam. Do not call from Start until grip/performance gates close.
+        private void Start()
+        {
+            // Authored only on offline Ranger players; older/unconfigured fixtures keep legacy visuals.
+            if (_presentationGrip != null && PreparePresentationCandidate() == null)
+                Debug.LogError("Authored knife presentation could not find its equipped sword grip.", this);
+        }
+
+        // Idempotent assembly also used by explicit diagnostic callers. Never called by network players.
         public PlayerKnifePresentation PreparePresentationCandidate()
         {
             // Offline-only launcher owns the pool. Render adapter reads its committed releases;
@@ -70,6 +80,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             if (grip == null) return null;
             var presentation = gameObject.AddComponent<PlayerKnifePresentation>();
             presentation.Initialize(_actor, this, grip, _available.ToArray());
+            if (_presentationGrip != null) presentation.ConfigureGrip(_presentationGrip);
             return presentation;
         }
 

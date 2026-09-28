@@ -96,6 +96,14 @@ namespace Emberfall.Editor.Setup
             BuildDiagnosticPlayers("0.9.3-KnifeTrail2-Development", "0.9.3-KnifeTrail2-ReleaseGuard", pose);
         }
 
+        public static void BuildKnifeProductionPlayers()
+        {
+            BuildDiagnosticPlayers("0.9.3-KnifeProduction-Development", "0.9.3-knife-production");
+            var cleanup = Emberfall.Infrastructure.Build.BuildArtifactCleaner.RemoveDoNotShipDirectories(
+                System.IO.Path.GetFullPath("Builds/Windows/0.9.3-knife-production"));
+            Debug.Log($"[KNIFE_PRODUCTION_READY] bytes={cleanup.BytesAfter} files={cleanup.FilesAfter} removedDoNotShip={cleanup.RemovedDirectories}");
+        }
+
         private static void BuildDiagnosticPlayers(string developmentFolder, string releaseFolder,
             UnityEngine.Object diagnosticPreload = null)
         {

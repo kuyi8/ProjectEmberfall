@@ -1,6 +1,7 @@
 using System.Linq;
 using Emberfall.Gameplay.Combat.Unity;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
@@ -11,6 +12,34 @@ namespace Emberfall.Editor.Setup
     {
         public const string Path = "Assets/_Game/Settings/KnifeGripPose_Ranger.asset";
         public const string AvatarPath = "Assets/_Game/Prefabs/Characters/M3Art/P_Player_Ranger.prefab";
+        public static void WireProduction()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) throw new System.InvalidOperationException("Edit Mode required.");
+            if (!UnityEngine.Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                foreach (string scenePath in new[] { "Assets/_Game/Scenes/10_EmberValley.unity", "Assets/_Game/Scenes/90_CombatGym.unity" })
+                {
+                    var scene = EditorSceneManager.OpenScene(scenePath);
+                    // Opening a scene unloads unreferenced assets; resolve after each open.
+                    var pose = AssetDatabase.LoadAssetAtPath<KnifeGripPose>(Path);
+                    if (pose == null) throw new System.InvalidOperationException("Missing baked grip; do not silently regenerate reviewed data.");
+                    var launcher = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<PlayerThrowingKnifeLauncher>(true)).Single();
+                    if (launcher.PresentationGrip == pose) continue;
+                    launcher.ConfigurePresentation(pose);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(launcher);
+                    EditorUtility.SetDirty(launcher);
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    if (!EditorSceneManager.SaveScene(scene)) throw new System.IO.IOException("Could not save " + scenePath);
+                }
+            }
+            finally
+            {
+                if (previous.Any(x => x.isLoaded && x.isActive)) EditorSceneManager.RestoreSceneManagerSetup(previous);
+                else EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            }
+        }
         public static void Apply()
         {
             var clone = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(AvatarPath));

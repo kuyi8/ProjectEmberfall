@@ -30,6 +30,7 @@ namespace Emberfall.Tests.PlayMode
                 if (item is MeleeEnemyActor || item is RangedEnemyActor || item is ShieldEnemyActor) item.enabled = false;
             var actor = Object.FindObjectOfType<PlayerCombatActor>();
             var visual = actor.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
+            visual.ConfigureGrip(null); // Explicit historical comparison, not production evidence.
             var animator = actor.GetComponentInChildren<Animator>();
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             foreach (var r in actor.GetComponentsInChildren<SkinnedMeshRenderer>()) r.updateWhenOffscreen = true;
@@ -82,7 +83,7 @@ namespace Emberfall.Tests.PlayMode
             foreach (var item in Object.FindObjectsOfType<MonoBehaviour>())
                 if (item is MeleeEnemyActor || item is RangedEnemyActor || item is ShieldEnemyActor) item.enabled = false;
             var actor = Object.FindObjectOfType<PlayerCombatActor>();
-            actor.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
+            actor.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate().ConfigureGrip(null);
             var animator = actor.GetComponentInChildren<Animator>();
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             foreach (var renderer in actor.GetComponentsInChildren<SkinnedMeshRenderer>()) renderer.updateWhenOffscreen = true;

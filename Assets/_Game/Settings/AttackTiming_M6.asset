@@ -98,18 +98,21 @@ MonoBehaviour:
     observedTimingHash: action-v2:31089796fc83b4bca4733697eb69e715
   - actionId: player.knife
     clip: {fileID: 7400000, guid: 7e21c926670c0534aaec3a3c9d701f0e, type: 2}
-    contactSeconds: -1
-    sourceFrame: -1
-    confirmed: 0
-    observedBy:
-    evidencePath:
-    observation:
-    observedClipHash:
+    contactSeconds: 0.37371665
+    sourceFrame: 11
+    confirmed: 1
+    observedBy: Codex visual review 2026-09-28
+    evidencePath: Builds/ArtReview/0.9.3-player-natural-20260928-110459-591/knife-release-observation.json
+    observation: Default Ranger. f28 bridge at hand, f29 clearly separate. Natural
+      release0.233892s is13.892ms after0.22s; max gap26.103ms. One-frame precision
+      only. Wall ends14.478ms after birth; no damage. Product gates passed. Fresh
+      persisted-clip evidence; KI-KNIFE-001 open.
+    observedClipHash: d29da6d3f68b9dd07fecf125a65f10ad
     synchronizationObserved: 0
-    naturalContactTime: -1
+    naturalContactTime: 0.23389249
     firstDamageTime: -1
-    maxSampleGap: -1
-    observedTimingHash:
+    maxSampleGap: 0.0261025
+    observedTimingHash: action-v2:da05f22fd84fed65af6db4138c20e8c6
   - actionId: player.execution
     clip: {fileID: 7400000, guid: b4147bd9ceb8eea43bdf055deb550f6b, type: 2}
     contactSeconds: 0.4041036

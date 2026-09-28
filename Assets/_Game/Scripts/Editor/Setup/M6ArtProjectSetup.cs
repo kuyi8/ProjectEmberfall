@@ -700,6 +700,10 @@ namespace Emberfall.Editor.Setup
             PlayerThrowingKnifeLauncher launcher = actor.GetComponent<PlayerThrowingKnifeLauncher>();
             if (launcher == null) launcher = actor.gameObject.AddComponent<PlayerThrowingKnifeLauncher>();
             launcher.Configure(actor, targeting, launchOrigin, projectilePrefab);
+            var gripPose = AssetDatabase.LoadAssetAtPath<KnifeGripPose>(KnifeGripPoseSetup.Path);
+            if (gripPose == null) throw new InvalidDataException("Missing authored Ranger knife grip.");
+            launcher.ConfigurePresentation(gripPose);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(launcher);
             EditorUtility.SetDirty(launcher);
             EditorSceneManager.SaveScene(scene, scenePath);
         }

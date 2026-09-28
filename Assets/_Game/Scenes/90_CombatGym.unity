@@ -4043,6 +4043,7 @@ MonoBehaviour:
   _targeting: {fileID: 994004237}
   _launchOrigin: {fileID: 1721168336}
   _projectilePrefab: {fileID: 5661713530101965485, guid: 0c051c2aef753f14d81434d52ae1e6ea, type: 3}
+  _presentationGrip: {fileID: 11400000, guid: a57cf9063a866004dbe99d169b3379e4, type: 2}
   _prewarmCount: 4
   _unlockedAimAssistRadius: 0.1
 --- !u!114 &994004247

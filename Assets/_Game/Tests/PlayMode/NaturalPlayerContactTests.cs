@@ -115,11 +115,9 @@ namespace Emberfall.Tests.PlayMode
                     target.Create();
                     var recorder = cameraObject.AddComponent<NaturalPlayerContactRecorder>();
                     recorder.Initialize(player, enemy, camera, target, referenceBody);
-                    recorder.ProductionKnife = player.GetComponent<PlayerThrowingKnifeLauncher>().PreparePresentationCandidate();
-#if UNITY_EDITOR
-                    recorder.ProductionKnife.ConfigureGrip(UnityEditor.AssetDatabase.LoadAssetAtPath<KnifeGripPose>(
-                        "Assets/_Game/Settings/KnifeGripPose_Ranger.asset"));
-#endif
+                    recorder.ProductionKnife = player.GetComponent<PlayerKnifePresentation>();
+                    Assert.That(recorder.ProductionKnife != null && recorder.ProductionKnife.IsConfigured, Is.True,
+                        "Natural capture must use authored default presentation, never install a candidate.");
                     bool knifePreview = scenario == "knife" && Environment.GetCommandLineArgs().Contains("-emberfall-knife-visual-preview");
                     GameObject previewWall = null;
                     if (knifePreview)
@@ -246,6 +244,7 @@ namespace Emberfall.Tests.PlayMode
             public bool referenceOnly;
             public bool testOnlyKnifePresentation;
             public bool productionKnifePresentation;
+            public bool defaultKnifeAssembly;
             public float previewBridgeDuration, previewGripToCenter;
             public float maxActionGap, fixtureDistance;
             public Vector3 fixturePlayerOffset;
@@ -353,9 +352,10 @@ namespace Emberfall.Tests.PlayMode
             else if (ProductionKnife != null)
             {
                 report.productionKnifePresentation = true;
+                report.defaultKnifeAssembly = _player.GetComponent<PlayerThrowingKnifeLauncher>().PresentationGrip != null;
                 report.previewBridgeDuration = PlayerKnifePresentation.BridgeDuration;
                 report.previewGripToCenter = PlayerKnifePresentation.GripToCenter;
-                report.scope += " Runtime offline PlayerKnifePresentation candidate, including leased visual trail; explicitly assembled by fixture, NOT default production wiring. No test visual override. Not network evidence or performance acceptance.";
+                report.scope += " Default authored offline PlayerKnifePresentation, including leased visual trail and Ranger grip; fixture does not assemble presentation. No test visual override. Not network evidence or performance acceptance.";
             }
             for (int i = 1; i < _frames.Count; i++)
                 if (_frames[i].state != "Locomotion") report.maxActionGap = Mathf.Max(report.maxActionGap,
