@@ -64,6 +64,19 @@ namespace Emberfall.Gameplay.Combat.Unity
         public ContentId ActiveCheckpointId => _activeCheckpointId;
         public Vector3 RespawnPosition => _spawnPosition;
         public Quaternion RespawnRotation => _spawnRotation;
+        /// <summary>Navigation consumes capsule feet, not the centre-root used by combat/camera.
+        /// Preserve planar targeting and the target's own floor; never project to an enemy's layer.</summary>
+        public Vector3 NavigationFootPosition
+        {
+            get
+            {
+                Vector3 position = transform.position;
+                if (_characterController != null)
+                    position.y = _characterController.transform.TransformPoint(
+                        _characterController.center - Vector3.up * (_characterController.height * 0.5f)).y;
+                return position;
+            }
+        }
         public RuneBlessing ActiveRuneBlessing { get; private set; }
         public bool IsGuardCounterReady => _guardCounterReady;
 

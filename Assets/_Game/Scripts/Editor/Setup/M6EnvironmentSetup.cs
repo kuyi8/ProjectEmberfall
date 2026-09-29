@@ -77,7 +77,26 @@ namespace Emberfall.Editor.Setup
             }
             else BuildGym(builder);
             builder.Finish();
+            LiftGroundMarkersAbovePaving(scene,root.transform);
             EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        private static void LiftGroundMarkersAbovePaving(Scene scene,Transform root)
+        {
+            // Visible seal/checkpoint rings only: never move triggers, light/aim anchors or gate art.
+            var floors=root.GetComponentsInChildren<MeshCollider>().Where(c=>c.GetComponentInParent<NavMeshModifier>()==null).ToArray();
+            Physics.SyncTransforms();
+            foreach(var marker in scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<Transform>(true)))
+            {
+                if(!marker.name.EndsWith("_HighlightRing",StringComparison.Ordinal) ||
+                    !(marker.name.StartsWith("Seal_",StringComparison.Ordinal) || marker.name.StartsWith("Checkpoint_",StringComparison.Ordinal) ||
+                      marker.name=="NetworkSeal_Forest_HighlightRing")) continue;
+                var position=marker.position; float y=position.y;
+                var ray=new Ray(new Vector3(position.x,position.y+2,position.z),Vector3.down);
+                foreach(var floor in floors)
+                    if(floor.Raycast(ray,out var hit,4))y=Mathf.Max(y,hit.point.y+.04f);
+                if(position.y!=y) { position.y=y; marker.position=position; }
+            }
         }
 
         private static Transform Find(Scene scene,string name)=>scene.GetRootGameObjects()
@@ -121,12 +140,12 @@ namespace Emberfall.Editor.Setup
             b.Run("Camp_West",-8,-8,-8,6,.45f,true);
             b.Run("Camp_East",8,-8,8,6,.45f,true);
             b.Pave("Camp",-6,-6,4,4);
-            b.Run("Entry_West",-5,10,-5,24,.38f,true);
-            b.Run("Entry_East",5,10,5,24,.38f,true);
+            b.Run("Entry_West",-5,10,-5,24,.2f,true);
+            b.Run("Entry_East",5,10,5,24,.2f,true);
             b.Pave("Entry",-2,12,2,4);
             // The west opening leads to the existing watchtower, not a new quest.
-            b.Run("Forest_SW",-9,26,-2.5f,26,.45f,true);
-            b.Run("Forest_SE",2.5f,26,7.35f,26,.45f,true);
+            b.Run("Forest_SW",-9,26,-2.5f,26,.25f,true);
+            b.Run("Forest_SE",2.5f,26,7.35f,26,.25f,true);
             b.Run("Forest_W_Lower",-9,26,-9,34,.45f,true);
             b.Run("Forest_W_Upper",-9,42,-9,46,.45f,true);
             b.Run("Forest_North",-9,46,7,46,.45f,true);
@@ -144,23 +163,25 @@ namespace Emberfall.Editor.Setup
             b.Run("Bridge_W",9,46.5f,9,50,.4f,true);
             b.Run("Bridge_S",9,39,18,39,.4f,true);
             b.Pave("Bridge",11,41,2,2,.02f);
-            b.K("Court_NW","wall_corner",18,52,90,1,.45f,1);
-            b.K("Court_NE","wall_corner",38,52,180,1,.45f,1);
+            // Place exterior stone outside the fixed encounter rectangle, not through its battle floor.
+            b.K("Court_NW","wall_corner",18,54,90,1,.45f,1);
+            b.K("Court_NE","wall_corner",40,54,180,1,.45f,1);
             b.K("Court_SW","wall_corner",18,36);
-            foreach(float x in new[]{22f,30f,34f}) b.K("Court_N_"+x,"wall_broken",x,52,0,1,.45f,1);
-            b.K("Court_T","wall_Tsplit",26,52,0,1,.45f,1);
-            b.K("Court_T_End","wall_endcap",26,54,90,1,.45f,1);
-            b.Run("Court_East",38,36,38,50,.45f,true);
+            foreach(float x in new[]{22f,30f,34f,38f}) b.K("Court_N_"+x,"wall_broken",x,54,0,1,.45f,1);
+            b.K("Court_T","wall_Tsplit",26,54,0,1,.45f,1);
+            b.K("Court_T_End","wall_endcap",26,56,90,1,.45f,1);
+            b.Run("Court_East",40,36,40,52,.45f,true);
+            b.Run("Court_SE_Link",38,36,40,36,1,false);
             b.Portal("Court_Entry",18,43,90);
-            b.Run("Court_West_N",18,47,18,50,.45f,true);
+            b.Run("Court_West_N",18,47,18,52,.45f,true);
             b.Run("Court_West_S",18,38,18,39,1,false);
             b.Run("Court_South",20,36,30,36,1,false);
             b.Portal("Court_Exit",34,36,0);
             b.Pave("Court",20,38,5,4);
-            b.Cluster("Court_NW",20,49);
-            b.Cluster("Court_NE",36,49);
-            b.K("Court_RearColumn","pillar_decorated",26,53,0,.7f,.85f,.7f);
-            b.K("Court_Rubble","rubble_half",25,50,0,.4f,.3f,.4f);
+            b.Cluster("Court_NW",20,52);
+            b.Cluster("Court_NE",38,52);
+            b.K("Court_RearColumn","pillar_decorated",26,55,0,.7f,.85f,.7f);
+            b.K("Court_Rubble","rubble_half",25,52.5f,0,.4f,.3f,.4f);
             // Existing dynamic gates at z32.5/z31 are untouched. Full-height sides prevent lateral bypass.
             b.Run("Approach_W",34.1f,27.3f,34.1f,34.5f,1,false);
             b.Run("Approach_E",44,27.3f,44,35.5f,1,false);
@@ -196,7 +217,7 @@ namespace Emberfall.Editor.Setup
             {
                 _root=root;
                 _stone=Material("M_KayKit_Courtyard",Color.white);
-                _paving=Material("M_KayKit_Paving",new Color(.72f,.78f,.66f));
+                _paving=Material("M_KayKit_Paving",new Color(.55f,.61f,.52f));
             }
             private static Material Material(string name,Color tint)
             {
@@ -262,19 +283,23 @@ namespace Emberfall.Editor.Setup
             {
                 for(int ix=0;ix<nx;ix++)for(int iz=0;iz<nz;iz++)
                 {
-                    bool edge=ix==0||iz==0||ix==nx-1||iz==nz-1;
-                    bool dirt=edge && (ix+iz)%3==0;
+                    // One connected weathered corner/wall-root cluster; no alternating dark holes
+                    // throughout the combat floor or narrow transit routes.
+                    bool weathered=nx>=3 && nz>=3 && ((ix==0 && iz>=nz-2)||(iz==nz-1 && ix<=1));
+                    bool dirt=weathered && ix==0 && iz==nz-1;
                     float px=x+ix*4,pz=z+iz*4;
-                    if(dirt) K(name+"_Dirt_"+ix+"_"+iz,"floor_dirt_large",px,pz,0,1,1,1,true,baseHeight-.025f,true);
-                    else if(edge)
+                    float yaw=((ix*3+iz*7)%4)*90f;
+                    if(dirt) K(name+"_Dirt_"+ix+"_"+iz,"floor_dirt_large",px,pz,yaw,1,1,1,true,baseHeight-.025f,true);
+                    else if(weathered)
                     {
                         for(int a=0;a<2;a++)for(int c=0;c<2;c++)
                         {
-                            string mesh=(a+c+ix+iz)%2==0?"floor_tile_small_broken_B":"floor_tile_small_weeds_B";
-                            K(name+"_Edge_"+ix+"_"+iz+"_"+a+"_"+c,mesh,px-1+a*2,pz-1+c*2,0,1,1,1,true,baseHeight-.025f,true);
+                            bool outer=(ix==0 && a==0)||(iz==nz-1 && c==1);
+                            string mesh=outer?(ix==0?"floor_tile_small_weeds_B":"floor_tile_small_broken_B"):"floor_tile_small";
+                            K(name+"_Edge_"+ix+"_"+iz+"_"+a+"_"+c,mesh,px-1+a*2,pz-1+c*2,yaw+(a+c)*90f,1,1,1,true,baseHeight-.025f,true);
                         }
                     }
-                    else K(name+"_Paving_"+ix+"_"+iz,"floor_tile_large",px,pz,0,1,1,1,true,baseHeight-.025f,true);
+                    else K(name+"_Paving_"+ix+"_"+iz,"floor_tile_large",px,pz,yaw,1,1,1,true,baseHeight-.025f,true);
                 }
             }
             public void Cluster(string name,float x,float z)

@@ -322,7 +322,7 @@ namespace Emberfall.AI.Unity
                 _agent.isStopped = false;
                 SetDestination(_hasSupportDestination && !_attackAllowed
                     ? _supportDestination
-                    : _target.transform.position);
+                    : _target.NavigationFootPosition);
             }
             else if (_agent.isOnNavMesh && _brain.WantsReturnMovement)
             {

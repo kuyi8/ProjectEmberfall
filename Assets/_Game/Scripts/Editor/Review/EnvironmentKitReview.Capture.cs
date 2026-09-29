@@ -15,6 +15,13 @@ namespace Emberfall.Editor.Review
 {
     public static partial class EnvironmentKitReview
     {
+        private static bool _useArchivedBaseline=true;
+        public static void CaptureRefinement()
+        {
+            _useArchivedBaseline=false;
+            try { CaptureProduction(); EnvironmentNavigationBaseline.PrepareAndMeasure(); }
+            finally { _useArchivedBaseline=true; }
+        }
         [Serializable] public sealed class Result
         {
             public string scene,navAsset,output;
@@ -86,7 +93,7 @@ namespace Emberfall.Editor.Review
         {
             // Keep the actual pre-production baseline after corrective reruns, never relabel an intermediate as old art.
             string baseline=Evidence+"/20260928-175449-665";
-            if(scene=="10_EmberValley" && label=="before" && File.Exists(baseline+"/before-overview.png"))
+            if(_useArchivedBaseline && scene=="10_EmberValley" && label=="before" && File.Exists(baseline+"/before-overview.png"))
                 return new[]{"overview","entry","left","right"}.Select(n=>{
                     var image=new Texture2D(2,2,TextureFormat.RGB24,false);
                     image.LoadImage(File.ReadAllBytes(baseline+"/before-"+n+".png")); return image; }).ToArray();

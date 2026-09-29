@@ -21,6 +21,19 @@ namespace Emberfall.Tests.PlayMode
     public sealed class EnvironmentNavigationTests
     {
         private readonly List<string> _rows=new List<string>();
+        private AsyncOperation LoadValley()
+        {
+#if UNITY_EDITOR
+            if (System.Environment.GetCommandLineArgs().Contains("-emberfallOldGeometry"))
+            {
+                const string path="Assets/_Game/Scenes/Review/NavigationBaseline/10_EmberValley.unity";
+                _rows.Add("Geometry=historical exact snapshot; unchanged placement/time/assertions; no rebake");
+                return UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(path,new LoadSceneParameters(LoadSceneMode.Single));
+            }
+#endif
+            _rows.Add("Geometry=current production");
+            return SceneManager.LoadSceneAsync("10_EmberValley");
+        }
         [UnityTearDown] public IEnumerator SaveEvidence()
         {
             string dir="Builds/ArtReview/0.9.6-environment-production/runtime";
@@ -77,7 +90,7 @@ namespace Emberfall.Tests.PlayMode
         [UnityTest] public IEnumerator Courtyard_RealActorsEngagePlayer_AfterRebake()
         {
             M2LaunchIntent.RequestNewGame();
-            yield return SceneManager.LoadSceneAsync("10_EmberValley"); yield return null; yield return null;
+            yield return LoadValley(); yield return null; yield return null;
             var player=Object.FindObjectOfType<PlayerCombatActor>();
             var controller=player.GetComponent<CharacterController>(); controller.enabled=false;
             // Player root is at capsule centre, unlike enemy/NavMesh feet. Never embed the fixture in paving.
@@ -111,6 +124,29 @@ namespace Emberfall.Tests.PlayMode
             yield return SceneManager.LoadSceneAsync("90_CombatGym"); yield return null; yield return null;
             Assert.That(GameObject.Find("[Art] M6 Environment"),Is.Not.Null);
             foreach(var agent in Object.FindObjectsOfType<NavMeshAgent>())Path(agent.transform.position,new Vector3(0,0,0),agent.name);
+        }
+        [UnityTest] public IEnumerator Forest_RealMeleeApproachesAndAttacks()
+        {
+            M2LaunchIntent.RequestNewGame();
+            yield return LoadValley(); yield return null; yield return null;
+            var player=Object.FindObjectOfType<PlayerCombatActor>();
+            var controller=player.GetComponent<CharacterController>(); controller.enabled=false;
+            player.transform.position=Point(new Vector3(0,0,30))+Vector3.up*(controller.height*.5f-controller.center.y+.05f);
+            controller.enabled=true; player.GetComponent<ThirdPersonMotor>().ResetAfterTeleport();
+            var enemy=Object.FindObjectsOfType<MeleeEnemyActor>().Single(x=>x.name=="Enemy_Fogwalker_Forest");
+            Vector3 start=enemy.transform.position; float until=Time.time+12, next=Time.time;
+            bool attacked=false;
+            while(Time.time<until && !attacked)
+            {
+                attacked=enemy.IsThreatening;
+                if(Time.time>=next) {
+                    _rows.Add($"t={Time.time:F3} enemy={enemy.State} position={enemy.transform.position:F3} player={player.transform.position:F3} distance={Vector3.ProjectOnPlane(enemy.transform.position-player.transform.position,Vector3.up).magnitude:F3} granted={enemy.IsGroupAttackAllowed}"); next+=.2f;
+                }
+                yield return null;
+            }
+            _rows.Add($"Natural forest attack={attacked}; displacement={Vector3.Distance(start,enemy.transform.position):F3}");
+            Assert.That(attacked,Is.True,"Forest melee must naturally approach and commit an attack within the same 12s budget.");
+            Assert.That(Vector3.Distance(start,enemy.transform.position),Is.GreaterThan(1));
         }
     }
 }
