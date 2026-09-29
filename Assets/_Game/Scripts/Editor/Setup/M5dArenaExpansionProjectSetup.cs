@@ -74,10 +74,11 @@ namespace Emberfall.Editor.Setup
             MoveActor("Enemy_RunePriest_Bridge_Right", new Vector3(14.5f, 0f, 42.2f));
 
             M5dArenaRepair.ApplyToLoadedScene();
+            M6EnvironmentSetup.ApplyToScene(scene);
 
             NavMeshSurface surface = UnityEngine.Object.FindObjectOfType<NavMeshSurface>();
             if (surface == null) throw new InvalidDataException("Ember Valley NavMesh surface is missing.");
-            surface.BuildNavMesh();
+            M6EnvironmentSetup.BakeNavigation(scene);
             EditorUtility.SetDirty(surface);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);

@@ -18,7 +18,8 @@ namespace Emberfall.Editor.Setup
         {
             var scene = EditorSceneManager.OpenScene("Assets/_Game/Scenes/10_EmberValley.unity");
             ApplyToLoadedScene();
-            UnityEngine.Object.FindObjectOfType<NavMeshSurface>().BuildNavMesh();
+            M6EnvironmentSetup.ApplyToScene(scene);
+            M6EnvironmentSetup.BakeNavigation(scene);
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             Debug.Log("ARENA_REPAIR_COMPLETE version=0.8.10a");

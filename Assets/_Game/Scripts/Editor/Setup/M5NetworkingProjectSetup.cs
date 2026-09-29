@@ -81,6 +81,7 @@ namespace Emberfall.Editor.Setup
             M6VisualFoundationSetup.Apply();
             M6CombatFeedbackSetup.Apply();
             M6BoundaryArtSetup.Apply();
+            M6EnvironmentSetup.Apply();
             PlayerSettings.bundleVersion = Version;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

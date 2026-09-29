@@ -20,7 +20,7 @@ namespace Emberfall.Editor.Review
         public const string KitRoot = "Assets/_Game/Art/DownloadResources/UnityFreeAssets/07_Environment_Ruins/";
         public const string KayRoot = KitRoot + "KayKit_Dungeon_Remastered/addons/kaykit_dungeon_remastered/Assets/";
         public const string VillageRoot = KitRoot + "Medieval_Village_MegaKit/";
-        public const string OutputRoot = "Assets/_Game/Art/CourtyardBakeoff";
+        public const string OutputRoot = M6EnvironmentSetup.AssetRoot;
         [Serializable] public sealed class Measurement
         {
             public string path;
@@ -244,7 +244,7 @@ namespace Emberfall.Editor.Review
             if(!sourceBytes.SequenceEqual(File.ReadAllBytes(SourceScene))) throw new InvalidOperationException("Shipping scene was modified.");
             Debug.Log("[COURTYARD_KIT] "+output+" idempotent=true shippingUnchanged=true");
         }
-        private static string ProtectedState(Scene scene)
+        public static string ProtectedState(Scene scene)
         {
             string ObjectPath(Transform t)=>t.parent==null?t.name:ObjectPath(t.parent)+"/"+t.name;
             var rows=new List<string>();
