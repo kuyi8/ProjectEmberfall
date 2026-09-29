@@ -103,7 +103,7 @@ namespace Emberfall.Editor.Review
                 Shot(output+"/"+label+"-left.png",new Vector3(22,5,54),new Vector3(12,1,44),60),
                 Shot(output+"/"+label+"-right.png",new Vector3(27,4,43),new Vector3(39,1,31),60)};
         }
-        private static Texture2D Shot(string path,Vector3 p,Vector3 target,float fov)
+        internal static Texture2D Shot(string path,Vector3 p,Vector3 target,float fov)
         {
             var go=new GameObject("Environment review camera"); var cam=go.AddComponent<Camera>();
             if(Camera.main!=null)cam.CopyFrom(Camera.main);

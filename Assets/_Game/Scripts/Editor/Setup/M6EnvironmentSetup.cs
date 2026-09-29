@@ -78,6 +78,7 @@ namespace Emberfall.Editor.Setup
             else BuildGym(builder);
             builder.Finish();
             LiftGroundMarkersAbovePaving(scene,root.transform);
+            M6EnvironmentFinishSetup.ApplyToScene(scene);
             EditorSceneManager.MarkSceneDirty(scene);
         }
 
