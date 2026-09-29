@@ -51,7 +51,7 @@ namespace Emberfall.Editor.Review
             public float currentCapsuleHeight, currentCapsuleRadius, currentCameraDistance, currentCameraPivotHeight;
             public bool frozenFilesUnchanged;
         }
-        sealed class Rig : IDisposable
+        internal sealed class Rig : IDisposable
         {
             public GameObject go;
             public Animator animator;
@@ -263,7 +263,7 @@ namespace Emberfall.Editor.Review
             foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.sharedMaterials = r.sharedMaterials.Select(_ => mat).ToArray();
             return go;
         }
-        static Bounds VertexBounds(GameObject go)
+        internal static Bounds VertexBounds(GameObject go)
         {
             var bounds = new Bounds(); bool first = true;
             // Modular heads/hair can be rigid MeshRenderers, not skins. Include them or height is false.
@@ -294,7 +294,7 @@ namespace Emberfall.Editor.Review
             }
             return false;
         }
-        static void SetupLight()
+        internal static void SetupLight()
         {
             RenderSettings.ambientMode = AmbientMode.Trilight; RenderSettings.ambientSkyColor = new Color(.65f,.72f,.8f);
             RenderSettings.ambientEquatorColor = new Color(.5f,.53f,.57f); RenderSettings.ambientGroundColor = new Color(.3f,.31f,.34f);
@@ -303,7 +303,7 @@ namespace Emberfall.Editor.Review
             var fill = new GameObject("Neutral fill").AddComponent<Light>(); fill.type=LightType.Directional; fill.intensity=.5f;
             fill.transform.rotation=Quaternion.Euler(25,-35,0);
         }
-        static void Cube(string name, Vector3 position, Vector3 scale, Color color)
+        internal static void Cube(string name, Vector3 position, Vector3 scale, Color color)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube); go.name = name; go.transform.position = position; go.transform.localScale = scale;
             Object.DestroyImmediate(go.GetComponent<Collider>()); var mat = new Material(Shader.Find("Universal Render Pipeline/Lit")); mat.color = color;
@@ -315,8 +315,8 @@ namespace Emberfall.Editor.Review
             var mat = new Material(Shader.Find("Universal Render Pipeline/Unlit")); mat.color = color; line.sharedMaterial = mat;
             for (int i=0;i<96;i++) { float a=i*Mathf.PI*2/96; line.SetPosition(i,new Vector3(Mathf.Cos(a)*radius,.012f,Mathf.Sin(a)*radius)); }
         }
-        static void View(Camera camera, Vector3 position, Vector3 target) { camera.transform.position = position; camera.transform.LookAt(target); }
-        static Texture2D Render(Camera camera, int width, int height)
+        internal static void View(Camera camera, Vector3 position, Vector3 target) { camera.transform.position = position; camera.transform.LookAt(target); }
+        internal static Texture2D Render(Camera camera, int width, int height)
         {
             var rt = RenderTexture.GetTemporary(width,height,24,RenderTextureFormat.ARGB32); var previous=RenderTexture.active;
             try { camera.targetTexture=rt; camera.Render(); RenderTexture.active=rt; var image=new Texture2D(width,height,TextureFormat.RGB24,false); image.ReadPixels(new Rect(0,0,width,height),0,0); image.Apply(); return image; }
