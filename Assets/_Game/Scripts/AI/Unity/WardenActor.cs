@@ -279,7 +279,7 @@ namespace Emberfall.AI.Unity
             if (_agent.isOnNavMesh && _brain.WantsTargetMovement && _target != null)
             {
                 _agent.isStopped = false;
-                _agent.SetDestination(_target.transform.position);
+                _agent.SetDestination(_target.NavigationFootPosition);
             }
             else if (_agent.isOnNavMesh && _brain.WantsReturnMovement)
             {

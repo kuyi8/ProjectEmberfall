@@ -310,7 +310,7 @@ namespace Emberfall.AI.Unity
             {
                 _agent.stoppingDistance = _definition.PreferredMaximumRange * 0.9f;
                 _agent.isStopped = false;
-                SetDestination(_target.transform.position);
+                SetDestination(_target.NavigationFootPosition);
             }
             else if (_agent.isOnNavMesh && _brain.WantsRetreatMovement && _target != null)
             {
