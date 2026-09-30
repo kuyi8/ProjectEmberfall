@@ -44,7 +44,7 @@ namespace Emberfall.Editor.Review
             EditorApplication.update += Tick;
         }
 
-        public static string Begin(bool throughBridge = false, bool legacyTreeQuery = false)
+        public static string Begin(bool throughBridge = false, bool throughEnd = false, bool inspectBridgeCamera = true)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||
@@ -58,14 +58,14 @@ namespace Emberfall.Editor.Review
             SessionState.SetString(Key + "temp", temp);
             SessionState.SetString(Key + "output", folder);
             SessionState.SetBool(Key + "active", true);
-            SessionState.SetBool(Key + "bridge", throughBridge);
-            SessionState.SetBool(Key + "legacyTree", legacyTreeQuery);
+            SessionState.SetBool(Key + "bridge", throughBridge || throughEnd);
+            SessionState.SetBool(Key + "end", throughEnd);
+            SessionState.SetBool(Key + "camera", inspectBridgeCamera);
             var copy = EditorSceneManager.OpenScene(temp);
             var serialized = new SerializedObject(Object.FindObjectOfType<M2RouteFlowController>());
             serialized.FindProperty("_saveFileName").stringValue = Path.GetFullPath(folder + "/isolated-save.json");
             serialized.ApplyModifiedPropertiesWithoutUndo();
-            if (throughBridge)
-                new GameObject("R4_ContentBootstrap").AddComponent<Emberfall.Infrastructure.Bootstrap.AppBootstrap>();
+            // No injected bootstrap: exercise the same direct-Play entry as the user.
             EditorSceneManager.SaveScene(copy);
             EditorApplication.isPlaying = true;
             return folder;
@@ -79,9 +79,9 @@ namespace Emberfall.Editor.Review
                 output = SessionState.GetString(Key + "output", "");
                 samples.Clear(); logs.Clear(); phase = 0; finishing = false;
                 bridgeRun = SessionState.GetBool(Key + "bridge", false);
-                legacyTreeRun = SessionState.GetBool(Key + "legacyTree", false);
-                if (legacyTreeRun)
-                    Object.FindObjectsOfType<CameraOccluder>(true).Single(x=>x.name=="BridgeDeadTree").SetQueryProxy(null);
+                endRun = SessionState.GetBool(Key + "end", false);
+                cameraReview = SessionState.GetBool(Key + "camera", true);
+                heavyUntil = 0;
                 combatTargets = null; lastEnemyHealth = -1; nextCombatButton = 0;
                 dynamicMove = Vector2.zero; dynamicInputSamples = 0;
                 player = null; flow = null; target = null;
@@ -140,7 +140,7 @@ namespace Emberfall.Editor.Review
             try
             {
                 double now = EditorApplication.timeSinceStartup;
-                if (now - started > (bridgeRun ? 240 : 100)) { Finish(false, "Input route deadline."); return; }
+                if (now - started > (endRun ? 420 : bridgeRun ? 240 : 100)) { Finish(false, "Input route deadline."); return; }
                 if (player == null) player = Object.FindObjectOfType<PlayerCombatActor>();
                 if (flow == null) flow = Object.FindObjectOfType<M2RouteFlowController>();
                 if (player == null || flow == null || !flow.IsInitialized) return;
@@ -212,7 +212,9 @@ namespace Emberfall.Editor.Review
 
         static void Capture(string name)
         {
-            ScreenCapture.CaptureScreenshot(Path.GetFullPath(output + "/" + name + ".png"));
+            // v3: keep only explicitly required camera checks and failure evidence, not route galleries.
+            if (name.StartsWith("bridge-B-orbit-", StringComparison.Ordinal) || name == "pilot-blocked" || name == "forest-seal-activated")
+                ScreenCapture.CaptureScreenshot(Path.GetFullPath(output + "/" + name + ".png"));
             var camera = Camera.main;
             if (camera == null || player == null) return;
             File.WriteAllText(output + "/" + name + "-pose.json", JsonUtility.ToJson(new Frame {
@@ -238,7 +240,9 @@ namespace Emberfall.Editor.Review
                 throughBridge = bridgeRun, bridgeA = flow != null && flow.BridgeMechanismAActivated,
                 bridgeB = flow != null && flow.BridgeMechanismBActivated, bridgeCleared = flow != null && flow.BridgeEncounterCleared,
                 bridgeSeal = logs.Any(x => x.Contains("segment=bridge-seal event=activated")),
-                legacyTreeQuery = legacyTreeRun,
+                throughEnd = endRun, courtyardGuardBroken = flow != null && flow.CourtyardGuardBroken,
+                courtyardSeal = logs.Any(x => x.Contains("segment=courtyard-seal event=activated")),
+                finalStage = flow == null ? "" : flow.Stage.ToString(),
                 forestPhase = flow == null || flow.ForestTemplate == null ? "" : flow.ForestTemplate.Phase.ToString(),
                 contentInitialized = Emberfall.Core.Content.ContentPackageRuntime.IsInitialized,
                 deaths = flow == null ? -1 : flow.DeathCount }, true));
@@ -248,8 +252,10 @@ namespace Emberfall.Editor.Review
         { public double seconds; public Vector3 position; public Vector2 move, requestedMove; public float health; public int phase; public string candidate; }
         [Serializable] sealed class Result
         {
-            public string scope = "Editor input-chain route (throughBridge selects extended scope); AI on; no relocation/damage injection. Not full R4/Player/performance/human acceptance.";
-            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, bridgeSeal, contentInitialized,legacyTreeQuery;
+            public string scope = "Editor input-chain route; AI on; isolated save; no relocation/damage injection. Not human/Player/performance or optional left-corridor acceptance.";
+            public bool throughEnd, courtyardGuardBroken, courtyardSeal;
+            public string finalStage;
+            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, bridgeSeal, contentInitialized;
             public string forestPhase;
             public bool pilotPassed, watchtower; public int deaths, dynamicMoveSamples, flaskCapacity; public string reason; public Sample[] samples;
         }

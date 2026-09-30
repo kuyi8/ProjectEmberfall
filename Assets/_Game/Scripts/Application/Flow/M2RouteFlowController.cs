@@ -156,6 +156,12 @@ namespace Emberfall.Application.Flow
         {
             try
             {
+#if UNITY_EDITOR
+                // Direct scene Play has no bootstrap scene. Use the real validated content/Lua path,
+                // rather than letting the forest start with a partial editor-only rules fallback.
+                if (!ContentPackageRuntime.IsInitialized && !Emberfall.Infrastructure.Bootstrap.AppBootstrap.IsInitialized)
+                    new GameObject("[Editor Direct Play Bootstrap]").AddComponent<Emberfall.Infrastructure.Bootstrap.AppBootstrap>();
+#endif
                 Initialize();
             }
             catch (Exception exception)

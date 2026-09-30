@@ -73,13 +73,14 @@ namespace Emberfall.Editor.Setup
                     var networkRing=Find(scene,"NetworkSeal_Forest_HighlightRing");
                     if(ring!=null && networkRing!=null)networkRing.position=ring.position;
                 }
+                ForestRuneRewardLayout.ApplyToScene(scene);
                 builder.Backdrop(Find(scene,"CourtyardTree"));
             }
             else BuildGym(builder);
             builder.Finish();
             LiftGroundMarkersAbovePaving(scene,root.transform);
             M6EnvironmentFinishSetup.ApplyToScene(scene);
-            BridgeCameraProxySetup.ApplyToScene(scene);
+            BridgeTreePresentationSetup.ApplyToScene(scene);
             EditorSceneManager.MarkSceneDirty(scene);
         }
 

@@ -289,18 +289,8 @@ namespace Emberfall.Application.Flow
 
         private void InitializeLuaOrchestration()
         {
-#if UNITY_EDITOR
             if (!ContentPackageRuntime.IsInitialized)
-            {
-                _encounterWaveQueued = true;
-                _questConditionEligible = Phase >= ForestSealPhase.SigilAvailable;
-                _questConditionReasonId = new ContentId(
-                    _questConditionEligible
-                        ? "text:quest.forest-seal.ready"
-                        : "text:quest.forest-seal.blocked");
-                return;
-            }
-#endif
+                throw new InvalidOperationException("Forest seal requires initialized content; enter through AppBootstrap.");
             using var lua = new LuaOrchestrationRuntime();
             LuaEncounterResult result = lua.EvaluateEncounter(
                 ContentPackageRuntime.Current.Snapshot,
