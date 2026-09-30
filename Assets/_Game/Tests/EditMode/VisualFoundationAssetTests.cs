@@ -90,11 +90,19 @@ namespace Emberfall.Tests.EditMode
                 Assert.That(volumes[0].weight, Is.EqualTo(1f));
                 Assert.That(AssetDatabase.GetAssetPath(volumes[0].sharedProfile), Does.EndWith("PP_Emberfall_Global.asset"));
                 Assert.That(volumes[0].GetComponent<Collider>(), Is.Null);
-                Assert.That(RenderSettings.fog, Is.False);
+                bool valley = sceneName == "10_EmberValley";
+                Assert.That(RenderSettings.fog, Is.EqualTo(valley));
+                if (valley)
+                {
+                    Assert.That(RenderSettings.fogMode, Is.EqualTo(FogMode.Linear));
+                    Assert.That(RenderSettings.fogStartDistance, Is.EqualTo(42f));
+                    Assert.That(RenderSettings.fogEndDistance, Is.EqualTo(150f));
+                    Assert.That(RenderSettings.fogColor, Is.EqualTo(new Color(.45f, .68f, .85f)));
+                }
                 Assert.That(RenderSettings.ambientMode, Is.EqualTo(UnityEngine.Rendering.AmbientMode.Trilight));
                 Assert.That(RenderSettings.ambientSkyColor, Is.EqualTo(new Color(0.55f, 0.62f, 0.72f)));
-                Assert.That(RenderSettings.ambientEquatorColor, Is.EqualTo(new Color(0.4f, 0.42f, 0.42f)));
-                Assert.That(RenderSettings.ambientGroundColor, Is.EqualTo(new Color(0.24f, 0.22f, 0.2f)));
+                Assert.That(RenderSettings.ambientEquatorColor, Is.EqualTo(valley ? new Color(.4f, .45f, .49f) : new Color(.4f, .42f, .42f)));
+                Assert.That(RenderSettings.ambientGroundColor, Is.EqualTo(valley ? new Color(.25f, .27f, .24f) : new Color(.24f, .22f, .2f)));
                 foreach (var camera in roots.SelectMany(x => x.GetComponentsInChildren<Camera>(true))) CheckCamera(camera);
             }
             finally

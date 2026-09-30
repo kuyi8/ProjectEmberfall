@@ -7,6 +7,33 @@ namespace Emberfall.Tests.EditMode
 {
     public sealed class EnvironmentFinishTests
     {
+        [Test]
+        public void Ridge_IsDeterministicGroundedAndLowPoly()
+        {
+            var crest = new[] { new Vector3(-48, 6, -22), new Vector3(-45, 16, 1), new Vector3(-51, 23, 22) };
+            var a = M6EnvironmentFinishSetup.BuildRidge(crest, 14);
+            var b = M6EnvironmentFinishSetup.BuildRidge(crest, 14);
+            try
+            {
+                Assert.That(a.vertices, Is.EqualTo(b.vertices));
+                Assert.That(a.triangles, Is.EqualTo(b.triangles));
+                Assert.That(a.bounds.min.y, Is.EqualTo(-5.2f).Within(.00001f));
+                Assert.That(a.bounds.max.y, Is.EqualTo(23f).Within(.00001f));
+                Assert.That(a.bounds.max.x, Is.LessThan(-30f), "West ridge must stay outside the route.");
+                Assert.That(a.vertexCount, Is.LessThan(200));
+                Assert.That(a.normals.All(n => n.sqrMagnitude > .9f), Is.True);
+            }
+            finally { Object.DestroyImmediate(a); Object.DestroyImmediate(b); }
+        }
+
+        [Test]
+        public void Ridge_RejectsInvalidProfile()
+        {
+            Assert.Throws<System.ArgumentException>(() => M6EnvironmentFinishSetup.BuildRidge(null, 10));
+            Assert.Throws<System.ArgumentException>(() => M6EnvironmentFinishSetup.BuildRidge(new[] { Vector3.zero }, 10));
+            Assert.Throws<System.ArgumentException>(() => M6EnvironmentFinishSetup.BuildRidge(new[] { Vector3.zero, Vector3.forward }, 0));
+        }
+
         [TestCase(.2f, 1.2f)] // Covers neither original 3m segment midpoint: old mesh overlaps.
         [TestCase(.8f, 2.2f)] // Covers a midpoint but not the whole segment: old mesh leaves a hole.
         public void Cliff_PartialSharedEdgeRetainsExactlyTheExposedLength(float from, float to)

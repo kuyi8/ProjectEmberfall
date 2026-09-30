@@ -24,6 +24,8 @@ namespace Emberfall.Editor.Setup
         public static void ApplyToScene(Scene scene)
         {
             if (scene.name != "10_EmberValley") return;
+            if (SceneManager.GetActiveScene() != scene)
+                throw new InvalidOperationException("R3 atmosphere requires the target scene to be active.");
             if (!AssetDatabase.IsValidFolder(AssetRoot)) AssetDatabase.CreateFolder(M6EnvironmentSetup.AssetRoot, "Finish");
             var all = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Transform>(true)).ToArray();
             var root = scene.GetRootGameObjects().FirstOrDefault(r => r.name == RootName) ?? new GameObject(RootName);
@@ -94,8 +96,68 @@ namespace Emberfall.Editor.Setup
                         Vector3.one * (j == 1 ? 14 : 10 + i % 3), i * 31 + j * 67, null);
             }
             // Right-rear sightline deliberately stays open between north and east groups.
+            // Three continuous landforms, not another ring of scattered props. Entirely outside
+            // the playable platforms, with low saddles framing the right-rear destination.
+            var ridgeMaterial = FlatMaterial("M_DistantRidge", new Color(.30f, .40f, .43f));
+            var ridges = new[] {
+                new[] { new Vector3(-48,6,-22), new Vector3(-45,16,1), new Vector3(-51,23,22),
+                    new Vector3(-46,14,43), new Vector3(-43,21,65), new Vector3(-35,10,91) },
+                new[] { new Vector3(-55,10,94), new Vector3(-28,23,89), new Vector3(-5,17,96),
+                    new Vector3(17,25,93), new Vector3(38,16,97), new Vector3(60,9,93), new Vector3(87,18,98) },
+                new[] { new Vector3(89,13,96), new Vector3(92,22,72), new Vector3(88,12,49),
+                    new Vector3(96,20,25), new Vector3(90,15,0), new Vector3(94,5,-24) }
+            };
+            for (int i = 0; i < ridges.Length; i++)
+            {
+                string name = "DistantRidge_" + i;
+                var t = Child(root.transform, name, expected);
+                var filter = t.GetComponent<MeshFilter>();
+                if (filter == null) filter = t.gameObject.AddComponent<MeshFilter>();
+                var renderer = t.GetComponent<MeshRenderer>();
+                if (renderer == null) renderer = t.gameObject.AddComponent<MeshRenderer>();
+                var lowerCrest = ridges[i].Select(p => new Vector3(p.x, p.y * .55f, p.z)).ToArray();
+                filter.sharedMesh = SaveMesh(BuildRidge(lowerCrest, 14f), name);
+                renderer.sharedMaterial = ridgeMaterial;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                GameObjectUtility.SetStaticEditorFlags(t.gameObject, 0);
+            }
             foreach (Transform t in root.transform.Cast<Transform>().ToArray())
                 if (!expected.Contains(t.name)) Object.DestroyImmediate(t.gameObject);
+            M6VisualFoundationSetup.ConfigureEnvironment(scene.name);
+        }
+
+        public static Mesh BuildRidge(Vector3[] crest, float halfWidth)
+        {
+            if (crest == null || crest.Length < 2 || halfWidth <= 0) throw new ArgumentException("Invalid ridge profile.");
+            var vertices = new List<Vector3>();
+            var indices = new List<int>();
+            var sections = new Vector3[crest.Length][];
+            for (int i = 0; i < crest.Length; i++)
+            {
+                var tangent = crest[Mathf.Min(i + 1, crest.Length - 1)] - crest[Mathf.Max(i - 1, 0)];
+                var across = Vector3.Cross(Vector3.up, tangent).normalized * halfWidth;
+                var foot = new Vector3(crest[i].x, -5.2f, crest[i].z);
+                sections[i] = new[] { foot - across, crest[i] - across * .32f - Vector3.up * 4f,
+                    crest[i], foot + across };
+            }
+            void Triangle(Vector3 a, Vector3 b, Vector3 c)
+            {
+                int n = vertices.Count;
+                vertices.AddRange(new[] { a, b, c, c, b, a });
+                indices.AddRange(new[] { n, n + 1, n + 2, n + 3, n + 4, n + 5 });
+            }
+            for (int i = 0; i < sections.Length - 1; i++)
+                for (int j = 0; j < 3; j++)
+                {
+                    Triangle(sections[i][j], sections[i + 1][j], sections[i][j + 1]);
+                    Triangle(sections[i][j + 1], sections[i + 1][j], sections[i + 1][j + 1]);
+                }
+            foreach (int i in new[] { 0, sections.Length - 1 })
+            { Triangle(sections[i][0], sections[i][1], sections[i][2]); Triangle(sections[i][0], sections[i][2], sections[i][3]); }
+            var mesh = new Mesh { name = "DistantRidge" };
+            mesh.SetVertices(vertices); mesh.SetTriangles(indices, 0); mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            return mesh;
         }
 
         static Transform Child(Transform root, string name, HashSet<string> expected)

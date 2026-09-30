@@ -170,16 +170,7 @@ namespace Emberfall.Editor.Setup
                         if (name == "91_NetworkGym") light.intensity = 1.38f;
                         EditorUtility.SetDirty(light);
                     }
-                    RenderSettings.ambientMode = AmbientMode.Trilight;
-                    RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.72f);
-                    RenderSettings.ambientEquatorColor = new Color(0.40f, 0.42f, 0.42f);
-                    RenderSettings.ambientGroundColor = new Color(0.24f, 0.22f, 0.20f);
-                    RenderSettings.ambientIntensity = 1.5f;
-                    RenderSettings.fog = false;
-                    RenderSettings.fogMode = FogMode.Linear;
-                    RenderSettings.fogColor = new Color(0.105f, 0.14f, 0.155f);
-                    RenderSettings.fogStartDistance = name == "20_Sanctum" ? 18f : 28f;
-                    RenderSettings.fogEndDistance = name == "20_Sanctum" ? 48f : 88f;
+                    ConfigureEnvironment(name);
                     EditorSceneManager.MarkSceneDirty(scene);
                     EditorSceneManager.SaveScene(scene);
                 }
@@ -197,7 +188,24 @@ namespace Emberfall.Editor.Setup
                 if (setup.Any(x => x.isLoaded && x.isActive)) EditorSceneManager.RestoreSceneManagerSetup(setup);
                 else EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             }
-            Debug.Log("EMBERFALL_VISUAL_FOUNDATION_COMPLETE version=0.9.0 style=bright-solid fog=off contactShadows=not-applicable");
+            Debug.Log("EMBERFALL_VISUAL_FOUNDATION_COMPLETE style=bright-solid valley=distant-haze other-scenes=fog-off contactShadows=not-applicable");
+        }
+
+        // Single atmosphere owner, shared by full rebuild and the targeted R3 scene pass.
+        // Keep approved Neutral/+0.7 exposure; haze starts beyond combat/interaction distances.
+        public static void ConfigureEnvironment(string sceneName)
+        {
+            bool valley = sceneName == "10_EmberValley";
+            RenderSettings.ambientMode = AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = new Color(0.55f, 0.62f, 0.72f);
+            RenderSettings.ambientEquatorColor = valley ? new Color(.40f, .45f, .49f) : new Color(.40f, .42f, .42f);
+            RenderSettings.ambientGroundColor = valley ? new Color(.25f, .27f, .24f) : new Color(.24f, .22f, .20f);
+            RenderSettings.ambientIntensity = 1.5f;
+            RenderSettings.fog = valley;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = valley ? new Color(.45f, .68f, .85f) : new Color(.105f, .14f, .155f);
+            RenderSettings.fogStartDistance = valley ? 42f : sceneName == "20_Sanctum" ? 18f : 28f;
+            RenderSettings.fogEndDistance = valley ? 150f : sceneName == "20_Sanctum" ? 48f : 88f;
         }
 
         private static VolumeProfile ConfigureProfile()
