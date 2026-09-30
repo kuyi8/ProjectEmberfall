@@ -49,7 +49,12 @@ namespace Emberfall.Editor.Review
                 // Diagnostic camera orbit through the actual Look binding, after normal B interaction.
                 InputSystem.QueueStateEvent(pad, new GamepadState { rightStick = new Vector2(.5f, 0) });
                 if (now >= nextOrbitShot) { Capture("bridge-B-orbit-" + (int)(now - orbitStarted)); nextOrbitShot = now + 1; }
-                if (now - orbitStarted >= 4.4) Finish(true, "Forest and bridge A/combat/B input chain completed; camera images require separate visual review.");
+                if (now - orbitStarted >= 4.4) Advance(10, now, "bridge-orbit-complete");
+                return;
+            }
+            if (phase == 10 && logs.Any(x => x.Contains("segment=bridge-seal event=activated")))
+            {
+                Finish(true, "Forest and bridge A/combat/B plus bridge seal activated via input; camera acceptance remains separate.");
                 return;
             }
             var state = new GamepadState();
@@ -61,6 +66,7 @@ namespace Emberfall.Editor.Review
                     if (phase == 3) target = forest.SigilPickup;
                     if (phase == 4) target = Object.FindObjectsOfType<M2RouteInteractable>().Single(x => x.StableId.Value == "seal:forest");
                     if (phase == 5) target = forest.GuardRune;
+                    if (phase == 10) target = Object.FindObjectsOfType<M2RouteInteractable>().Single(x => x.StableId.Value == "seal:bridge");
                     if (phase == 6 || phase == 8) target = Object.FindObjectsOfType<BridgeMechanismInteractable>()
                         .Single(x => x.StableId == (phase == 6 ? "bridge-mechanism:A" : "bridge-mechanism:B"));
                 }

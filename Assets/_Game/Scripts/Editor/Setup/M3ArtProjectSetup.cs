@@ -159,6 +159,7 @@ namespace Emberfall.Editor.Setup
             ApplySurfaceMaterials(palette);
             CreateDistantGround(root, palette);
             MarkCameraOccluders(root);
+            BridgeCameraProxySetup.ApplyToScene(scene);
 
             EditorSceneManager.SaveScene(scene, EmberValleyPath);
         }

@@ -233,6 +233,7 @@ namespace Emberfall.Editor.Review
                 dynamicMoveSamples = dynamicInputSamples, flaskCapacity = player == null ? -1 : player.Model.HealingFlasks.MaximumCharges,
                 throughBridge = bridgeRun, bridgeA = flow != null && flow.BridgeMechanismAActivated,
                 bridgeB = flow != null && flow.BridgeMechanismBActivated, bridgeCleared = flow != null && flow.BridgeEncounterCleared,
+                bridgeSeal = logs.Any(x => x.Contains("segment=bridge-seal event=activated")),
                 forestPhase = flow == null || flow.ForestTemplate == null ? "" : flow.ForestTemplate.Phase.ToString(),
                 contentInitialized = Emberfall.Core.Content.ContentPackageRuntime.IsInitialized,
                 deaths = flow == null ? -1 : flow.DeathCount }, true));
@@ -243,7 +244,7 @@ namespace Emberfall.Editor.Review
         [Serializable] sealed class Result
         {
             public string scope = "Editor input-chain route (throughBridge selects extended scope); AI on; no relocation/damage injection. Not full R4/Player/performance/human acceptance.";
-            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, contentInitialized;
+            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, bridgeSeal, contentInitialized;
             public string forestPhase;
             public bool pilotPassed, watchtower; public int deaths, dynamicMoveSamples, flaskCapacity; public string reason; public Sample[] samples;
         }

@@ -79,6 +79,7 @@ namespace Emberfall.Editor.Setup
             builder.Finish();
             LiftGroundMarkersAbovePaving(scene,root.transform);
             M6EnvironmentFinishSetup.ApplyToScene(scene);
+            BridgeCameraProxySetup.ApplyToScene(scene);
             EditorSceneManager.MarkSceneDirty(scene);
         }
 

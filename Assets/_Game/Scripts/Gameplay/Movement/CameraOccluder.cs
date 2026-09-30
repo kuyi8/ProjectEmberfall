@@ -6,9 +6,18 @@ namespace Emberfall.Gameplay.Movement
     public sealed class CameraOccluder : MonoBehaviour
     {
         [SerializeField] private Renderer[] _renderers;
+        private CameraQueryProxy _queryProxy;
+
+        public void SetQueryProxy(CameraQueryProxy proxy)
+        {
+            if (proxy != null && proxy.gameObject != gameObject)
+                throw new System.ArgumentException("Query proxy must belong to this occluder.");
+            _queryProxy = proxy;
+        }
 
         private void Awake()
         {
+            _queryProxy = GetComponent<CameraQueryProxy>();
             if (_renderers == null || _renderers.Length == 0)
             {
                 _renderers = GetComponentsInChildren<Renderer>(true);
@@ -17,6 +26,8 @@ namespace Emberfall.Gameplay.Movement
 
         public bool TryGetDistance(Ray ray, float maximumDistance, float radius, out float distance)
         {
+            if (_queryProxy != null)
+                return _queryProxy.TryGetDistance(ray, maximumDistance, radius, out distance);
             distance = maximumDistance;
             if (_renderers == null || _renderers.Length == 0)
             {
