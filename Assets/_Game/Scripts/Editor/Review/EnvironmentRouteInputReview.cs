@@ -20,7 +20,7 @@ namespace Emberfall.Editor.Review
 {
     /// <summary>Editor-only input-chain pilot, not a full Player/human route acceptance.</summary>
     [InitializeOnLoad]
-    public static class EnvironmentRouteInputReview
+    public static partial class EnvironmentRouteInputReview
     {
         const string Source = "Assets/_Game/Scenes/10_EmberValley.unity";
         const string Key = "Emberfall.R4Input.";
@@ -44,7 +44,7 @@ namespace Emberfall.Editor.Review
             EditorApplication.update += Tick;
         }
 
-        public static string Begin()
+        public static string Begin(bool throughBridge = false)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||
@@ -58,10 +58,13 @@ namespace Emberfall.Editor.Review
             SessionState.SetString(Key + "temp", temp);
             SessionState.SetString(Key + "output", folder);
             SessionState.SetBool(Key + "active", true);
+            SessionState.SetBool(Key + "bridge", throughBridge);
             var copy = EditorSceneManager.OpenScene(temp);
             var serialized = new SerializedObject(Object.FindObjectOfType<M2RouteFlowController>());
             serialized.FindProperty("_saveFileName").stringValue = Path.GetFullPath(folder + "/isolated-save.json");
             serialized.ApplyModifiedPropertiesWithoutUndo();
+            if (throughBridge)
+                new GameObject("R4_ContentBootstrap").AddComponent<Emberfall.Infrastructure.Bootstrap.AppBootstrap>();
             EditorSceneManager.SaveScene(copy);
             EditorApplication.isPlaying = true;
             return folder;
@@ -74,6 +77,8 @@ namespace Emberfall.Editor.Review
             {
                 output = SessionState.GetString(Key + "output", "");
                 samples.Clear(); logs.Clear(); phase = 0; finishing = false;
+                bridgeRun = SessionState.GetBool(Key + "bridge", false);
+                combatTargets = null; lastEnemyHealth = -1; nextCombatButton = 0;
                 dynamicMove = Vector2.zero; dynamicInputSamples = 0;
                 player = null; flow = null; target = null;
                 started = nextSample = nextShot = lastProgress = EditorApplication.timeSinceStartup;
@@ -131,7 +136,7 @@ namespace Emberfall.Editor.Review
             try
             {
                 double now = EditorApplication.timeSinceStartup;
-                if (now - started > 100) { Finish(false, "100s pilot deadline."); return; }
+                if (now - started > (bridgeRun ? 240 : 100)) { Finish(false, "Input route deadline."); return; }
                 if (player == null) player = Object.FindObjectOfType<PlayerCombatActor>();
                 if (flow == null) flow = Object.FindObjectOfType<M2RouteFlowController>();
                 if (player == null || flow == null || !flow.IsInitialized) return;
@@ -146,7 +151,12 @@ namespace Emberfall.Editor.Review
                     logs.Add("Scout advanced via input; now walking to Watchtower.");
                     Capture("scout-interacted");
                 }
-                if (phase == 1 && flow.WatchtowerDiscovered) { Finish(true, "Scout and watchtower completed via input."); return; }
+                if (phase == 1 && flow.WatchtowerDiscovered)
+                {
+                    if (!bridgeRun) { Finish(true, "Scout and watchtower completed via input."); return; }
+                    Advance(2, now, "watchtower-complete");
+                }
+                if (phase >= 2) { TickBridge(now); return; }
                 if (target == null)
                 {
                     target = phase == 0
@@ -196,7 +206,19 @@ namespace Emberfall.Editor.Review
             catch (Exception ex) { Finish(false, ex.ToString()); }
         }
 
-        static void Capture(string name) => ScreenCapture.CaptureScreenshot(Path.GetFullPath(output + "/" + name + ".png"));
+        static void Capture(string name)
+        {
+            ScreenCapture.CaptureScreenshot(Path.GetFullPath(output + "/" + name + ".png"));
+            var camera = Camera.main;
+            if (camera == null || player == null) return;
+            File.WriteAllText(output + "/" + name + "-pose.json", JsonUtility.ToJson(new Frame {
+                player = player.transform.position, camera = camera.transform.position, euler = camera.transform.eulerAngles,
+                fov = camera.fieldOfView, width = Screen.width, height = Screen.height,
+                cameraOverlaps = Physics.OverlapSphere(camera.transform.position, .22f, ~0, QueryTriggerInteraction.Ignore)
+                    .Select(x => x.name).ToArray() }, true));
+        }
+        [Serializable] sealed class Frame
+        { public Vector3 player, camera, euler; public float fov; public int width, height; public string[] cameraOverlaps; }
         static void Finish(bool success, string reason)
         {
             InputSystem.QueueStateEvent(pad, new GamepadState());
@@ -209,6 +231,10 @@ namespace Emberfall.Editor.Review
             File.WriteAllText(output + "/result.json", JsonUtility.ToJson(new Result { pilotPassed = success, reason = reason,
                 samples = samples.ToArray(), watchtower = flow != null && flow.WatchtowerDiscovered,
                 dynamicMoveSamples = dynamicInputSamples, flaskCapacity = player == null ? -1 : player.Model.HealingFlasks.MaximumCharges,
+                throughBridge = bridgeRun, bridgeA = flow != null && flow.BridgeMechanismAActivated,
+                bridgeB = flow != null && flow.BridgeMechanismBActivated, bridgeCleared = flow != null && flow.BridgeEncounterCleared,
+                forestPhase = flow == null || flow.ForestTemplate == null ? "" : flow.ForestTemplate.Phase.ToString(),
+                contentInitialized = Emberfall.Core.Content.ContentPackageRuntime.IsInitialized,
                 deaths = flow == null ? -1 : flow.DeathCount }, true));
             File.WriteAllLines(output + "/events.log", logs);
         }
@@ -216,7 +242,9 @@ namespace Emberfall.Editor.Review
         { public double seconds; public Vector3 position; public Vector2 move, requestedMove; public float health; public int phase; public string candidate; }
         [Serializable] sealed class Result
         {
-            public string scope = "Editor input-chain pilot: authored spawn to scout/watchtower; AI on; no relocation/damage injection. Not full R4/Player/performance/human acceptance.";
+            public string scope = "Editor input-chain route (throughBridge selects extended scope); AI on; no relocation/damage injection. Not full R4/Player/performance/human acceptance.";
+            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, contentInitialized;
+            public string forestPhase;
             public bool pilotPassed, watchtower; public int deaths, dynamicMoveSamples, flaskCapacity; public string reason; public Sample[] samples;
         }
     }
