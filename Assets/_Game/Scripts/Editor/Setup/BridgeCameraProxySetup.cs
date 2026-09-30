@@ -16,6 +16,11 @@ namespace Emberfall.Editor.Setup
             if (scene.name != "10_EmberValley") return 0;
             var tree = scene.GetRootGameObjects().SelectMany(x => x.GetComponentsInChildren<CameraOccluder>(true))
                 .Single(x => x.name == "BridgeDeadTree");
+            // Harness-approved move from repaired baseline (10.8, y, 49); never accumulate an offset.
+            var position = tree.transform.position;
+            tree.transform.position = new Vector3(9.3f, position.y, 50.5f);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(tree.transform);
+            EditorUtility.SetDirty(tree.transform);
             var mesh = tree.GetComponent<MeshFilter>().sharedMesh;
             var scale = tree.transform.lossyScale;
             if (Mathf.Abs(scale.x - scale.y) > .0001f || Mathf.Abs(scale.x - scale.z) > .0001f || scale.x <= 0)

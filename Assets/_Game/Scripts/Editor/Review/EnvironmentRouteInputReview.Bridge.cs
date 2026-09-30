@@ -18,10 +18,16 @@ namespace Emberfall.Editor.Review
     public static partial class EnvironmentRouteInputReview
     {
         static bool bridgeRun;
+        static bool legacyTreeRun;
         static CombatTarget[] combatTargets;
         static float lastEnemyHealth;
         static double nextCombatButton;
-        static double orbitStarted, nextOrbitShot;
+        static double orbitStarted;
+        static readonly float[] OrbitYaws = { 27,108,189,264,342 };
+        static readonly Vector3 OrbitStation = new Vector3(11.762124f,1.1f,47.786297f);
+        static int orbitIndex;
+        static double orbitSettled;
+        static bool orbitCaptured;
 
         static void Advance(int next, double now, string label)
         {
@@ -42,14 +48,50 @@ namespace Emberfall.Editor.Review
             if (phase == 7 && flow.BridgeEncounterCleared) Advance(8, now, "bridge-cleared");
             if (phase == 8 && flow.BridgeMechanismBActivated)
             {
-                Advance(9, now, "bridge-B-activated"); orbitStarted = nextOrbitShot = now;
+                Advance(11, now, "bridge-B-activated"); orbitStarted = now;
+                orbitIndex=0; orbitSettled=0; orbitCaptured=false;
+            }
+            if(phase==11)
+            {
+                // Walk back to the recorded problem station; no relocation/disabled collision.
+                var stationInput=new GamepadState();
+                if(Vector3.ProjectOnPlane(player.transform.position-OrbitStation,Vector3.up).magnitude>.08f)
+                    Steer(ref stationInput,OrbitStation);
+                else { Advance(9,now,"bridge-camera-station"); orbitStarted=now; }
+                InputSystem.QueueStateEvent(pad,stationInput);
+                if(now>=nextSample)
+                {
+                    nextSample=now+.1;
+                    samples.Add(new Sample { seconds=now-started,position=player.transform.position,move=dynamicMove,
+                        requestedMove=stationInput.leftStick,health=player.HealthNormalized,phase=phase,candidate="camera-station" });
+                }
+                if(now-orbitStarted>20) Finish(false,"Cannot physically reach recorded camera station in20s.");
+                return;
             }
             if (phase == 9)
             {
-                // Diagnostic camera orbit through the actual Look binding, after normal B interaction.
-                InputSystem.QueueStateEvent(pad, new GamepadState { rightStick = new Vector2(.5f, 0) });
-                if (now >= nextOrbitShot) { Capture("bridge-B-orbit-" + (int)(now - orbitStarted)); nextOrbitShot = now + 1; }
-                if (now - orbitStarted >= 4.4) Advance(10, now, "bridge-orbit-complete");
+                // Real Look binding, then a stationary hold so asynchronous screenshots match stable poses.
+                float error = Mathf.DeltaAngle(Camera.main.transform.eulerAngles.y, OrbitYaws[orbitIndex]);
+                var orbitInput = new GamepadState();
+                if (Mathf.Abs(error) > .6f && !orbitCaptured)
+                {
+                    orbitSettled=0;
+                    // Stay above the existing stick dead zone; do not change the player's input settings.
+                    orbitInput.rightStick=new Vector2(Mathf.Sign(error)*Mathf.Clamp(Mathf.Abs(error)/40f,.2f,.55f),0);
+                }
+                else
+                {
+                    if(orbitSettled==0) orbitSettled=now;
+                    if(!orbitCaptured && now-orbitSettled>.45)
+                    { Capture("bridge-B-orbit-"+orbitIndex); orbitCaptured=true; }
+                    if(orbitCaptured && now-orbitSettled>.9)
+                    {
+                        orbitIndex++; orbitCaptured=false; orbitSettled=0;
+                        if(orbitIndex==OrbitYaws.Length) Advance(10,now,"bridge-orbit-complete");
+                    }
+                }
+                InputSystem.QueueStateEvent(pad,orbitInput);
+                if(now-orbitStarted>40) Finish(false,"Camera orbit input did not settle within40s.");
                 return;
             }
             if (phase == 10 && logs.Any(x => x.Contains("segment=bridge-seal event=activated")))

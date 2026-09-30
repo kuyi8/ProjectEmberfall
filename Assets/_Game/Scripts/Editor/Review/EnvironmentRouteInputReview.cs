@@ -44,7 +44,7 @@ namespace Emberfall.Editor.Review
             EditorApplication.update += Tick;
         }
 
-        public static string Begin(bool throughBridge = false)
+        public static string Begin(bool throughBridge = false, bool legacyTreeQuery = false)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||
@@ -59,6 +59,7 @@ namespace Emberfall.Editor.Review
             SessionState.SetString(Key + "output", folder);
             SessionState.SetBool(Key + "active", true);
             SessionState.SetBool(Key + "bridge", throughBridge);
+            SessionState.SetBool(Key + "legacyTree", legacyTreeQuery);
             var copy = EditorSceneManager.OpenScene(temp);
             var serialized = new SerializedObject(Object.FindObjectOfType<M2RouteFlowController>());
             serialized.FindProperty("_saveFileName").stringValue = Path.GetFullPath(folder + "/isolated-save.json");
@@ -78,6 +79,9 @@ namespace Emberfall.Editor.Review
                 output = SessionState.GetString(Key + "output", "");
                 samples.Clear(); logs.Clear(); phase = 0; finishing = false;
                 bridgeRun = SessionState.GetBool(Key + "bridge", false);
+                legacyTreeRun = SessionState.GetBool(Key + "legacyTree", false);
+                if (legacyTreeRun)
+                    Object.FindObjectsOfType<CameraOccluder>(true).Single(x=>x.name=="BridgeDeadTree").SetQueryProxy(null);
                 combatTargets = null; lastEnemyHealth = -1; nextCombatButton = 0;
                 dynamicMove = Vector2.zero; dynamicInputSamples = 0;
                 player = null; flow = null; target = null;
@@ -234,6 +238,7 @@ namespace Emberfall.Editor.Review
                 throughBridge = bridgeRun, bridgeA = flow != null && flow.BridgeMechanismAActivated,
                 bridgeB = flow != null && flow.BridgeMechanismBActivated, bridgeCleared = flow != null && flow.BridgeEncounterCleared,
                 bridgeSeal = logs.Any(x => x.Contains("segment=bridge-seal event=activated")),
+                legacyTreeQuery = legacyTreeRun,
                 forestPhase = flow == null || flow.ForestTemplate == null ? "" : flow.ForestTemplate.Phase.ToString(),
                 contentInitialized = Emberfall.Core.Content.ContentPackageRuntime.IsInitialized,
                 deaths = flow == null ? -1 : flow.DeathCount }, true));
@@ -244,7 +249,7 @@ namespace Emberfall.Editor.Review
         [Serializable] sealed class Result
         {
             public string scope = "Editor input-chain route (throughBridge selects extended scope); AI on; no relocation/damage injection. Not full R4/Player/performance/human acceptance.";
-            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, bridgeSeal, contentInitialized;
+            public bool throughBridge, bridgeA, bridgeB, bridgeCleared, bridgeSeal, contentInitialized,legacyTreeQuery;
             public string forestPhase;
             public bool pilotPassed, watchtower; public int deaths, dynamicMoveSamples, flaskCapacity; public string reason; public Sample[] samples;
         }
