@@ -75,6 +75,7 @@ MonoBehaviour:
   _perfectGuardWindow: 0.2
   _perfectGuardPostureMultiplier: 0.15
   _perfectGuardCounterPostureDamage: 60
+  _perfectGuardCounterWindow: 0.6
   _guardBreakDuration: 0.78
   _healingFlaskCharges: 2
   _healDuration: 1.05

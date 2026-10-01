@@ -38,6 +38,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         private int _currentAttackHitCount;
         private bool _attackHitMetricPending;
         private bool _countedAttackWasSweep;
+        private bool _countedAttackWasGuardCounter;
         private IExecutionTarget _executionTarget;
         private IExecutionTarget _executionPromptTarget;
         private float _executionPromptRefreshRemaining;
@@ -529,7 +530,9 @@ namespace Emberfall.Gameplay.Combat.Unity
                     }
                     else
                     {
-                        LastCombatEvent = $"{_model.CurrentAttackTag} hit: {result.AppliedDamage:0}";
+                        LastCombatEvent = _model.CurrentAttackIsGuardCounter
+                            ? $"Perfect guard counter: {result.AppliedDamage:0}"
+                            : $"{_model.CurrentAttackTag} hit: {result.AppliedDamage:0}";
                     }
                 }
             }
@@ -545,6 +548,8 @@ namespace Emberfall.Gameplay.Combat.Unity
             _countedAttackSequence = _model.AttackSequence;
             _currentAttackHitCount = 0;
             _countedAttackWasSweep = _model.State == CombatState.Sweep;
+            _countedAttackWasGuardCounter = _model.CurrentAttackIsGuardCounter;
+            if (_countedAttackWasGuardCounter) LogFeel("guard-counter-start", 1, _countedAttackSequence);
             _attackHitMetricPending = true;
         }
 
@@ -559,6 +564,8 @@ namespace Emberfall.Gameplay.Combat.Unity
             LogFeel("attack-hit-count", _currentAttackHitCount, _countedAttackSequence);
             if (_countedAttackWasSweep)
                 LogFeel("sweep", _currentAttackHitCount, _countedAttackSequence);
+            if (_countedAttackWasGuardCounter)
+                LogFeel("guard-counter-hit-count", _currentAttackHitCount, _countedAttackSequence);
             _attackHitMetricPending = false;
         }
 

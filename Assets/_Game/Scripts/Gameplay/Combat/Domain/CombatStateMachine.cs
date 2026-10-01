@@ -8,6 +8,7 @@ namespace Emberfall.Gameplay.Combat.Domain
     public sealed class CombatStateMachine
     {
         private readonly CombatTuning _tuning;
+        private readonly bool _enablePerfectGuardCounter;
         private CombatCommand? _bufferedCommand;
         private float _bufferRemaining;
         private float _heavyChargeSeconds;
@@ -17,9 +18,10 @@ namespace Emberfall.Gameplay.Combat.Domain
         private bool _sprintRequested;
         private float _sprintHeldSeconds;
 
-        public CombatStateMachine(CombatTuning tuning)
+        public CombatStateMachine(CombatTuning tuning, bool enablePerfectGuardCounter = true)
         {
             _tuning = tuning ?? throw new ArgumentNullException(nameof(tuning));
+            _enablePerfectGuardCounter = enablePerfectGuardCounter;
             Health = new HealthModel(tuning.MaxHealth);
             Stamina = new StaminaModel(tuning.MaxStamina, tuning.StaminaRegenPerSecond, tuning.StaminaRegenDelay);
             Posture = new PostureModel(
@@ -74,6 +76,11 @@ namespace Emberfall.Gameplay.Combat.Domain
         public bool IsSprinting { get; private set; }
         public bool PerfectDodgeAttackReady { get; private set; }
         public bool CurrentAttackEmpowered { get; private set; }
+        public bool CurrentAttackIsGuardCounter { get; private set; }
+        public float GuardCounterWindowRemaining { get; private set; }
+        public bool CanUseGuardCounter => GuardCounterWindowRemaining > 0f &&
+            (State == CombatState.Locomotion || State == CombatState.Guard) &&
+            Stamina.Current >= _tuning.LightStaminaCost;
         public float CurrentAttackPostureBonus { get; private set; }
         public int DodgeAttemptCount { get; private set; }
         public int PerfectDodgeCount { get; private set; }
@@ -124,6 +131,7 @@ namespace Emberfall.Gameplay.Combat.Domain
             StateElapsed += deltaTime;
             RangedCooldownRemaining = Math.Max(0f, RangedCooldownRemaining - deltaTime);
             SweepCooldownRemaining = Math.Max(0f, SweepCooldownRemaining - deltaTime);
+            GuardCounterWindowRemaining = Math.Max(0f, GuardCounterWindowRemaining - deltaTime);
             if (State == CombatState.HeavyCharge)
             {
                 _heavyChargeSeconds += deltaTime;
@@ -181,7 +189,11 @@ namespace Emberfall.Gameplay.Combat.Domain
             if (IsGuarding && request.IsDefendable && request.IsInDefenderFrontArc)
             {
                 bool perfect = IsPerfectGuardWindow;
-                if (perfect) PerfectGuardCount++;
+                if (perfect)
+                {
+                    PerfectGuardCount++;
+                    if (_enablePerfectGuardCounter) GuardCounterWindowRemaining = _tuning.PerfectGuardCounterWindow;
+                }
                 float postureDamage = request.PostureDamage *
                     (perfect ? _tuning.PerfectGuardPostureMultiplier : 1f);
                 float appliedPosture = Posture.ApplyDamage(postureDamage);
@@ -242,6 +254,7 @@ namespace Emberfall.Gameplay.Combat.Domain
             _bufferRemaining = 0f;
             _heavyChargeSeconds = 0f;
             PerfectDodgeAttackReady = false;
+            GuardCounterWindowRemaining = 0f;
             SetSprintRequested(false);
             EnterState(CombatState.Locomotion);
             return true;
@@ -269,6 +282,8 @@ namespace Emberfall.Gameplay.Combat.Domain
             CurrentAttackDamage = 0f;
             CurrentAttackPostureBonus = 0f;
             CurrentAttackEmpowered = false;
+            CurrentAttackIsGuardCounter = false;
+            GuardCounterWindowRemaining = 0f;
             PerfectDodgeAttackReady = false;
             IsHeavyFullyCharged = false;
             LastHealAmount = 0f;
@@ -334,6 +349,7 @@ namespace Emberfall.Gameplay.Combat.Domain
                     CurrentAttackDamage = _tuning.RangedDamage;
                     CurrentAttackTag = AttackTag.Projectile;
                     CurrentAttackEmpowered = false;
+                    CurrentAttackIsGuardCounter = false;
                     CurrentAttackPostureBonus = 0f;
                     IsHeavyFullyCharged = false;
                     AttackSequence++;
@@ -379,6 +395,7 @@ namespace Emberfall.Gameplay.Combat.Domain
                     CurrentAttackDamage = 0f;
                     CurrentAttackPostureBonus = 0f;
                     CurrentAttackEmpowered = false;
+                    CurrentAttackIsGuardCounter = false;
                     ExecutionSequence++;
                     EnterState(CombatState.Execution);
                     return true;
@@ -405,7 +422,7 @@ namespace Emberfall.Gameplay.Combat.Domain
         private bool TryLightAttack()
         {
             int comboIndex;
-            if (State == CombatState.Locomotion)
+            if (State == CombatState.Locomotion || (State == CombatState.Guard && CanUseGuardCounter))
             {
                 comboIndex = 0;
             }
@@ -431,7 +448,9 @@ namespace Emberfall.Gameplay.Combat.Domain
 
             CurrentAttackDamage = _tuning.GetLightDamage(comboIndex);
             CurrentAttackTag = AttackTag.Light;
-            ApplyPerfectDodgeAttackBonus();
+            bool counter = comboIndex == 0 && GuardCounterWindowRemaining > 0f;
+            ApplyPerfectDodgeAttackBonus(counter);
+            if (counter) GuardCounterWindowRemaining = 0f;
             IsHeavyFullyCharged = false;
             AttackSequence++;
             EnterState((CombatState)((int)CombatState.LightAttack1 + comboIndex));
@@ -531,6 +550,10 @@ namespace Emberfall.Gameplay.Combat.Domain
         {
             State = next;
             StateElapsed = 0f;
+            if (next == CombatState.HitReact || next == CombatState.GuardBreak || next == CombatState.Dead)
+                GuardCounterWindowRemaining = 0f;
+            if (!IsLightAttack(next) && next != CombatState.HeavyAttack && next != CombatState.Sweep)
+                CurrentAttackIsGuardCounter = false;
             if (next == CombatState.Heal)
             {
                 _healResolved = false;
@@ -590,13 +613,14 @@ namespace Emberfall.Gameplay.Combat.Domain
         private static bool IsLightAttack(CombatState state) =>
             state >= CombatState.LightAttack1 && state <= CombatState.LightAttack3;
 
-        private void ApplyPerfectDodgeAttackBonus()
+        private void ApplyPerfectDodgeAttackBonus(bool guardCounter = false)
         {
-            CurrentAttackEmpowered = PerfectDodgeAttackReady;
-            CurrentAttackPostureBonus = CurrentAttackEmpowered
+            CurrentAttackIsGuardCounter = guardCounter;
+            CurrentAttackEmpowered = guardCounter || PerfectDodgeAttackReady;
+            CurrentAttackPostureBonus = PerfectDodgeAttackReady
                 ? _tuning.PerfectDodgePostureBonus
                 : 0f;
-            if (!CurrentAttackEmpowered) return;
+            if (!PerfectDodgeAttackReady) return;
             CurrentAttackDamage += _tuning.PerfectDodgeDamageBonus;
             PerfectDodgeAttackReady = false;
         }

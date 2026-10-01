@@ -59,6 +59,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, Min(0.01f)] private float _perfectGuardWindow = 0.20f;
         [SerializeField, Range(0f, 1f)] private float _perfectGuardPostureMultiplier = 0.15f;
         [SerializeField, Min(0.1f)] private float _perfectGuardCounterPostureDamage = 60f;
+        [SerializeField, Min(0.01f)] private float _perfectGuardCounterWindow = 0.6f;
         [SerializeField, Min(0.1f)] private float _guardBreakDuration = 0.78f;
 
         [Header("Healing flask")]
@@ -101,6 +102,6 @@ namespace Emberfall.Gameplay.Combat.Unity
             _healHealthFraction, _sprintWarmupSeconds, _sprintStaminaPerSecond,
             _executionStaminaCost, _executionDuration, _executionResolveTime,
             _sweepDamage, _sweepStaminaCost, _sweepCooldown, _sweepDuration,
-            _sweepDamageOpen, _sweepDamageClose, _sweepRadius, _sweepAngle);
+            _sweepDamageOpen, _sweepDamageClose, _sweepRadius, _sweepAngle, _perfectGuardCounterWindow);
     }
 }

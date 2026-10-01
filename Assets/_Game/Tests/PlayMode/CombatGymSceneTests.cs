@@ -535,6 +535,17 @@ namespace Emberfall.Tests.PlayMode
         [UnityTest]
         public IEnumerator LightCombo_KeepsHumanoidHipsAlignedWithGameplayRoot()
         {
+            return CheckLightComboHips(false);
+        }
+
+        [UnityTest]
+        public IEnumerator LightCombo_AfterIdleSettles_KeepsHumanoidHipsAlignedWithGameplayRoot()
+        {
+            return CheckLightComboHips(true);
+        }
+
+        private IEnumerator CheckLightComboHips(bool settleIdle)
+        {
             yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
             yield return null;
             yield return null;
@@ -549,8 +560,19 @@ namespace Emberfall.Tests.PlayMode
             Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
             Assert.That(hips, Is.Not.Null);
 
+            if (settleIdle)
+            {
+                yield return new WaitForSeconds(0.5f);
+                Assert.That(animator.IsInTransition(0), Is.False, "Idle baseline must finish blending.");
+                Assert.That(combat.GetComponent<CharacterController>().isGrounded, Is.True,
+                    "Settled comparison must start grounded.");
+            }
+
             Vector2 baseline = ToPlanarLocal(combat.transform, hips.position);
             float maximumDrift = 0f;
+            var driftByState = new System.Collections.Generic.Dictionary<CombatState, float>();
+            string peakPose = string.Empty;
+            Debug.Log($"[HIPS_DIAGNOSTIC] baseline={baseline:F4} root={combat.transform.position:F4} animator={animator.transform.localPosition:F4} visible={animator.GetComponentInChildren<Renderer>().isVisible} transition={animator.IsInTransition(0)}");
             bool queuedSecond = false;
             bool queuedThird = false;
             bool reachedThird = false;
@@ -575,9 +597,13 @@ namespace Emberfall.Tests.PlayMode
                 }
 
                 reachedThird |= state == CombatState.LightAttack3;
-                maximumDrift = Mathf.Max(
-                    maximumDrift,
-                    Vector2.Distance(baseline, ToPlanarLocal(combat.transform, hips.position)));
+                float drift = Vector2.Distance(baseline, ToPlanarLocal(combat.transform, hips.position));
+                if (!driftByState.ContainsKey(state) || drift > driftByState[state]) driftByState[state] = drift;
+                if (drift > maximumDrift)
+                {
+                    maximumDrift = drift;
+                    peakPose = $"settled={settleIdle} domain={state} elapsed={combat.Model.StateElapsed:F4} hips={ToPlanarLocal(combat.transform, hips.position):F4} leftFoot={ToPlanarLocal(combat.transform, animator.GetBoneTransform(HumanBodyBones.LeftFoot).position):F4} rightFoot={ToPlanarLocal(combat.transform, animator.GetBoneTransform(HumanBodyBones.RightFoot).position):F4} animator={animator.transform.localPosition:F4} normalized={animator.GetCurrentAnimatorStateInfo(0).normalizedTime:F4}";
+                }
 
                 if (reachedThird && state == CombatState.Locomotion)
                 {
@@ -587,6 +613,8 @@ namespace Emberfall.Tests.PlayMode
 
             yield return null;
             float finalDrift = Vector2.Distance(baseline, ToPlanarLocal(combat.transform, hips.position));
+            Debug.Log($"[HIPS_DIAGNOSTIC] peak={maximumDrift:F6} final={finalDrift:F6} {peakPose}; byState=" +
+                string.Join(";", driftByState.Select(pair => pair.Key + "=" + pair.Value.ToString("F6"))));
             Assert.That(queuedSecond, Is.True, "Second attack was not accepted in the combo window.");
             Assert.That(queuedThird, Is.True, "Third attack was not accepted in the combo window.");
             Assert.That(reachedThird, Is.True, "The test did not reach LightAttack3.");

@@ -177,7 +177,10 @@ namespace Emberfall.UI
                 new Rect(34f, 118f, 282f, 24f),
                 $"生命 {_player.Model.Health.Current:0}/{_player.Model.Health.Maximum:0}　耐力 {_player.Model.Stamina.Current:0}/{_player.Model.Stamina.Maximum:0}　架势 {_player.Model.Posture.Current:0}",
                 _bodyStyle);
-            string guardReady = _player.IsGuardCounterReady ? " · 反击就绪" : string.Empty;
+            string guardReady = _player.IsGuardCounterReady ? " · 守印蓄势" : string.Empty;
+            string counterPrompt = _player.Model.CanUseGuardCounter
+                ? $"反击就绪 {Mathf.Ceil(_player.Model.GuardCounterWindowRemaining * 10f) / 10f:0.0}s · 轻击"
+                : _player.Model.CurrentAttackIsGuardCounter ? "反击中" : string.Empty;
             GUI.Label(
                 new Rect(34f, 146f, 302f, 21f),
                 $"药剂：{_player.Model.HealingFlasks.CurrentCharges}/{_player.Model.HealingFlasks.MaximumCharges}　R 使用" +
@@ -196,6 +199,7 @@ namespace Emberfall.UI
                 $"飞刀 {(_player.Model.RangedCooldownRemaining <= 0f ? "就绪" : $"{_player.Model.RangedCooldownRemaining:0.0}s")}" +
                 $"　横扫 {(_player.Model.SweepCooldownRemaining <= 0f ? "就绪" : $"{_player.Model.SweepCooldownRemaining:0.0}s")}",
                 _bodyStyle);
+            GUI.Label(new Rect(34f, 222f, 302f, 21f), counterPrompt, _bodyStyle);
             GUI.Label(
                 new Rect(34f, 196f, 302f, 21f),
                 $"符文：{runeDetail}{guardReady}",

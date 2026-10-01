@@ -208,6 +208,7 @@ namespace Emberfall.Editor.Setup
             serialized.FindProperty("_perfectGuardWindow").floatValue = 0.20f;
             serialized.FindProperty("_perfectGuardPostureMultiplier").floatValue = 0.15f;
             serialized.FindProperty("_perfectGuardCounterPostureDamage").floatValue = 60f;
+            serialized.FindProperty("_perfectGuardCounterWindow").floatValue = 0.6f;
             serialized.FindProperty("_guardBreakDuration").floatValue = 0.78f;
             serialized.FindProperty("_healingFlaskCharges").intValue = 2;
             serialized.FindProperty("_healDuration").floatValue = 1.05f;

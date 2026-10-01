@@ -73,7 +73,8 @@ namespace Emberfall.Gameplay.Combat.Domain
             float sweepDamageOpen = 0.255f,
             float sweepDamageClose = 0.495f,
             float sweepRadius = 2.7f,
-            float sweepAngle = 240f)
+            float sweepAngle = 240f,
+            float perfectGuardCounterWindow = 0.6f)
         {
             ValidateTriplet(lightDamage, nameof(lightDamage));
             ValidateTriplet(lightDuration, nameof(lightDuration));
@@ -141,6 +142,9 @@ namespace Emberfall.Gameplay.Combat.Domain
                 perfectGuardPostureMultiplier, nameof(perfectGuardPostureMultiplier));
             PerfectGuardCounterPostureDamage = Positive(
                 perfectGuardCounterPostureDamage, nameof(perfectGuardCounterPostureDamage));
+            if (float.IsNaN(perfectGuardCounterWindow) || float.IsInfinity(perfectGuardCounterWindow))
+                throw new ArgumentOutOfRangeException(nameof(perfectGuardCounterWindow));
+            PerfectGuardCounterWindow = Positive(perfectGuardCounterWindow, nameof(perfectGuardCounterWindow));
             GuardBreakDuration = Positive(guardBreakDuration, nameof(guardBreakDuration));
             if (healingFlaskCharges <= 0)
             {
@@ -212,6 +216,7 @@ namespace Emberfall.Gameplay.Combat.Domain
         public float PerfectGuardWindow { get; }
         public float PerfectGuardPostureMultiplier { get; }
         public float PerfectGuardCounterPostureDamage { get; }
+        public float PerfectGuardCounterWindow { get; }
         public float GuardBreakDuration { get; }
         public int HealingFlaskCharges { get; }
         public float HealDuration { get; }
@@ -253,7 +258,7 @@ namespace Emberfall.Gameplay.Combat.Domain
             24f, 0.52f, 0.43f, 4.5f, 0.18f, 20f, 12f, 18f, 0.42f,
             100f, 34f, 1.2f, 0.72f, 0.20f, 0.15f, 60f, 0.78f,
             2, 1.05f, 0.78f, 0.45f,
-            0.5f, 12f, 22f, 0.72f, 0.21f);
+            0.5f, 12f, 22f, 0.72f, 0.21f, perfectGuardCounterWindow: 0.6f);
 
         private static void ValidateTriplet(float[] values, string name)
         {

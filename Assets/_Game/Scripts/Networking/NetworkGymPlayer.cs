@@ -378,7 +378,8 @@ namespace Emberfall.Networking
 
             if (IsServer)
             {
-                _combat = new CombatStateMachine(_presentationTuning);
+                // Counter opportunity is offline-only until its replicated facts/presentation are verified.
+                _combat = new CombatStateMachine(_presentationTuning, enablePerfectGuardCounter: false);
                 _combatIntentValidator = new NetworkCombatIntentValidator();
                 _interactionIntentValidator = new NetworkInteractionIntentValidator();
                 _rescueIntentValidator = new NetworkInteractionIntentValidator();

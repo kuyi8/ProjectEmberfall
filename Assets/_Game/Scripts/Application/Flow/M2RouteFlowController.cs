@@ -152,6 +152,10 @@ namespace Emberfall.Application.Flow
             _forestTemplate = forestTemplate;
         }
 
+#if UNITY_EDITOR
+        public static string EditorTestSavePath { get; set; }
+#endif
+
         private void Awake()
         {
             try
@@ -450,6 +454,11 @@ namespace Emberfall.Application.Flow
             string path = string.IsNullOrWhiteSpace(_savePathOverride)
                 ? Path.Combine(saveDirectory, _saveFileName)
                 : _savePathOverride;
+#if UNITY_EDITOR
+            // Test Runner also runs inside the interactive Editor, where isBatchMode is false.
+            // The test assembly owns this scoped override; never let a new-game fixture delete user saves.
+            if (!string.IsNullOrEmpty(EditorTestSavePath)) path = EditorTestSavePath;
+#endif
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (VisualFoundationReviewProbe.IsActive) path = VisualFoundationReviewProbe.SavePath;
 #endif

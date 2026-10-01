@@ -11,6 +11,7 @@
         "Emberfall.UI",
         "Emberfall.Networking",
         "Unity.Netcode.Runtime",
+        "Unity.InputSystem",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],

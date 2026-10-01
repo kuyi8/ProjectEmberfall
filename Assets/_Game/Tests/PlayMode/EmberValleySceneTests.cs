@@ -62,6 +62,12 @@ namespace Emberfall.Tests.PlayMode
             M2RouteFlowController flow = Object.FindObjectOfType<M2RouteFlowController>();
             Assert.That(flow, Is.Not.Null);
             Assert.That(flow.IsInitialized, Is.True);
+#if UNITY_EDITOR
+            Assert.That(M2RouteFlowController.EditorTestSavePath, Is.Not.Null.And.Not.Empty);
+            Assert.That(Path.GetFullPath(flow.SavePath),
+                Is.EqualTo(Path.GetFullPath(M2RouteFlowController.EditorTestSavePath)),
+                "Interactive Test Runner must never read, overwrite or delete the user's save.");
+#endif
             Assert.That(flow.Stage, Is.EqualTo(MainQuestStage.MeetScout));
             Assert.That(flow.PacingRunId, Is.Not.Empty,
                 "The offline route must create a read-only pacing run for real-play logs.");
