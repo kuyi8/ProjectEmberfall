@@ -162,6 +162,7 @@ namespace Emberfall.Editor.Setup
             BindCombatVfx(CombatGymPath, steelImpact, guardImpact, emberImpact);
             BindSwordTrail(ScenePath, swordTrailMaterial);
             BindSwordTrail(CombatGymPath, swordTrailMaterial);
+            PlayerSwordArtSetup.ApplyProject();
             BindThrowingKnife(ScenePath, throwingKnife);
             BindThrowingKnife(CombatGymPath, throwingKnife);
             BindWardenChargeTrail(ScenePath, wardenChargeTrailMaterial);
@@ -304,7 +305,9 @@ namespace Emberfall.Editor.Setup
                     UnityEngine.Object.DestroyImmediate(core.GetComponent<Collider>());
                 }
 
+                CharacterEquipmentSelection.Apply(root);
                 M1ProjectSetup.SetLayerRecursively(root, 0);
+                CharacterPresentationPaletteSetup.Apply(root);
                 PrefabUtility.SaveAsPrefabAsset(root, ScorchedKnightPrefabPath);
                 EditorUtility.SetDirty(sword);
                 EditorUtility.SetDirty(shield);
@@ -361,6 +364,9 @@ namespace Emberfall.Editor.Setup
 
             M1ProjectSetup.SetLayerRecursively(root, 0);
             string prefabPath = $"{outputRoot}/{prefabName}.prefab";
+            CharacterPresentationPaletteSetup.Apply(root);
+            if (prefabName == WardenSilhouetteSelection.WardenCharacterName)
+                WardenSilhouetteSelection.Apply(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             if (prefab == null) throw new IOException($"Could not save character prefab: {prefabPath}");
@@ -555,6 +561,8 @@ namespace Emberfall.Editor.Setup
 
             M1ProjectSetup.SetLayerRecursively(root, 0);
             string path = $"{WeaponPrefabRoot}/{prefabName}.prefab";
+            if (prefabName == WardenSilhouetteSelection.CanonicalSwordName)
+                WardenSilhouetteSelection.Apply(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             UnityEngine.Object.DestroyImmediate(root);
             if (prefab == null) throw new IOException($"Could not save weapon prefab: {path}");

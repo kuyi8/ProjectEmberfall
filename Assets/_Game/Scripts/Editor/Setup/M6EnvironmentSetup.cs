@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Emberfall.Gameplay.Movement;
 using Emberfall.AI.Unity;
 using Unity.AI.Navigation;
 using UnityEditor;
@@ -81,7 +82,37 @@ namespace Emberfall.Editor.Setup
             LiftGroundMarkersAbovePaving(scene,root.transform);
             M6EnvironmentFinishSetup.ApplyToScene(scene);
             BridgeTreePresentationSetup.ApplyToScene(scene);
+            WorldPresentationSetup.ApplyToScene(scene);
             EditorSceneManager.MarkSceneDirty(scene);
+        }
+
+        /// <summary>Presentation-only migration for existing approved kit walls; never rebuilds geometry or navigation.</summary>
+        public static int RegisterCameraOccluders(Scene scene)
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling || !Scenes.Contains(scene.name))
+                throw new InvalidOperationException("Idle approved production scene required.");
+            var root = scene.GetRootGameObjects().Single(r => r.name == RootName);
+            int added = 0;
+            foreach (Transform part in root.transform) if (RegisterWallOccluder(part)) added++;
+            if (added > 0) EditorSceneManager.MarkSceneDirty(scene);
+            return added;
+        }
+
+        private static bool RegisterWallOccluder(Transform part)
+        {
+            // Per-part bounds, never the entire environment root: huge aggregate bounds pin the camera.
+            bool wall = part.GetComponentsInChildren<MeshFilter>(true).Any(f =>
+                AssetDatabase.GetAssetPath(f.sharedMesh).StartsWith(KitRoot + "fbx/wall", StringComparison.Ordinal));
+            if (!wall) return false;
+            if (part.GetComponent<CameraOccluder>() != null) return false;
+            var occluder = part.gameObject.AddComponent<CameraOccluder>();
+            var serialized = new SerializedObject(occluder);
+            var array = serialized.FindProperty("_renderers");
+            var renderers = part.GetComponentsInChildren<Renderer>(true);
+            array.arraySize = renderers.Length;
+            for (int i = 0; i < renderers.Length; i++) array.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return true;
         }
 
         private static void LiftGroundMarkersAbovePaving(Scene scene,Transform root)
@@ -255,6 +286,7 @@ namespace Emberfall.Editor.Setup
                 var modifier=t.GetComponent<NavMeshModifier>();
                 if(!floor && solid) { if(modifier==null)modifier=t.gameObject.AddComponent<NavMeshModifier>(); if(!modifier.overrideArea)modifier.overrideArea=true; if(modifier.area!=1)modifier.area=1; }
                 else if(modifier!=null)Object.DestroyImmediate(modifier);
+                RegisterWallOccluder(t);
             }
             public void Run(string name,float x0,float z0,float x1,float z1,float height,bool broken)
             {

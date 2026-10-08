@@ -13,7 +13,7 @@ namespace Emberfall.UI
         private const float EventDuration = 1.1f;
 
         [SerializeField] private PlayerInputReader _input;
-        [SerializeField] private bool _visible = true;
+        [SerializeField] private bool _visible;
 
         private GUIStyle _titleStyle;
         private GUIStyle _bodyStyle;
@@ -31,6 +31,13 @@ namespace Emberfall.UI
         private float _telemetryRefreshRemaining;
 
         public bool IsVisible => _visible;
+        public Rect PanelRect => ResolvePanel(Screen.width, Screen.height, Debug.isDebugBuild);
+        public static Rect ResolvePanel(float width, float height, bool development)
+        {
+            float scale=Mathf.Clamp(height/1080f,.72f,1.15f);
+            float panelHeight=development?400f:332f;
+            return new Rect(width-432f*scale,height-(panelHeight+18f)*scale,414f*scale,panelHeight*scale);
+        }
         public PlayerInputSnapshot LatestSnapshot { get; private set; }
         public string EncounterTelemetryText => _encounterTelemetry;
         public string TacticalTelemetryText => _tacticalTelemetry;
@@ -39,7 +46,10 @@ namespace Emberfall.UI
         public void Configure(PlayerInputReader input)
         {
             _input = input;
+            _visible = false;
         }
+
+        public void SetVisible(bool visible) => _visible = visible;
 
         private void Start()
         {
@@ -97,12 +107,7 @@ namespace Emberfall.UI
 
             EnsureStyles();
             float scale = Mathf.Clamp(Screen.height / 1080f, 0.72f, 1.15f);
-            float panelHeight = Debug.isDebugBuild ? 400f : 332f;
-            Rect panel = new Rect(
-                Screen.width - (432f * scale),
-                Screen.height - ((panelHeight + 18f) * scale),
-                414f * scale,
-                panelHeight * scale);
+            Rect panel = PanelRect;
             DrawPanel(panel, 0.9f);
             GUI.Label(ScaleRect(panel, 14f, 8f, 386f, 24f, scale), "录屏输入监视（F2 隐藏）", _titleStyle);
 

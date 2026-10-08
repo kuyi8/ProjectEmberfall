@@ -1,4 +1,5 @@
 using Emberfall.AI.Domain;
+using Emberfall.Gameplay.Combat.Unity;
 using UnityEngine;
 
 namespace Emberfall.AI.Unity
@@ -78,7 +79,11 @@ namespace Emberfall.AI.Unity
 
         private void Play(AudioClip clip, float volume)
         {
-            if (_source != null && clip != null) _source.PlayOneShot(clip, volume);
+            if (_source != null && clip != null)
+            {
+                _source.PlayOneShot(clip, volume);
+                CombatAudioVoiceBudget.Track(_source, clip, CombatAudioImportance.Critical);
+            }
         }
 
         private static AudioClip CreateClip(string name, float duration, System.Func<float, uint, float> sampler)

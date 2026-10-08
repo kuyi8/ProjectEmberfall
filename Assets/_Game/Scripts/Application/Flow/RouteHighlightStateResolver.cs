@@ -32,11 +32,18 @@ namespace Emberfall.Application.Flow
             RouteEnrichmentInteractionKind kind,
             bool watchtowerDiscovered,
             EmberValleyRouteChoice routeChoice,
-            bool isAvailable)
+            bool isAvailable,
+            AshReinforcementChoice reinforcementChoice = AshReinforcementChoice.None,
+            bool supplyCartClaimed = false)
         {
-            bool completed = kind == RouteEnrichmentInteractionKind.Watchtower
-                ? watchtowerDiscovered
-                : routeChoice != EmberValleyRouteChoice.None;
+            bool completed = kind switch
+            {
+                RouteEnrichmentInteractionKind.Watchtower => watchtowerDiscovered,
+                RouteEnrichmentInteractionKind.SupplyCart => supplyCartClaimed,
+                RouteEnrichmentInteractionKind.StagedReinforcement or RouteEnrichmentInteractionKind.TogetherReinforcement =>
+                    reinforcementChoice != AshReinforcementChoice.None,
+                _ => routeChoice != EmberValleyRouteChoice.None
+            };
             if (completed) return RouteHighlightState.Completed;
             return isAvailable ? RouteHighlightState.Ready : RouteHighlightState.Locked;
         }

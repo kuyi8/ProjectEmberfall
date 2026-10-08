@@ -58,7 +58,7 @@ namespace Emberfall.Quests.Data
                     throw new FormatException("Required seal count must be greater than zero.");
                 }
 
-                definitions[i] = new QuestDefinition(questId, titleTextId, record.requiredSealCount);
+                definitions[i] = new QuestDefinition(questId, titleTextId, record.requiredSealCount, record.supplyCartHeavyPostureMultiplier);
             }
 
             return new ContentRegistry<QuestDefinition>(definitions);
@@ -77,6 +77,7 @@ namespace Emberfall.Quests.Data
             public string id;
             public string titleTextId;
             public int requiredSealCount;
+            public float supplyCartHeavyPostureMultiplier;
         }
     }
 }

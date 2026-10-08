@@ -15,6 +15,8 @@ namespace Emberfall.AI.Unity
         [SerializeField] private MeleeEnemyActor[] _meleeEnemies = System.Array.Empty<MeleeEnemyActor>();
         [SerializeField] private ShieldEnemyActor[] _shieldEnemies = System.Array.Empty<ShieldEnemyActor>();
         [SerializeField] private RangedEnemyActor[] _rangedEnemies = System.Array.Empty<RangedEnemyActor>();
+        [SerializeField] private SummonerEnemyActor[] _summoners = System.Array.Empty<SummonerEnemyActor>();
+        [SerializeField] private bool _endAttemptOnExit;
         [SerializeField, Min(1)] private int _maximumConcurrentMeleeAttackers = 1;
         [SerializeField] private bool _resetMembersOnPlayerDeath;
         [SerializeField] private Vector3 _arenaCenter;
@@ -29,10 +31,25 @@ namespace Emberfall.AI.Unity
         private readonly Dictionary<int, SupportAnchor> _supportAnchors = new Dictionary<int, SupportAnchor>();
         private bool _telemetryEncounterStarted;
         private bool _telemetryEncounterCleared;
+        private bool _combatAlerted;
+        private NavMeshPath _supportPath;
+        private readonly Vector3[] _supportCorners = new Vector3[64];
+        private readonly RaycastHit[] _supportSightHits = new RaycastHit[16];
+        private static readonly float[] SupportAngles = { 0f, 30f, -30f, 60f, -60f, 80f, -80f };
+
+        // An observed intruder alerts only this authored encounter. This is not LOS,
+        // an attack grant, or a global target registry; actors still raycast independently.
+        public bool HasCombatAlertFor(PlayerCombatActor player) =>
+            isActiveAndEnabled && _combatAlerted && player == _player &&
+            player != null && player.IsAvailable && IsPlayerPositionInsideTelemetryArena();
 
         public int MaximumConcurrentMeleeAttackers => _maximumConcurrentMeleeAttackers;
         public int MeleeMemberCount => (_meleeEnemies?.Length ?? 0) + (_shieldEnemies?.Length ?? 0);
         public int RangedMemberCount => _rangedEnemies?.Length ?? 0;
+        public int SummonerMemberCount => _summoners?.Length ?? 0;
+        public bool EndsAttemptOnExit => _endAttemptOnExit;
+        public bool HasRunFirstUpdate { get; private set; }
+        public Vector2 FirstUpdateArenaHalfExtents { get; private set; }
         public int GrantedAttackCount => _quota?.GrantedCount ?? 0;
         public float SupportRadius => _supportRadius;
         public float SupportArrivalDistance => _supportArrivalDistance;
@@ -104,6 +121,24 @@ namespace Emberfall.AI.Unity
             _telemetryActivationMargin = activationMargin;
         }
 
+        public void ConfigureSummoners(SummonerEnemyActor[] summoners, bool endAttemptOnExit)
+        {
+            _summoners = summoners ?? System.Array.Empty<SummonerEnemyActor>();
+            _endAttemptOnExit = endAttemptOnExit;
+        }
+
+        /// <summary>Restore a completed authored encounter without dealing damage or granting loot.</summary>
+        public void RestoreClearedMembers()
+        {
+            _combatAlerted = false;
+            foreach (MeleeEnemyActor enemy in _meleeEnemies) if (enemy != null) enemy.gameObject.SetActive(false);
+            foreach (ShieldEnemyActor enemy in _shieldEnemies) if (enemy != null) enemy.gameObject.SetActive(false);
+            foreach (RangedEnemyActor enemy in _rangedEnemies) if (enemy != null) enemy.gameObject.SetActive(false);
+            foreach (SummonerEnemyActor enemy in _summoners) if (enemy != null) enemy.gameObject.SetActive(false);
+            _telemetryEncounterStarted = false;
+            _telemetryEncounterCleared = true;
+        }
+
         public void SetMaximumConcurrentMeleeAttackers(int maximumConcurrentMeleeAttackers)
         {
             if (maximumConcurrentMeleeAttackers <= 0)
@@ -119,6 +154,7 @@ namespace Emberfall.AI.Unity
 
         private void Awake()
         {
+            _supportPath = new NavMeshPath();
             _quota = new CombatAttackQuotaModel(_maximumConcurrentMeleeAttackers);
             foreach (MeleeEnemyActor enemy in _meleeEnemies)
                 if (enemy != null) _quota.Register(enemy.CombatantId);
@@ -133,6 +169,7 @@ namespace Emberfall.AI.Unity
 
         private void OnDisable()
         {
+            _combatAlerted = false;
             if (_player != null) _player.Died -= OnPlayerDied;
             foreach (MeleeEnemyActor enemy in _meleeEnemies)
                 enemy?.SetGroupDirective(true, false, Vector3.zero, 0, _supportArrivalDistance);
@@ -142,23 +179,34 @@ namespace Emberfall.AI.Unity
 
         private void Update()
         {
+            if (!HasRunFirstUpdate) { FirstUpdateArenaHalfExtents = _arenaHalfExtents; HasRunFirstUpdate = true; }
             if (_quota == null || _player == null) return;
             bool playerAvailable = _player.IsAvailable;
+            if (!playerAvailable || !IsPlayerPositionInsideTelemetryArena()) _combatAlerted = false;
+            else if (!_combatAlerted)
+            {
+                foreach (MeleeEnemyActor enemy in _meleeEnemies)
+                    if (enemy != null && enemy.HasDirectVisualContactWith(_player)) _combatAlerted = true;
+                foreach (ShieldEnemyActor enemy in _shieldEnemies)
+                    if (enemy != null && enemy.HasDirectVisualContactWith(_player)) _combatAlerted = true;
+                foreach (RangedEnemyActor enemy in _rangedEnemies)
+                    if (enemy != null && enemy.HasDirectVisualContactWith(_player)) _combatAlerted = true;
+            }
             foreach (MeleeEnemyActor enemy in _meleeEnemies)
             {
                 if (enemy == null) continue;
                 _quota.UpdateMember(
                     enemy.CombatantId,
-                    playerAvailable && enemy.IsAvailable && enemy.IsAttackSlotEligible,
-                    playerAvailable && enemy.IsAvailable && enemy.IsAttackSlotCommitted);
+                    playerAvailable && enemy.isActiveAndEnabled && enemy.IsAvailable && enemy.IsAttackSlotEligible,
+                    playerAvailable && enemy.isActiveAndEnabled && enemy.IsAvailable && enemy.IsAttackSlotCommitted);
             }
             foreach (ShieldEnemyActor enemy in _shieldEnemies)
             {
                 if (enemy == null) continue;
                 _quota.UpdateMember(
                     enemy.CombatantId,
-                    playerAvailable && enemy.IsAvailable && enemy.IsAttackSlotEligible,
-                    playerAvailable && enemy.IsAvailable && enemy.IsAttackSlotCommitted);
+                    playerAvailable && enemy.isActiveAndEnabled && enemy.IsAvailable && enemy.IsAttackSlotEligible,
+                    playerAvailable && enemy.isActiveAndEnabled && enemy.IsAvailable && enemy.IsAttackSlotCommitted);
             }
 
             _quota.Resolve();
@@ -178,12 +226,14 @@ namespace Emberfall.AI.Unity
 
         public void ResetEncounter()
         {
+            _combatAlerted = false;
             ResetPacingTelemetry();
             _quota?.Reset();
             _supportAnchors.Clear();
             foreach (MeleeEnemyActor enemy in _meleeEnemies) enemy?.ResetToSpawn();
             foreach (ShieldEnemyActor enemy in _shieldEnemies) enemy?.ResetToSpawn();
             foreach (RangedEnemyActor enemy in _rangedEnemies) enemy?.ResetToSpawn();
+            foreach (SummonerEnemyActor enemy in _summoners) enemy?.ResetToSpawn();
         }
 
         private void ApplyDirective(MeleeEnemyActor enemy, int combatantId)
@@ -194,7 +244,7 @@ namespace Emberfall.AI.Unity
             enemy.SetGroupDirective(
                 allowed,
                 !allowed,
-                allowed ? Vector3.zero : ResolveStableSupportPosition(combatantId, side),
+                allowed ? Vector3.zero : ResolveStableSupportPosition(enemy, combatantId, side),
                 allowed ? 0 : side,
                 _supportArrivalDistance);
         }
@@ -207,41 +257,71 @@ namespace Emberfall.AI.Unity
             enemy.SetGroupDirective(
                 allowed,
                 !allowed,
-                allowed ? Vector3.zero : ResolveStableSupportPosition(combatantId, side),
+                allowed ? Vector3.zero : ResolveStableSupportPosition(enemy, combatantId, side),
                 allowed ? 0 : side,
                 _supportArrivalDistance);
         }
 
-        private Vector3 ResolveStableSupportPosition(int combatantId, int side)
+        private Vector3 ResolveStableSupportPosition(CombatTarget member, int combatantId, int side)
         {
             if (_supportAnchors.TryGetValue(combatantId, out SupportAnchor anchor))
             {
+                // A stable side point may become occluded after the player moves less
+                // than the reanchor threshold. Validate at a bounded rate, not per frame.
+                if (anchor.Validated && Time.time >= anchor.NextPlanTime)
+                {
+                    bool visible = EnemyLineOfSight.HasContactFrom(
+                        anchor.Destination + member.AimPoint.position - member.transform.position,
+                        _player, _supportSightHits);
+                    anchor = new SupportAnchor(anchor.PlayerPosition,
+                        visible ? anchor.Destination : member.transform.position, visible,
+                        visible ? Time.time + .25f : Time.time);
+                    _supportAnchors[combatantId] = anchor;
+                }
                 float playerDrift = Vector3.ProjectOnPlane(
                     _player.transform.position - anchor.PlayerPosition,
                     Vector3.up).magnitude;
-                if (ActiveCommittedCount > 0 || playerDrift <= _supportReanchorDistance)
+                if (anchor.Validated && (ActiveCommittedCount > 0 || playerDrift <= _supportReanchorDistance) ||
+                    !anchor.Validated && Time.time < anchor.NextPlanTime)
                 {
                     return anchor.Destination;
                 }
             }
 
-            Vector3 destination = ResolveSupportPosition(side);
-            _supportAnchors[combatantId] = new SupportAnchor(_player.transform.position, destination);
+            bool valid = TryResolveSupportPosition(member, side, out Vector3 destination);
+            _supportAnchors[combatantId] = new SupportAnchor(_player.transform.position, destination, valid, Time.time + .25f);
             return destination;
         }
 
-        private Vector3 ResolveSupportPosition(int side)
+        private bool TryResolveSupportPosition(CombatTarget member, int side, out Vector3 destination)
         {
             Vector3 right = Vector3.ProjectOnPlane(_player.transform.right, Vector3.up).normalized;
             Vector3 forward = Vector3.ProjectOnPlane(_player.transform.forward, Vector3.up).normalized;
-            Vector3 desired = _player.transform.position + (right * side * _supportRadius) - (forward * 0.35f);
-            desired.x = Mathf.Clamp(desired.x, _arenaCenter.x - _arenaHalfExtents.x, _arenaCenter.x + _arenaHalfExtents.x);
-            desired.z = Mathf.Clamp(desired.z, _arenaCenter.z - _arenaHalfExtents.y, _arenaCenter.z + _arenaHalfExtents.y);
-            if (NavMesh.SamplePosition(desired, out NavMeshHit hit, 2.2f, NavMesh.AllAreas))
+            var agent = member.GetComponent<NavMeshAgent>();
+            var leash = member.GetComponent<EncounterLeash>();
+            destination = member.transform.position;
+            if (agent == null || !agent.enabled || !agent.isOnNavMesh || _supportPath == null) return false;
+            foreach (float angle in SupportAngles)
             {
-                return hit.position;
+                Vector3 desired = _player.transform.position +
+                    Quaternion.Euler(0f, angle, 0f) * (right * side * _supportRadius) - forward * .35f;
+                desired.x = Mathf.Clamp(desired.x, _arenaCenter.x - _arenaHalfExtents.x, _arenaCenter.x + _arenaHalfExtents.x);
+                desired.z = Mathf.Clamp(desired.z, _arenaCenter.z - _arenaHalfExtents.y, _arenaCenter.z + _arenaHalfExtents.y);
+                if (leash != null) desired = leash.ClampDestination(desired);
+                if (!NavMesh.SamplePosition(desired, out NavMeshHit hit, 2.2f, agent.areaMask) ||
+                    leash != null && !leash.Contains(hit.position, agent.radius) ||
+                    !agent.CalculatePath(hit.position, _supportPath) || _supportPath.status != NavMeshPathStatus.PathComplete)
+                    continue;
+                int count = _supportPath.GetCornersNonAlloc(_supportCorners);
+                bool inside = count > 0 && count < _supportCorners.Length;
+                if (leash != null) for (int i = 0; i < count; i++) inside &= leash.Contains(_supportCorners[i]);
+                if (!inside || !EnemyLineOfSight.HasContactFrom(hit.position + member.AimPoint.position - member.transform.position,
+                    _player, _supportSightHits)) continue;
+                destination = hit.position;
+                return true;
             }
-            return desired;
+            // No visible contained side slot: hold/retry, not a cached point behind a closed gate.
+            return false;
         }
 
         public bool TryCaptureEncounterTelemetry(out EncounterTelemetrySnapshot snapshot)
@@ -280,7 +360,7 @@ namespace Emberfall.AI.Unity
             for (int i = 0; i < members.Length; i++)
             {
                 T member = members[i];
-                if (member == null || !member.IsAvailable) continue;
+                if (member == null || !member.isActiveAndEnabled || !member.IsAvailable) continue;
                 available++;
                 int id = member.CombatantId;
                 string label = ShortCombatantName(member.name);
@@ -308,6 +388,7 @@ namespace Emberfall.AI.Unity
 
         private void OnPlayerDied(PlayerCombatActor _)
         {
+            _combatAlerted = false;
             // Every coordinator observes the same player death. Settle a same-frame clear first.
             // An unfinished encounter is abandoned without respawning its members once the player
             // has left its authored arena; only the arena containing the death may reset members.
@@ -344,13 +425,18 @@ namespace Emberfall.AI.Unity
         private void UpdatePacingTelemetry()
         {
             int available = CountAvailableMembers();
-            if (!_telemetryEncounterStarted && available > 0 && IsPlayerInsideTelemetryArena())
+            // New corridor encounter only: leaving abandons the attempt, not its health/deaths.
+            // Settle a last-frame clear before exit; old arenas retain their default behaviour.
+            if (_endAttemptOnExit && IsTelemetryActive && !AllAuthoredMembersDefeated() && !IsPlayerPositionInsideTelemetryArena())
+                ResetPacingTelemetry();
+            if (!_telemetryEncounterStarted && !_telemetryEncounterCleared && available > 0 && IsPlayerInsideTelemetryArena())
             {
                 _telemetryEncounterStarted = true;
                 EncounterStarted?.Invoke(this);
             }
 
-            if (_telemetryEncounterStarted && !_telemetryEncounterCleared && available == 0)
+            if (_telemetryEncounterStarted && !_telemetryEncounterCleared && available == 0 &&
+                (!_endAttemptOnExit || AllAuthoredMembersDefeated()))
             {
                 _telemetryEncounterCleared = true;
                 EncounterCleared?.Invoke(this);
@@ -359,14 +445,28 @@ namespace Emberfall.AI.Unity
 
         private int CountAvailableMembers()
         {
+            // Availability/lifecycle and AI execution are different facts. A temporarily
+            // disabled behaviour is not defeated; an inactive future wave is not in play.
+            // Attack-slot eligibility above still requires isActiveAndEnabled.
             int count = 0;
             foreach (MeleeEnemyActor enemy in _meleeEnemies)
-                if (enemy != null && enemy.IsAvailable) count++;
+                if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsAvailable) count++;
             foreach (ShieldEnemyActor enemy in _shieldEnemies)
-                if (enemy != null && enemy.IsAvailable) count++;
+                if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsAvailable) count++;
             foreach (RangedEnemyActor enemy in _rangedEnemies)
-                if (enemy != null && enemy.IsAvailable) count++;
+                if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsAvailable) count++;
+            foreach (SummonerEnemyActor enemy in _summoners)
+                if (enemy != null && enemy.gameObject.activeInHierarchy && enemy.IsAvailable) count++;
             return count;
+        }
+
+        private bool AllAuthoredMembersDefeated()
+        {
+            foreach (MeleeEnemyActor enemy in _meleeEnemies) if (enemy == null || enemy.Brain == null || !enemy.Brain.Health.IsDead) return false;
+            foreach (ShieldEnemyActor enemy in _shieldEnemies) if (enemy == null || enemy.Brain == null || !enemy.Brain.Health.IsDead) return false;
+            foreach (RangedEnemyActor enemy in _rangedEnemies) if (enemy == null || enemy.Brain == null || !enemy.Brain.Health.IsDead) return false;
+            foreach (SummonerEnemyActor enemy in _summoners) if (enemy == null || enemy.Brain == null || !enemy.Brain.Health.IsDead) return false;
+            return MeleeMemberCount + RangedMemberCount + SummonerMemberCount > 0;
         }
 
         private bool IsPlayerInsideTelemetryArena()
@@ -390,14 +490,18 @@ namespace Emberfall.AI.Unity
 
         private readonly struct SupportAnchor
         {
-            public SupportAnchor(Vector3 playerPosition, Vector3 destination)
+            public SupportAnchor(Vector3 playerPosition, Vector3 destination, bool validated, float nextPlanTime)
             {
                 PlayerPosition = playerPosition;
                 Destination = destination;
+                Validated = validated;
+                NextPlanTime = nextPlanTime;
             }
 
             public Vector3 PlayerPosition { get; }
             public Vector3 Destination { get; }
+            public bool Validated { get; }
+            public float NextPlanTime { get; }
         }
     }
 }

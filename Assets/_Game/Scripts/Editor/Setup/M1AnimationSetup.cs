@@ -123,6 +123,7 @@ namespace Emberfall.Editor.Setup
             PlayerKnifeAnimationSetup.Apply();
             AssetDatabase.SaveAssets();
             Debug.Log("M1 player animation setup completed with CC0 Humanoid clips and root motion disabled.");
+            OfflineLocomotionSetup.Apply();
             return animationSet;
         }
 

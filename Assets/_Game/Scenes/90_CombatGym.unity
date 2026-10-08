@@ -1096,6 +1096,7 @@ GameObject:
   m_Component:
   - component: {fileID: 166933066}
   - component: {fileID: 166933067}
+  - component: {fileID: 166933068}
   m_Layer: 0
   m_Name: Gym_E_0
   m_TagString: Untagged
@@ -1138,6 +1139,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &166933068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 166933065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 992527006}
 --- !u!1 &169278121
 GameObject:
   m_ObjectHideFlags: 0
@@ -1294,7 +1309,7 @@ Transform:
   m_LocalScale: {x: 1.0396686, y: 1.0396684, z: 1.0396682}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 240660343}
+  - {fileID: 1901989878}
   m_Father: {fileID: 768179751}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &184746037
@@ -1753,76 +1768,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 226658051}
   m_Mesh: {fileID: 6068885569156669, guid: f4c8cbd4a0899754988ecac091a09e7e, type: 3}
---- !u!1001 &240660342
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 183462454}
-    m_Modifications:
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4328118945036261127, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_Name
-      value: Sword_M6_Player_Equipped
-      objectReference: {fileID: 0}
-    - target: {fileID: 4328118945036261127, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_Layer
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4689293245237849262, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-      propertyPath: m_Layer
-      value: 2
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
---- !u!4 &240660343 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 2515571110787285056, guid: 0925dc9a36dc6c643be26f46fde9a86c, type: 3}
-  m_PrefabInstance: {fileID: 240660342}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &248266284
 GameObject:
   m_ObjectHideFlags: 0
@@ -1833,6 +1778,7 @@ GameObject:
   m_Component:
   - component: {fileID: 248266285}
   - component: {fileID: 248266286}
+  - component: {fileID: 248266287}
   m_Layer: 0
   m_Name: Gym_E_4
   m_TagString: Untagged
@@ -1875,6 +1821,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &248266287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 248266284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 56574243}
 --- !u!1 &253116116
 GameObject:
   m_ObjectHideFlags: 0
@@ -3106,6 +3066,7 @@ GameObject:
   m_Component:
   - component: {fileID: 528631000}
   - component: {fileID: 528631001}
+  - component: {fileID: 528631002}
   m_Layer: 0
   m_Name: Gym_S_4
   m_TagString: Untagged
@@ -3148,6 +3109,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &528631002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 528630999}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1839579343}
 --- !u!1 &529151674
 GameObject:
   m_ObjectHideFlags: 0
@@ -3370,6 +3345,7 @@ GameObject:
   m_Component:
   - component: {fileID: 547602924}
   - component: {fileID: 547602925}
+  - component: {fileID: 547602926}
   m_Layer: 0
   m_Name: Gym_S_3
   m_TagString: Untagged
@@ -3412,6 +3388,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &547602926
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 547602923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 2027125520}
 --- !u!1 &548373769
 GameObject:
   m_ObjectHideFlags: 0
@@ -3542,6 +3532,7 @@ GameObject:
   m_Component:
   - component: {fileID: 593582280}
   - component: {fileID: 593582281}
+  - component: {fileID: 593582282}
   m_Layer: 0
   m_Name: Gym_W_0
   m_TagString: Untagged
@@ -3584,6 +3575,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &593582282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 593582279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1098071762}
 --- !u!1 &620578282
 GameObject:
   m_ObjectHideFlags: 0
@@ -3748,6 +3753,7 @@ GameObject:
   m_Component:
   - component: {fileID: 633143864}
   - component: {fileID: 633143865}
+  - component: {fileID: 633143866}
   m_Layer: 0
   m_Name: Gym_N_5
   m_TagString: Untagged
@@ -3790,6 +3796,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &633143866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 633143863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1096780964}
 --- !u!1 &635754648
 GameObject:
   m_ObjectHideFlags: 0
@@ -6404,6 +6424,7 @@ GameObject:
   m_Component:
   - component: {fileID: 847020154}
   - component: {fileID: 847020155}
+  - component: {fileID: 847020156}
   m_Layer: 0
   m_Name: Gym_N_4
   m_TagString: Untagged
@@ -6446,6 +6467,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &847020156
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 847020153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1196251804}
 --- !u!1 &853398624
 GameObject:
   m_ObjectHideFlags: 0
@@ -6774,6 +6809,7 @@ GameObject:
   m_Component:
   - component: {fileID: 865117122}
   - component: {fileID: 865117123}
+  - component: {fileID: 865117124}
   m_Layer: 0
   m_Name: Gym_S_1
   m_TagString: Untagged
@@ -6816,6 +6852,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &865117124
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 865117121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 226658054}
 --- !u!1 &866609254
 GameObject:
   m_ObjectHideFlags: 0
@@ -7004,7 +7054,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _input: {fileID: 994004236}
-  _visible: 1
+  _visible: 0
 --- !u!4 &932770523
 Transform:
   m_ObjectHideFlags: 0
@@ -7148,6 +7198,7 @@ GameObject:
   m_Component:
   - component: {fileID: 965154558}
   - component: {fileID: 965154559}
+  - component: {fileID: 965154560}
   m_Layer: 0
   m_Name: Gym_N_2
   m_TagString: Untagged
@@ -7190,6 +7241,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &965154560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 965154557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1873685564}
 --- !u!1 &965460630
 GameObject:
   m_ObjectHideFlags: 0
@@ -8170,6 +8235,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1073939826}
   - component: {fileID: 1073939827}
+  - component: {fileID: 1073939828}
   m_Layer: 0
   m_Name: Gym_S_5
   m_TagString: Untagged
@@ -8212,6 +8278,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1073939828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1073939825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1541904947}
 --- !u!1 &1092908759
 GameObject:
   m_ObjectHideFlags: 0
@@ -8572,6 +8652,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1109012338}
   - component: {fileID: 1109012339}
+  - component: {fileID: 1109012340}
   m_Layer: 0
   m_Name: Gym_N_3
   m_TagString: Untagged
@@ -8614,6 +8695,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1109012340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1109012337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 259729430}
 --- !u!1001 &1121876797
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10798,6 +10893,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1472944807}
   - component: {fileID: 1472944808}
+  - component: {fileID: 1472944809}
   m_Layer: 0
   m_Name: Gym_W_3
   m_TagString: Untagged
@@ -10840,6 +10936,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1472944809
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472944806}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1961850001}
 --- !u!1 &1473668575
 GameObject:
   m_ObjectHideFlags: 0
@@ -12588,6 +12698,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1677244226}
   - component: {fileID: 1677244227}
+  - component: {fileID: 1677244228}
   m_Layer: 0
   m_Name: Gym_N_0
   m_TagString: Untagged
@@ -12630,6 +12741,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1677244228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1677244225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1657365790}
 --- !u!1 &1679018476
 GameObject:
   m_ObjectHideFlags: 0
@@ -12778,6 +12903,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1713648719}
   - component: {fileID: 1713648720}
+  - component: {fileID: 1713648721}
   m_Layer: 0
   m_Name: Gym_W_4
   m_TagString: Untagged
@@ -12820,6 +12946,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1713648721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713648718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1851966002}
 --- !u!1 &1713712415
 GameObject:
   m_ObjectHideFlags: 0
@@ -12830,6 +12970,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1713712416}
   - component: {fileID: 1713712417}
+  - component: {fileID: 1713712418}
   m_Layer: 0
   m_Name: Gym_E_3
   m_TagString: Untagged
@@ -12872,6 +13013,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1713712418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1713712415}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 2006428631}
 --- !u!1 &1721168335
 GameObject:
   m_ObjectHideFlags: 0
@@ -13101,6 +13256,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1744916009}
   - component: {fileID: 1744916010}
+  - component: {fileID: 1744916011}
   m_Layer: 0
   m_Name: Gym_W_2
   m_TagString: Untagged
@@ -13143,6 +13299,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1744916011
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1744916008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 792762829}
 --- !u!1 &1763219379
 GameObject:
   m_ObjectHideFlags: 0
@@ -13233,6 +13403,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1784050823}
   - component: {fileID: 1784050824}
+  - component: {fileID: 1784050825}
   m_Layer: 0
   m_Name: Gym_W_1
   m_TagString: Untagged
@@ -13275,6 +13446,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1784050825
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1784050822}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1732578469}
 --- !u!1 &1793774488
 GameObject:
   m_ObjectHideFlags: 0
@@ -13454,6 +13639,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1820306307}
   - component: {fileID: 1820306308}
+  - component: {fileID: 1820306309}
   m_Layer: 0
   m_Name: Gym_E_5
   m_TagString: Untagged
@@ -13496,6 +13682,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1820306309
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820306306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1305910922}
 --- !u!1 &1820360816
 GameObject:
   m_ObjectHideFlags: 0
@@ -13584,7 +13784,7 @@ Transform:
   m_GameObject: {fileID: 1835574815}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.118437074, y: 0.9201084, z: -0.03189399}
+  m_LocalPosition: {x: 0.000007733887, y: 0.82455, z: 0.00000059418386}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -14055,6 +14255,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1860862657}
   - component: {fileID: 1860862658}
+  - component: {fileID: 1860862659}
   m_Layer: 0
   m_Name: Gym_S_2
   m_TagString: Untagged
@@ -14097,6 +14298,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1860862659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1860862656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1673778838}
 --- !u!1 &1872321912
 GameObject:
   m_ObjectHideFlags: 0
@@ -14543,6 +14758,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1884833338}
   - component: {fileID: 1884833339}
+  - component: {fileID: 1884833340}
   m_Layer: 0
   m_Name: Gym_E_2
   m_TagString: Untagged
@@ -14585,6 +14801,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1884833340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1884833337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 529151677}
 --- !u!1 &1887201021
 GameObject:
   m_ObjectHideFlags: 0
@@ -14616,6 +14846,76 @@ Transform:
   m_Children: []
   m_Father: {fileID: 768179751}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1901989877
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 183462454}
+    m_Modifications:
+    - target: {fileID: 388943431295143112, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1549274879611151601, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_Name
+      value: Sword_M6_Player_Equipped
+      objectReference: {fileID: 0}
+    - target: {fileID: 1549274879611151601, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_Layer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+--- !u!4 &1901989878 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5010621705740908298, guid: 5235dc2c125df0a469ddbcacb1f64f11, type: 3}
+  m_PrefabInstance: {fileID: 1901989877}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1917608727
 GameObject:
   m_ObjectHideFlags: 0
@@ -14933,6 +15233,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1960635392}
   - component: {fileID: 1960635393}
+  - component: {fileID: 1960635394}
   m_Layer: 0
   m_Name: Gym_S_0
   m_TagString: Untagged
@@ -14975,6 +15276,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1960635394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1960635391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1318755441}
 --- !u!1 &1961849998
 GameObject:
   m_ObjectHideFlags: 0
@@ -15091,6 +15406,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1977161085}
   - component: {fileID: 1977161086}
+  - component: {fileID: 1977161087}
   m_Layer: 0
   m_Name: Gym_E_1
   m_TagString: Untagged
@@ -15133,6 +15449,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &1977161087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1977161084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 987466480}
 --- !u!1 &1984610755
 GameObject:
   m_ObjectHideFlags: 0
@@ -16381,6 +16711,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2081968454}
   - component: {fileID: 2081968455}
+  - component: {fileID: 2081968456}
   m_Layer: 0
   m_Name: Gym_N_1
   m_TagString: Untagged
@@ -16423,6 +16754,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &2081968456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2081968453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 1877645937}
 --- !u!1 &2095090984
 GameObject:
   m_ObjectHideFlags: 0
@@ -16708,6 +17053,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2126231443}
   - component: {fileID: 2126231444}
+  - component: {fileID: 2126231445}
   m_Layer: 0
   m_Name: Gym_W_5
   m_TagString: Untagged
@@ -16750,6 +17096,20 @@ MonoBehaviour:
   m_IgnoreFromBuild: 0
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffff
+--- !u!114 &2126231445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2126231442}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f344a19ec6123594ca8b550acbea5cf9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _renderers:
+  - {fileID: 439422212}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

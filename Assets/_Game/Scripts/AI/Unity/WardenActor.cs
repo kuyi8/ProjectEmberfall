@@ -551,7 +551,7 @@ namespace Emberfall.AI.Unity
             {
                 Color runeColor = new Color(1f, 0.16f, 0.035f);
                 Color target = Phase == WardenPhase.PhaseOne ? _weaponBaseColor : runeColor;
-                _weaponRenderer.material.color = Color.Lerp(_weaponRenderer.material.color, target,
+                BlendWeaponTint(_weaponRenderer.material, target,
                     Time.deltaTime * (State == WardenState.PhaseTransition ? 5f : 12f));
             }
 
@@ -603,6 +603,16 @@ namespace Emberfall.AI.Unity
                 _brain.CurrentAttack == WardenAttackKind.Charge ? 1.1f : 2.35f,
                 0.025f,
                 (_brain.CurrentAttack == WardenAttackKind.Charge ? 5.2f : 2.35f) * pulse);
+        }
+
+        private static void BlendWeaponTint(Material material, Color target, float blend)
+        {
+            Color current = material.color;
+            // A no-op Material.color round trip can change URP's stored float
+            // values. Leave an already matching tint untouched; do not use the
+            // approximate Color == operator or skip real phase transitions.
+            if (current.Equals(target)) return;
+            material.color = Color.Lerp(current, target, blend);
         }
 
         private void OnDestroy()

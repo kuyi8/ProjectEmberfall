@@ -20,7 +20,7 @@ namespace Emberfall.Tests.PlayMode
     public sealed class CombatGymSceneTests
     {
         [UnityTest]
-        public IEnumerator CombatGym_LoadsPlayablePlayerCameraAndTargets()
+        public IEnumerator CombatGym_LoadsPlayableActors_WithFourCoveredKitWallSides()
         {
             yield return SceneManager.LoadSceneAsync("90_CombatGym", LoadSceneMode.Single);
             yield return null;
@@ -53,7 +53,12 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(Object.FindObjectOfType<VoidExecutionVolume>(), Is.Not.Null);
             GameObject artRoot = GameObject.Find("[Art] Combat Gym Baseline");
             Assert.That(artRoot, Is.Not.Null);
-            Assert.That(artRoot.GetComponentsInChildren<Renderer>(true).Length, Is.GreaterThanOrEqualTo(20));
+            var kitRoot = GameObject.Find(M6EnvironmentAssertions.RootName);
+            Assert.That(kitRoot, Is.Not.Null);
+            //20 is the original four-side/five-decoration baseline, now only a combined content floor.
+            Assert.That(artRoot.GetComponentsInChildren<Renderer>(true).Length +
+                kitRoot.GetComponentsInChildren<Renderer>(true).Length, Is.GreaterThanOrEqualTo(20));
+            foreach (string side in new[] { "N", "S", "W", "E" }) M6EnvironmentAssertions.AssertGymSide(side);
             CheckpointInteractable checkpoint = Object.FindObjectOfType<CheckpointInteractable>();
             Assert.That(checkpoint, Is.Not.Null);
             Assert.That(checkpoint.CheckpointId.Value, Is.EqualTo("checkpoint:combat-gym"));

@@ -46,12 +46,14 @@ namespace Emberfall.Gameplay.Combat.Unity
 
         private void Present(PerfectDefenseKind kind)
         {
-            AnimatorSpeedCoordinator.For(_animator)?.Request(HitFeedbackGrade.PerfectDefense);
+            if (PlayerFreezePresentationPolicy.AllowPerfectDefenseFreeze(kind, _actor, _animator))
+                AnimatorSpeedCoordinator.For(_animator)?.Request(HitFeedbackGrade.PerfectDefense);
 
             if (_source != null && _clip != null)
             {
                 _source.pitch = kind == PerfectDefenseKind.Guard ? 1.15f : 1.45f;
                 _source.PlayOneShot(_clip, 0.62f);
+                CombatAudioVoiceBudget.Track(_source, _clip, CombatAudioImportance.Critical);
             }
         }
 

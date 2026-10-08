@@ -76,7 +76,7 @@ namespace Emberfall.Tests.PlayMode
                     .Select(coordinator => coordinator.TelemetrySegment),
                 Is.EquivalentTo(new[]
                 {
-                    "forest-encounter", "bridge-encounter", "courtyard-encounter", "pre-sanctum-encounter"
+                    "forest-encounter", "bridge-encounter", "courtyard-encounter", "pre-sanctum-encounter", "ash-approach-encounter", "ash-guard-pass-encounter"
                 }));
             NetworkEmberValleyModeAdapter networkMode =
                 Object.FindObjectOfType<NetworkEmberValleyModeAdapter>(true);
@@ -85,6 +85,7 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(networkMode.ContainsOfflineBehaviour<BridgeMechanismInteractable>(), Is.True);
             Assert.That(networkMode.ContainsOfflineBehaviour<RouteEnrichmentInteractable>(), Is.True);
             Assert.That(networkMode.ContainsOfflineBehaviour<BridgeMechanismGuidancePresenter>(), Is.True);
+            Assert.That(networkMode.ContainsOfflineBehaviour<SummonerEnemyActor>(), Is.True);
             Assert.That(networkMode.NetworkModeActive, Is.False,
                 "Ordinary Ember Valley loading must preserve the complete offline route.");
             NetworkGymSceneController networkController =
@@ -131,17 +132,23 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(hud, Is.Not.Null);
             ThirdPersonCameraRig cameraRig = Object.FindObjectOfType<ThirdPersonCameraRig>();
             Assert.That(cameraRig, Is.Not.Null);
+            Assert.That(hud.ShouldShowWorldMarkers, Is.True);
             hud.SetPaused(true);
             Assert.That(hud.IsPaused, Is.True);
+            Assert.That(hud.ShouldShowWorldMarkers, Is.False,"Pause suppresses projected combat markers, not only their background panel.");
             Assert.That(cameraRig.IsLookInputBlocked, Is.True);
             Assert.That(Time.timeScale, Is.Zero);
             hud.SetPaused(false);
             Assert.That(hud.IsPaused, Is.False);
+            Assert.That(hud.ShouldShowWorldMarkers, Is.True);
             Assert.That(cameraRig.IsLookInputBlocked, Is.False);
             Assert.That(Time.timeScale, Is.EqualTo(1f));
             InputTelemetryOverlay inputOverlay = Object.FindObjectOfType<InputTelemetryOverlay>();
             Assert.That(inputOverlay, Is.Not.Null);
-            Assert.That(inputOverlay.IsVisible, Is.True);
+            Assert.That(inputOverlay.IsVisible, Is.False,"Player-facing default is clean; F2 recording remains available.");
+            inputOverlay.SetVisible(true);
+            Assert.That(inputOverlay.IsVisible,Is.True,"Recording must remain explicitly available.");
+            inputOverlay.SetVisible(false);
             Assert.That(inputOverlay.EncounterTelemetryText, Does.Contain("ATTACK"));
             Assert.That(inputOverlay.TacticalTelemetryText, Does.Contain("中立符文"));
             if (ContentPackageRuntime.IsInitialized)
@@ -187,11 +194,16 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(importedArtRoot.GetComponentsInChildren<Renderer>(true).Length, Is.GreaterThanOrEqualTo(10));
             Assert.That(Object.FindObjectsOfType<CameraOccluder>(), Has.Length.GreaterThanOrEqualTo(10));
             Assert.That(Object.FindObjectsOfType<M2RouteInteractable>(), Has.Length.EqualTo(6));
-            Assert.That(Object.FindObjectsOfType<RouteEnrichmentInteractable>(), Has.Length.EqualTo(3));
+            Assert.That(Object.FindObjectsOfType<RouteEnrichmentInteractable>().Select(item => item.Kind),
+                Is.EquivalentTo(new[] { RouteEnrichmentInteractionKind.Watchtower,
+                    RouteEnrichmentInteractionKind.SupplyRoute, RouteEnrichmentInteractionKind.RiskRoute,
+                    RouteEnrichmentInteractionKind.StagedReinforcement, RouteEnrichmentInteractionKind.TogetherReinforcement,
+                    RouteEnrichmentInteractionKind.SupplyCart }));
             Assert.That(Object.FindObjectsOfType<BridgeMechanismInteractable>(), Has.Length.EqualTo(2));
-            Assert.That(Object.FindObjectsOfType<MeleeEnemyActor>(), Has.Length.EqualTo(4));
+            Assert.That(Object.FindObjectsOfType<MeleeEnemyActor>(), Has.Length.EqualTo(6));
+            Assert.That(Object.FindObjectsOfType<SummonerEnemyActor>(), Has.Length.EqualTo(2));
             Assert.That(Object.FindObjectsOfType<RangedEnemyActor>(), Has.Length.EqualTo(4));
-            Assert.That(Object.FindObjectsOfType<ShieldEnemyActor>(), Has.Length.EqualTo(2));
+            Assert.That(Object.FindObjectsOfType<ShieldEnemyActor>(), Has.Length.EqualTo(3));
             WardenActor warden = Object.FindObjectOfType<WardenActor>();
             Assert.That(warden, Is.Not.Null);
             Assert.That(warden.name, Is.EqualTo("Enemy_EmberWarden"));
@@ -219,7 +231,7 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(bossVfx.RuneParticleCount, Is.GreaterThan(0));
             Assert.That(warden.DelayedBlastVfxConfigured, Is.True);
             CombatEncounterCoordinator[] combatGroups = Object.FindObjectsOfType<CombatEncounterCoordinator>();
-            Assert.That(combatGroups, Has.Length.EqualTo(4));
+            Assert.That(combatGroups, Has.Length.EqualTo(6));
             Assert.That(combatGroups.Single(group => group.name.Contains("Forest")).MeleeMemberCount, Is.EqualTo(1));
             CombatEncounterCoordinator courtyardGroup = combatGroups.Single(group => group.name.Contains("Courtyard"));
             Assert.That(courtyardGroup.MeleeMemberCount, Is.EqualTo(2));
@@ -244,7 +256,7 @@ namespace Emberfall.Tests.PlayMode
                 Assert.That(
                     enemy.GetComponentsInChildren<Renderer>(true)
                         .SelectMany(renderer => renderer.sharedMaterials)
-                        .Any(material => material != null && material.name.Contains("M_M6_FogwalkerBone")),
+                        .Any(material => material != null && (material.name == "M_CP_Bone" || material.name == "M_CP_Bone (Instance)")),
                     Is.True,
                     $"{enemy.name} is not using the selected M6 skeleton visual.");
                 Assert.That(enemy.GetComponent<NavMeshAgent>().stoppingDistance,
@@ -264,14 +276,11 @@ namespace Emberfall.Tests.PlayMode
                 Object.FindObjectsOfType<RangedEnemyActor>().Single(enemy => enemy.name == "Enemy_RunePriest_Forest")
                     .GetComponentsInChildren<Renderer>(true)
                     .SelectMany(renderer => renderer.sharedMaterials)
-                    .Any(material => material != null && material.name.Contains("M_M6_RunePriest")),
+                    .Any(material => material != null && (material.name == "M_CP_Priest" || material.name == "M_CP_Priest (Instance)")),
                 Is.True,
                 "Rune priest is not using the selected M6 Wizard visual.");
             Assert.That(Object.FindObjectsOfType<NavMeshAgent>().All(agent => agent.isOnNavMesh), Is.True);
-            Assert.That(
-                Object.FindObjectsOfType<CameraOccluder>().Any(occluder => occluder.name.Contains("Wall")),
-                Is.True,
-                "Large art walls are not registered with the camera occlusion system.");
+            M6EnvironmentAssertions.AssertWalls(new[] { "Camp_Back_", "Forest_North_", "Court_N_", "Warden_N_" });
             Assert.That(GameObject.Find("GateBlocker_Sanctum"), Is.Not.Null);
             Assert.That(GameObject.Find("GateBlocker_ReturnShortcut"), Is.Not.Null);
             Assert.That(GameObject.Find("GateBlocker_ForestShortcut"), Is.Not.Null);
@@ -292,7 +301,14 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(GameObject.Find("Seal_Forest_RuneCore"), Is.Not.Null);
             M2QuestHighlightPresenter[] routeHighlights =
                 Object.FindObjectsOfType<M2QuestHighlightPresenter>();
-            Assert.That(routeHighlights, Has.Length.EqualTo(11));
+            var reinforcementHighlights = GameObject.Find("Content_AshReinforcementChoice_v1")
+                .GetComponentsInChildren<M2QuestHighlightPresenter>();
+            Assert.That(reinforcementHighlights, Has.Length.EqualTo(2));
+            var cartHighlights = GameObject.Find("Content_AbandonedSupplyCart_v1").GetComponentsInChildren<M2QuestHighlightPresenter>();
+            Assert.That(cartHighlights, Has.Length.EqualTo(1));
+            Assert.That(routeHighlights.Except(reinforcementHighlights).Except(cartHighlights).ToArray(), Has.Length.EqualTo(11),
+                "The original eleven route highlights remain, plus exactly two choice and one cart highlights.");
+            Assert.That(routeHighlights, Has.Length.EqualTo(14));
             Assert.That(routeHighlights.All(item => item.UsesPropertyBlocks), Is.True);
             BridgeMechanismGuidancePresenter guidance =
                 Object.FindObjectOfType<BridgeMechanismGuidancePresenter>();
@@ -638,6 +654,7 @@ namespace Emberfall.Tests.PlayMode
             M2RouteHud hud = Object.FindObjectOfType<M2RouteHud>();
             ThirdPersonCameraRig cameraRig = Object.FindObjectOfType<ThirdPersonCameraRig>();
             Assert.That(hud.IsCompletionPresented, Is.True);
+            Assert.That(hud.ShouldShowWorldMarkers, Is.False,"Completed offline flow does not keep combat markers over results.");
             Assert.That(cameraRig.IsLookInputBlocked, Is.True);
 
             SaveLoadResult reloaded = new JsonSaveGameStore(flow.SavePath).LoadOrCreate(() => null);
@@ -780,7 +797,7 @@ namespace Emberfall.Tests.PlayMode
             CombatEncounterCoordinator[] coordinators = Object.FindObjectsOfType<CombatEncounterCoordinator>();
             Assert.That(coordinators.Select(item => item.TelemetrySegment), Is.EquivalentTo(new[]
             {
-                "forest-encounter", "bridge-encounter", "courtyard-encounter", "pre-sanctum-encounter"
+                "forest-encounter", "bridge-encounter", "courtyard-encounter", "pre-sanctum-encounter", "ash-approach-encounter", "ash-guard-pass-encounter"
             }));
             var active = new HashSet<string>();
             var overlapErrors = new List<string>();
@@ -849,7 +866,7 @@ namespace Emberfall.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator EmberValley_ArenasAreExpandedSeparatedAndHaveVisibleFaces()
+        public IEnumerator EmberValley_ArenasKeepAreaAndSeparation_WithKitWallsAndPreservedDoorways()
         {
             M2LaunchIntent.RequestNewGame();
             yield return SceneManager.LoadSceneAsync("10_EmberValley", LoadSceneMode.Single);
@@ -863,12 +880,18 @@ namespace Emberfall.Tests.PlayMode
                 { "courtyard-encounter", 15f * 12.4f },
                 { "pre-sanctum-encounter", 8f * 6f }
             };
-            CombatEncounterCoordinator[] arenas = Object.FindObjectsOfType<CombatEncounterCoordinator>();
+            CombatEncounterCoordinator[] arenas = Object.FindObjectsOfType<CombatEncounterCoordinator>(true);
             foreach (CombatEncounterCoordinator arena in arenas)
             {
                 float authoredArea = arena.ArenaHalfExtents.x * 2f * arena.ArenaHalfExtents.y * 2f;
-                Assert.That(authoredArea / baselineAreas[arena.TelemetrySegment],
-                    Is.InRange(1.49f, 1.51f), arena.TelemetrySegment);
+                if (arena.TelemetrySegment == "ash-approach-encounter")
+                    Assert.That(authoredArea, Is.EqualTo(8.4f * 7.4f).Within(.001f), "New corridor uses its own exact approved footprint, not a fake old x1.5 baseline.");
+                else if (arena.TelemetrySegment == "ash-guard-pass-encounter")
+                    Assert.That(authoredArea, Is.EqualTo(8.4f * 6.7f).Within(.001f), "Shield combination stops before the existing Forest exit wall.");
+                else if (arena.TelemetrySegment == "ash-return-encounter")
+                    Assert.That(authoredArea, Is.EqualTo(13f * 4.6f).Within(.001f), "Return combination reuses its actual corridor footprint.");
+                else Assert.That(authoredArea / baselineAreas[arena.TelemetrySegment],
+                        Is.InRange(1.49f, 1.51f), arena.TelemetrySegment);
             }
 
             for (int left = 0; left < arenas.Length; left++)
@@ -878,28 +901,43 @@ namespace Emberfall.Tests.PlayMode
                     $"{arenas[left].TelemetrySegment} overlaps {arenas[right].TelemetrySegment}");
             }
 
-            EncounterBoundaryVisualMarker[] markers = Object.FindObjectsOfType<EncounterBoundaryVisualMarker>();
-            Assert.That(markers.Length, Is.EqualTo(16));
-            foreach (CombatEncounterCoordinator arena in arenas)
+            // Explicit16-slot mapping:Forest/Bridge/Courtyard N,S,E,W;Approach W,E + Sanctum/WardenEncounter N/S.
+            // Approved level walls are not closed cages exactly on the logical encounter rectangle.
+            string[][] sides = {
+                new[] { "Forest_North_" }, new[] { "Forest_SW_", "Forest_SE_" }, new[] { "Forest_Gate_" }, new[] { "Forest_W_" },
+                new[] { "Bridge_N_" }, new[] { "Bridge_S_" }, new[] { "Court_Entry_Jamb_" }, new[] { "Bridge_W_" },
+                new[] { "Court_N_" }, new[] { "Court_SW", "Court_SE_Link_" }, new[] { "Court_East_" }, new[] { "Court_West_" },
+                new[] { "Approach_W_" }, new[] { "Approach_E_" }
+            };
+            foreach (var side in sides) M6EnvironmentAssertions.AssertWalls(side);
+            // Read all four real authoring IDs, including the initially inactive Warden door.
+            foreach (string name in new[] { "GateBlocker_ForestShortcut", "GateBlocker_ReturnShortcut",
+                "GateBlocker_Sanctum", "GateBlocker_WardenEncounter" })
             {
-                EncounterBoundaryVisualMarker[] faces = markers
-                    .Where(marker => marker.Segment == arena.TelemetrySegment).ToArray();
-                Assert.That(faces.Select(marker => marker.Face).Distinct().Count(), Is.EqualTo(4));
-                foreach (EncounterBoundaryVisualMarker marker in faces)
-                {
-                    Assert.That(marker.VisibleRenderer, Is.Not.Null);
-                    Assert.That(marker.VisibleRenderer.enabled, Is.True);
-                    Bounds solid = marker.GetComponent<BoxCollider>().bounds;
-                    Bounds visible = marker.VisibleRenderer.bounds;
-                    Assert.That(Vector3.Distance(solid.center, visible.center), Is.LessThan(0.02f), marker.name);
-                    Assert.That(Vector3.Distance(solid.size, visible.size), Is.LessThan(0.02f),
-                        "A named renderer alone cannot prove that a wall is visible at collider scale: " + marker.name);
-                    float faceDistance = marker.Face == EncounterBoundaryFace.North || marker.Face == EncounterBoundaryFace.South
-                        ? Mathf.Abs(Mathf.Abs(marker.transform.position.z - arena.ArenaCenter.z) - arena.ArenaHalfExtents.y)
-                        : Mathf.Abs(Mathf.Abs(marker.transform.position.x - arena.ArenaCenter.x) - arena.ArenaHalfExtents.x);
-                    Assert.That(faceDistance, Is.LessThan(0.12f), $"{arena.TelemetrySegment}/{marker.Face}");
-                }
+                var gates = Object.FindObjectsOfType<Transform>(true).Where(t => t.name == name).ToArray();
+                Assert.That(gates, Has.Length.EqualTo(1), "Unique preserved doorway: " + name);
+                var gate = gates[0]; var box = gate.GetComponent<BoxCollider>(); var mesh = gate.GetComponent<MeshFilter>();
+                Assert.That(box, Is.Not.Null, name);
+                Assert.That(mesh, Is.Not.Null, name);
+                Assert.That(mesh.sharedMesh, Is.Not.Null, name);
+                Assert.That(gate.GetComponent<Renderer>(), Is.Not.Null, name);
+                Bounds solid = DoorShapeWorldBounds(gate, new Bounds(box.center, box.size));
+                Bounds visible = DoorShapeWorldBounds(mesh.transform, mesh.sharedMesh.bounds);
+                Assert.That(Mathf.Min(solid.size.x, solid.size.y, solid.size.z), Is.GreaterThan(.01f), name);
+                Assert.That(Mathf.Min(visible.size.x, visible.size.y, visible.size.z), Is.GreaterThan(.01f), name);
+                Assert.That(Vector3.Distance(solid.center, visible.center), Is.LessThan(.02f), name);
+                Assert.That(Vector3.Distance(solid.size, visible.size), Is.LessThan(.02f), name);
             }
+        }
+
+        private static Bounds DoorShapeWorldBounds(Transform transform, Bounds local)
+        {
+            // Eight transformed corners measure inactive objects too; zero runtime bounds cannot vacuously pass.
+            var world = new Bounds(transform.TransformPoint(local.min), Vector3.zero);
+            foreach (float x in new[] { local.min.x, local.max.x })
+            foreach (float y in new[] { local.min.y, local.max.y })
+            foreach (float z in new[] { local.min.z, local.max.z }) world.Encapsulate(transform.TransformPoint(new Vector3(x, y, z)));
+            return world;
         }
 
         [UnityTest]

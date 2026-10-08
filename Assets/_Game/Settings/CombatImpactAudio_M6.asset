@@ -18,6 +18,10 @@ MonoBehaviour:
   _heavyMetal: {fileID: 0}
   _guardBreak: {fileID: 0}
   _execution: {fileID: 0}
+  _ownerVoiceVolume: 0.7
+  _ownerSpatialBlend: 0.25
+  _ownerMinDistance: 6
+  _ownerFleshPresenceDb: 5
   _slots:
   - label: LightFlesh
     variants:

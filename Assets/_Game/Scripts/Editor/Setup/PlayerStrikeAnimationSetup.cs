@@ -48,6 +48,7 @@ namespace Emberfall.Editor.Setup
             set.ConfigureOfflineStrikes(heavy, execution);
             EditorUtility.SetDirty(set); EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
+            OfflineLocomotionSetup.Apply();
         }
     }
 }

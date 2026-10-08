@@ -85,6 +85,10 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, Min(0.1f)] private float _sweepRadius = 2.7f;
         [SerializeField, Range(1f, 360f)] private float _sweepAngle = 240f;
 
+        [Header("Enemy hit stimulus")]
+        [SerializeField, Min(0.01f)] private float _enemyHitAwarenessSeconds = 3f;
+        [SerializeField, Min(0.01f)] private float _enemyRetreatBlockedSeconds = 2.5f;
+
         public CombatTuning CreateRuntimeCopy() => new CombatTuning(
             _maxHealth, _maxStamina, _staminaRegenPerSecond, _staminaRegenDelay, _inputBufferSeconds,
             _lightDamage, _lightStaminaCost, _lightDuration, _lightDamageOpen, _lightDamageClose,
@@ -102,6 +106,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             _healHealthFraction, _sprintWarmupSeconds, _sprintStaminaPerSecond,
             _executionStaminaCost, _executionDuration, _executionResolveTime,
             _sweepDamage, _sweepStaminaCost, _sweepCooldown, _sweepDuration,
-            _sweepDamageOpen, _sweepDamageClose, _sweepRadius, _sweepAngle, _perfectGuardCounterWindow);
+            _sweepDamageOpen, _sweepDamageClose, _sweepRadius, _sweepAngle, _perfectGuardCounterWindow,
+            _enemyHitAwarenessSeconds, _enemyRetreatBlockedSeconds);
     }
 }

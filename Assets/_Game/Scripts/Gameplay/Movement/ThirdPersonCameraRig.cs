@@ -1,6 +1,7 @@
 using Emberfall.Gameplay.Input;
 using Emberfall.Gameplay.Targeting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Emberfall.Gameplay.Movement
 {
@@ -54,7 +55,29 @@ namespace Emberfall.Gameplay.Movement
             _smoothedPosition = transform.position;
         }
 
-        private void Start()
+        private void OnEnable()
+        {
+            // A persistent owner camera must see later additive scene geometry too.
+            // Recompute with the original inactive-inclusive query; never append or query each frame.
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+            RefreshArtOccluders();
+        }
+
+        private void OnDisable()
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            _artOccluders = null;
+        }
+
+        private void Start() => RefreshArtOccluders();
+        private void OnSceneLoaded(Scene scene, LoadSceneMode mode) => RefreshArtOccluders();
+        private void OnSceneUnloaded(Scene scene) => RefreshArtOccluders();
+
+        private void RefreshArtOccluders()
         {
             _artOccluders = FindObjectsOfType<CameraOccluder>(true);
         }

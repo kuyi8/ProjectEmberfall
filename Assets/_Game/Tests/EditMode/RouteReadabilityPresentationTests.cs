@@ -73,6 +73,19 @@ namespace Emberfall.Tests.EditMode
                 "text:interaction.bridge-mechanism-b")), Is.EqualTo("启动断桥后置机关"));
         }
 
+        [TestCase(RouteEnrichmentInteractionKind.StagedReinforcement, AshReinforcementChoice.None, true, RouteHighlightState.Ready)]
+        [TestCase(RouteEnrichmentInteractionKind.TogetherReinforcement, AshReinforcementChoice.None, false, RouteHighlightState.Locked)]
+        [TestCase(RouteEnrichmentInteractionKind.StagedReinforcement, AshReinforcementChoice.Staged, false, RouteHighlightState.Completed)]
+        [TestCase(RouteEnrichmentInteractionKind.TogetherReinforcement, AshReinforcementChoice.Staged, false, RouteHighlightState.Completed)]
+        [TestCase(RouteEnrichmentInteractionKind.StagedReinforcement, AshReinforcementChoice.Together, false, RouteHighlightState.Completed)]
+        [TestCase(RouteEnrichmentInteractionKind.TogetherReinforcement, AshReinforcementChoice.Together, false, RouteHighlightState.Completed)]
+        public void ReinforcementHighlight_UsesItsOwnChoiceNotTheOtherRouteChoice(
+            RouteEnrichmentInteractionKind kind, AshReinforcementChoice choice, bool available, RouteHighlightState expected)
+        {
+            Assert.That(RouteHighlightStateResolver.ResolveRouteInteraction(kind, true, EmberValleyRouteChoice.Risk,
+                available, choice), Is.EqualTo(expected));
+        }
+
         private static string Build(
             LocalizedTextCatalog catalog,
             bool mechanismA,

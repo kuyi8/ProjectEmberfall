@@ -74,13 +74,14 @@ namespace Emberfall.Editor.Review
                 graph.SetTimeUpdateMode(DirectorUpdateMode.Manual);
                 output = AnimationPlayableOutput.Create(graph, "Pose", animator); graph.Play();
             }
-            public void Pose(AnimationClip clip, float time)
+            public void Pose(AnimationClip clip, float time, bool footIK = false)
             {
                 if (!clips.TryGetValue(clip, out var playable))
                 {
                     playable = AnimationClipPlayable.Create(graph, clip);
                     playable.SetApplyFootIK(false); playable.SetApplyPlayableIK(false); clips.Add(clip, playable);
                 }
+                playable.SetApplyFootIK(footIK);
                 output.SetSourcePlayable(playable); playable.SetTime(time); graph.Evaluate(0);
                 animator.transform.SetLocalPositionAndRotation(anchor, rotation);
             }

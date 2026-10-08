@@ -72,5 +72,19 @@ namespace Emberfall.Tests.EditMode
             Assert.That(accepted, Is.False);
             Assert.That(reason, Does.Contain("missing text ID"));
         }
+
+        [TestCase("\"summoners\"", "\"unregisteredSummoners\"", "summoner records")]
+        [TestCase("enemy:ash-caller", "enemy:ash-caller-missing", "enemy:ash-caller")]
+        [TestCase("text:enemy.ash-caller.name", "text:enemy.ash-caller.unknown", "missing text ID")]
+        [TestCase("\"minionId\": \"enemy:fogwalker\"", "\"minionId\": \"enemy:rune-priest\"", "missing melee minion")]
+        [TestCase("\"id\": \"enemy:ash-caller\"", "\"id\": \"enemy:fogwalker\"", "Duplicate enemy ID")]
+        public void SummonerContract_IsValidatedBeforeContentSelection(string from, string to, string message)
+        {
+            var files = M4ContentTestFactory.LoadAuthoredFiles();
+            M4ContentTestFactory.ReplaceText(files, RuntimeContentPaths.Enemies, from, to);
+            Assert.That(_preflight.Validate(M4ContentTestFactory.CreateSnapshot(new SemanticVersion(0, 8, 12), files), out string reason), Is.False);
+            Assert.That(reason, Does.Contain(message));
+        }
+
     }
 }

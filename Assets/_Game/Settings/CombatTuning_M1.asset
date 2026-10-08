@@ -94,3 +94,5 @@ MonoBehaviour:
   _sweepDamageClose: 0.495
   _sweepRadius: 2.7
   _sweepAngle: 240
+  _enemyHitAwarenessSeconds: 3
+  _enemyRetreatBlockedSeconds: 2.5

@@ -30,7 +30,11 @@ namespace Emberfall.AI.Unity
         private readonly Collider[] _hitBuffer = new Collider[HitBufferSize];
         private readonly HitRegistry _hitRegistry = new HitRegistry();
         private MeleeEnemyDefinition _definition;
+        private MeleeEnemyDefinition _runtimeSpawnDefinition;
+        private Material _runtimeSpawnBodyMaterial;
+        private bool _runtimeDespawned;
         private MeleeEnemyBrain _brain;
+        private readonly EnemyHitAwareness _hitAwareness = new EnemyHitAwareness();
         private EncounterLeash _leash;
         private MeleeEnemyPerception _perception;
         private Vector3 _spawnPosition;
@@ -47,13 +51,14 @@ namespace Emberfall.AI.Unity
 
         public override int CombatantId => GetInstanceID();
         public override Transform AimPoint => _aimPoint != null ? _aimPoint : transform;
-        public override bool IsAvailable => _brain != null && _brain.State != MeleeEnemyState.Dead;
+        public override bool IsAvailable => !_runtimeDespawned && _brain != null && _brain.State != MeleeEnemyState.Dead;
         public override float HealthNormalized => _brain?.Health.Normalized ?? 0f;
         public override bool HasSecondaryResource => true;
         public override float SecondaryResourceNormalized => _brain?.Posture.Normalized ?? 0f;
-        public override bool IsThreatening => State == MeleeEnemyState.Windup || State == MeleeEnemyState.Attack;
+        public override bool IsThreatening => !_runtimeDespawned && (State == MeleeEnemyState.Windup || State == MeleeEnemyState.Attack);
         public MeleeEnemyDefinition Definition => _definition;
         public MeleeEnemyBrain Brain => _brain;
+        public float HitAwarenessRemaining => _hitAwareness.Remaining;
         public MeleeEnemyState State => _brain?.State ?? MeleeEnemyState.Idle;
         public float HorizontalSpeed => _agent != null ? Vector3.ProjectOnPlane(_agent.velocity, Vector3.up).magnitude : 0f;
         public bool HasSimulationAuthority { get; private set; } = true;
@@ -70,7 +75,7 @@ namespace Emberfall.AI.Unity
         public ExecutionTargetKind ExecutionKind => ExecutionTargetKind.Ordinary;
         public bool IsExecutionClaimed => _executionClaimed;
         public bool IsPostureExecutionWindow => _brain?.IsPostureExecutionWindow == true;
-        public bool IsExecutionEligible => ExecutionRules.IsEligible(
+        public bool IsExecutionEligible => !_runtimeDespawned && ExecutionRules.IsEligible(
             ExecutionKind, HealthNormalized, IsPostureExecutionWindow, _executionClaimed);
         public float ExecutionDamage => ExecutionRules.OrdinaryDamage;
 
@@ -98,11 +103,31 @@ namespace Emberfall.AI.Unity
 
         public void SetSimulationAuthority(bool hasAuthority)
         {
+            hasAuthority = hasAuthority && !_runtimeDespawned;
             HasSimulationAuthority = hasAuthority;
+            if (!hasAuthority) _hitAwareness.Clear();
             if (!hasAuthority)
             {
                 StopAgent();
             }
+        }
+
+        /// <summary>Supply an immutable session-derived definition before activating a runtime-spawned root.</summary>
+        public void ConfigureRuntimeSpawn(MeleeEnemyDefinition definition)
+        {
+            if (_brain != null) throw new InvalidOperationException("Runtime spawn must be configured before Awake.");
+            _runtimeSpawnDefinition = definition ?? throw new ArgumentNullException(nameof(definition));
+            _autoResetAfterDelay = false;
+        }
+
+        /// <summary>Invalidate cached targets before deferred Unity destruction, without a kill or loot event.</summary>
+        public void DespawnRuntimeEntity()
+        {
+            if (_runtimeSpawnDefinition == null)
+                throw new InvalidOperationException("Only an explicitly runtime-spawned entity may be despawned.");
+            _runtimeDespawned = true;
+            SetSimulationAuthority(false);
+            if (_bodyCollider != null) _bodyCollider.enabled = false;
         }
 
         private void Awake()
@@ -117,7 +142,7 @@ namespace Emberfall.AI.Unity
                 return;
             }
 
-            _definition = MeleeEnemyDefinitionJsonLoader.Load(LoadDefinitionJson()).GetRequired(enemyId);
+            _definition = _runtimeSpawnDefinition ?? MeleeEnemyDefinitionJsonLoader.Load(LoadDefinitionJson()).GetRequired(enemyId);
             _brain = new MeleeEnemyBrain(_definition);
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
@@ -130,6 +155,7 @@ namespace Emberfall.AI.Unity
             if (_bodyRenderer != null)
             {
                 _baseColor = _bodyRenderer.material.color;
+                if (_runtimeSpawnDefinition != null) _runtimeSpawnBodyMaterial = _bodyRenderer.material;
             }
 
             RefreshPerception();
@@ -146,6 +172,12 @@ namespace Emberfall.AI.Unity
             throw new InvalidOperationException("Melee enemy content requires an initialized runtime package.");
         }
 
+        private void OnDestroy()
+        {
+            // A spawned actor's temporary flash material is not a shared asset and must not accumulate.
+            if (_runtimeSpawnBodyMaterial != null) Destroy(_runtimeSpawnBodyMaterial);
+        }
+
         private void Start()
         {
             WarpToSpawn();
@@ -157,6 +189,10 @@ namespace Emberfall.AI.Unity
             {
                 return;
             }
+
+            _hitAwareness.Tick(Time.deltaTime);
+            if (_target == null || !_target.IsAvailable ||
+                (_leash != null && !_leash.AllowsTarget(_target.transform.position))) _hitAwareness.Clear();
 
             if (_executionHoldRemaining > 0f)
             {
@@ -211,6 +247,12 @@ namespace Emberfall.AI.Unity
 
             MeleeEnemyState previousState = _brain.State;
             DamageResult result = _brain.ReceiveDamage(request);
+            if (_hitAwareness.Record(request, result, _target == null ? 0 : _target.CombatantId,
+                _target != null && _target.IsAvailable,
+                _leash == null || (_target != null && _leash.AllowsTarget(_target.transform.position)),
+                _target == null || _target.Model == null ? 0f : _target.Model.EnemyHitAwarenessSeconds))
+                _perceptionRemaining = 0f;
+            if (result.Killed) _hitAwareness.Clear();
             _flashRemaining = 0.12f;
             if (previousState != _brain.State)
             {
@@ -264,6 +306,8 @@ namespace Emberfall.AI.Unity
 
         public void ResetToSpawn()
         {
+            if (_runtimeDespawned) return;
+            _hitAwareness.Clear();
             if (_brain == null)
             {
                 return;
@@ -285,6 +329,7 @@ namespace Emberfall.AI.Unity
 
         public void HoldForExecution(float seconds)
         {
+            if (_runtimeDespawned) return;
             _executionHoldRemaining = Mathf.Max(_executionHoldRemaining, seconds);
             StopAgent();
         }
@@ -306,31 +351,31 @@ namespace Emberfall.AI.Unity
                 distanceToSpawn);
         }
 
+        private readonly RaycastHit[] _sightHits = new RaycastHit[16];
+
         private bool CanSeeTarget()
         {
             Vector3 origin = AimPoint.position;
             Vector3 targetPosition = _target.AimPoint.position;
             Vector3 direction = targetPosition - origin;
             Vector3 flatDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
-            if (flatDirection.sqrMagnitude > 0.001f &&
+            if (!_hitAwareness.IsAwareOf(_target.CombatantId) &&
+                !(_leash != null && _leash.Encounter != null && _leash.Encounter.HasCombatAlertFor(_target)) &&
+                flatDirection.sqrMagnitude > 0.001f &&
                 Vector3.Angle(transform.forward, flatDirection) > _definition.FieldOfView * 0.5f)
             {
                 return false;
             }
 
-            if (!Physics.Raycast(
-                    origin,
-                    direction.normalized,
-                    out RaycastHit hit,
-                    direction.magnitude,
-                    ~0,
-                    QueryTriggerInteraction.Ignore))
-            {
-                return true;
-            }
-
-            return hit.collider.GetComponentInParent<PlayerCombatActor>() == _target;
+            return EnemyLineOfSight.HasContact(this, _target, _sightHits);
         }
+
+        internal bool HasDirectVisualContactWith(PlayerCombatActor player) =>
+            player != null && player == _target && player.IsAvailable && isActiveAndEnabled &&
+            HasSimulationAuthority && IsAvailable && _perception.TargetAvailable && _perception.CanSeeTarget &&
+            _perception.DistanceToTarget <= _definition.DetectionRange &&
+            Vector3.Angle(transform.forward, Vector3.ProjectOnPlane(player.AimPoint.position - AimPoint.position, Vector3.up))
+                <= _definition.FieldOfView * .5f;
 
         private void DriveMovement()
         {

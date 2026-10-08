@@ -61,9 +61,22 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(GameObject.Find("[Art] M6 Environment"),Is.Not.Null);
             var destinations=new Dictionary<string,Vector3> {
                 {"forest-encounter",new Vector3(0,0,32)}, {"bridge-encounter",new Vector3(13,0,44)},
-                {"courtyard-encounter",new Vector3(24,0,43)}, {"pre-sanctum-encounter",new Vector3(39,0,30)} };
+                {"courtyard-encounter",new Vector3(24,0,43)}, {"pre-sanctum-encounter",new Vector3(39,0,30)},
+                {"ash-approach-encounter",new Vector3(0,0,13.3f)},
+                {"ash-guard-pass-encounter",new Vector3(0,0,21.75f)},
+                {"ash-return-encounter",new Vector3(23,0,10.2f)} };
+            var observedSegments=new HashSet<string>();
             foreach(var leash in Object.FindObjectsOfType<EncounterLeash>(true))
-                if(leash.Encounter!=null) Path(leash.transform.position,destinations[leash.Encounter.TelemetrySegment],leash.name);
+                if(leash.Encounter!=null)
+                {
+                    string segment=leash.Encounter.TelemetrySegment;
+                    Assert.That(destinations.ContainsKey(segment),Is.True,"Unregistered authored navigation segment: "+segment);
+                    observedSegments.Add(segment);
+                    Path(leash.transform.position,destinations[segment],leash.name);
+                }
+            // Include the dormant return members: inactivity is not permission to
+            // omit their authored spawn paths. Unknown OR missing groups stay red.
+            Assert.That(observedSegments,Is.EquivalentTo(destinations.Keys),"Every authored encounter must receive a real path check.");
             Path(new Vector3(0,0,32),new Vector3(5.4f,0,42.3f),"Forest exit seal");
             Path(new Vector3(0,0,36),new Vector3(-12.5f,0,37.5f),"Existing watchtower branch");
             foreach(var actor in Object.FindObjectsOfType<MonoBehaviour>())

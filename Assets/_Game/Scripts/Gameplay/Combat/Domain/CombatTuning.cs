@@ -74,7 +74,9 @@ namespace Emberfall.Gameplay.Combat.Domain
             float sweepDamageClose = 0.495f,
             float sweepRadius = 2.7f,
             float sweepAngle = 240f,
-            float perfectGuardCounterWindow = 0.6f)
+            float perfectGuardCounterWindow = 0.6f,
+            float enemyHitAwarenessSeconds = 3f,
+            float enemyRetreatBlockedSeconds = 2.5f)
         {
             ValidateTriplet(lightDamage, nameof(lightDamage));
             ValidateTriplet(lightDuration, nameof(lightDuration));
@@ -179,6 +181,10 @@ namespace Emberfall.Gameplay.Combat.Domain
             if (sweepAngle <= 0f || sweepAngle > 360f)
                 throw new ArgumentOutOfRangeException(nameof(sweepAngle));
             SweepAngle = sweepAngle;
+            EnemyHitAwarenessSeconds = Positive(enemyHitAwarenessSeconds, nameof(enemyHitAwarenessSeconds));
+            if (float.IsNaN(enemyRetreatBlockedSeconds) || float.IsInfinity(enemyRetreatBlockedSeconds))
+                throw new ArgumentOutOfRangeException(nameof(enemyRetreatBlockedSeconds), "Threshold must be finite.");
+            EnemyRetreatBlockedSeconds = Positive(enemyRetreatBlockedSeconds, nameof(enemyRetreatBlockedSeconds));
         }
 
         public float MaxHealth { get; }
@@ -235,6 +241,8 @@ namespace Emberfall.Gameplay.Combat.Domain
         public float SweepDamageClose { get; }
         public float SweepRadius { get; }
         public float SweepAngle { get; }
+        public float EnemyHitAwarenessSeconds { get; }
+        public float EnemyRetreatBlockedSeconds { get; }
 
         public float GetLightDamage(int comboIndex) => _lightDamage[comboIndex];
         public float GetLightDuration(int comboIndex) => _lightDuration[comboIndex];

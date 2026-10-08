@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "summoners": [
+    {
+      "id": "enemy:ash-caller", "displayNameTextId": "text:enemy.ash-caller.name", "minionId": "enemy:fogwalker",
+      "maximumHealth": 160, "armor": 3, "maximumPosture": 75, "postureRegenPerSecond": 18, "postureRegenDelay": 1.4,
+      "detectionRange": 16, "loseTargetRange": 20, "fieldOfView": 160, "leashRange": 24,
+      "preferredMinimumRange": 8, "preferredMaximumRange": 12, "moveSpeed": 2.3, "rotationSpeed": 420,
+      "windupDuration": 0.8, "releaseDuration": 0.24, "recoveryDuration": 1.1,
+      "projectileSpeed": 9, "projectileLifetime": 3, "projectileRadius": 0.18,
+      "attackDamage": 10, "postureDamage": 12, "hitReactDuration": 0.35, "respawnDelay": 4,
+      "summonWindup": 1.2, "summonRecovery": 0.8, "summonCooldown": 5.5, "interruptCooldown": 1.5,
+      "initialSummonDelay": 2.8, "minionHealth": 52
+    }
+  ]
+}

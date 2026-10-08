@@ -26,6 +26,20 @@ namespace Emberfall.Networking
         [SerializeField] private Animator _animator;
         [SerializeField] private Emberfall.Gameplay.Animation.PlayerAnimationSet _animationSet;
 
+        // Optional, purely local presentation references. Existing replicated facts retain
+        // sole authority; equipment does not participate in any hit or movement query.
+        [SerializeField] private Renderer _weaponRenderer;
+        [SerializeField] private Renderer _shieldRenderer;
+        [SerializeField] private GameObject _shieldVisualRoot;
+        private MaterialPropertyBlock _weaponColorBlock;
+        private MaterialPropertyBlock _shieldColorBlock;
+        private MaterialPropertyBlock _attackColorBlock;
+        private bool _equipmentColorsReady;
+        private Color _weaponBaseColor;
+        private Color _shieldBaseColor;
+        private Color _weaponPresentedColor;
+        private Color _shieldPresentedColor;
+
         private readonly NetworkVariable<Vector3> _serverPosition = new NetworkVariable<Vector3>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<float> _serverYaw = new NetworkVariable<float>(
@@ -106,6 +120,19 @@ namespace Emberfall.Networking
             _phaseIndicator = phaseIndicator;
             _animator = animator;
             _animationSet = animationSet;
+        }
+
+        public void ConfigureEquipment(Renderer weaponRenderer, Renderer shieldRenderer, GameObject shieldVisualRoot)
+        {
+            bool allMissing = weaponRenderer == null && shieldRenderer == null && shieldVisualRoot == null;
+            if (!allMissing && (weaponRenderer == null || shieldRenderer == null || shieldVisualRoot == null))
+                throw new ArgumentException("Warden presentation equipment must be a complete sword/shield pair.");
+            if (_weaponRenderer == weaponRenderer && _shieldRenderer == shieldRenderer && _shieldVisualRoot == shieldVisualRoot)
+                return;
+            _weaponRenderer = weaponRenderer;
+            _shieldRenderer = shieldRenderer;
+            _shieldVisualRoot = shieldVisualRoot;
+            _equipmentColorsReady = false;
         }
 
         public override void OnNetworkSpawn()
@@ -514,14 +541,19 @@ namespace Emberfall.Networking
             if (_attackIndicator != null)
             {
                 _attackIndicator.enabled = attack || ReplicatedState == WardenState.Windup;
-                var block = new MaterialPropertyBlock();
+                _attackColorBlock ??= new MaterialPropertyBlock();
+                var block = _attackColorBlock;
+                _attackIndicator.GetPropertyBlock(block);
+                // This legacy disc indicates an attack, NOT the authoritative hit boundary.
+                // Its opaque Lit material keeps depth/geometry unchanged. Limit emission so
+                // the warning stays warm without washing out the character and ground.
                 Color attackColor = ReplicatedAttack == WardenAttackKind.DelayedBlast
-                    ? new Color(0.68f, 0.08f, 1f)
+                    ? new Color(0.62f, 0.1f, 0.72f)
                     : ReplicatedAttack == WardenAttackKind.RuneCleave
-                        ? new Color(1f, 0.15f, 0.04f)
-                        : new Color(1f, 0.55f, 0.04f);
+                        ? new Color(0.92f, 0.18f, 0.08f)
+                        : new Color(0.82f, 0.22f, 0.04f);
                 block.SetColor("_BaseColor", attackColor);
-                block.SetColor("_EmissionColor", attackColor * 1.8f);
+                block.SetColor("_EmissionColor", attackColor * 0.18f);
                 _attackIndicator.SetPropertyBlock(block);
             }
             if (_phaseIndicator != null) _phaseIndicator.enabled = transition || ReplicatedPhase == WardenPhase.PhaseTwo;
@@ -535,8 +567,58 @@ namespace Emberfall.Networking
                 block.SetColor("_EmissionColor", color * 1.35f);
                 _stateMarker.SetPropertyBlock(block);
             }
+            ApplyEquipmentPresentation(Time.deltaTime);
             PresentBlast();
             PresentAnimation();
+        }
+
+        private void ApplyEquipmentPresentation(float deltaTime)
+        {
+            // Legacy prefabs without this optional presentation layer remain valid.
+            if (_weaponRenderer == null || _shieldRenderer == null || _shieldVisualRoot == null) return;
+            if (!_equipmentColorsReady)
+            {
+                _weaponBaseColor = ReadEquipmentBaseColor(_weaponRenderer);
+                _shieldBaseColor = ReadEquipmentBaseColor(_shieldRenderer);
+                _weaponPresentedColor = _weaponBaseColor;
+                _shieldPresentedColor = _shieldBaseColor;
+                _weaponColorBlock = _weaponColorBlock ?? new MaterialPropertyBlock();
+                _shieldColorBlock = _shieldColorBlock ?? new MaterialPropertyBlock();
+                _equipmentColorsReady = true;
+            }
+            bool shieldVisible = ReplicatedPhase != WardenPhase.PhaseTwo && ReplicatedState != WardenState.Dead;
+            if (_shieldVisualRoot.activeSelf != shieldVisible) _shieldVisualRoot.SetActive(shieldVisible);
+
+            Color weaponTarget = ReplicatedPhase == WardenPhase.PhaseOne
+                ? _weaponBaseColor : new Color(1f, 0.16f, 0.035f);
+            float weaponSpeed = ReplicatedState == WardenState.PhaseTransition ? 5f : 12f;
+            _weaponPresentedColor = Color.Lerp(_weaponPresentedColor, weaponTarget, Mathf.Max(0f, deltaTime) * weaponSpeed);
+            Color shieldTarget = ReplicatedState == WardenState.PhaseTransition
+                ? new Color(1f, 0.32f, 0.04f)
+                : ReplicatedState == WardenState.GuardBreak ? new Color(1f, 0.2f, 0.04f) : _shieldBaseColor;
+            _shieldPresentedColor = Color.Lerp(_shieldPresentedColor, shieldTarget, Mathf.Max(0f, deltaTime) * 16f);
+            WriteEquipmentColor(_weaponRenderer, _weaponColorBlock, _weaponPresentedColor);
+            WriteEquipmentColor(_shieldRenderer, _shieldColorBlock, _shieldPresentedColor);
+        }
+
+        private static Color ReadEquipmentBaseColor(Renderer renderer)
+        {
+            Material material = renderer.sharedMaterial;
+            return material != null && material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") :
+                material != null && material.HasProperty("_Color") ? material.GetColor("_Color") : Color.white;
+        }
+
+        private static void WriteEquipmentColor(Renderer renderer, MaterialPropertyBlock block, Color color)
+        {
+            Material material = renderer.sharedMaterial;
+            if (material == null) return;
+            // Match offline's first-material color only. Grip/brass and existing MPB
+            // properties remain untouched; this creates no material instance or emission.
+            renderer.GetPropertyBlock(block, 0);
+            if (block.isEmpty) renderer.GetPropertyBlock(block);
+            if (material.HasProperty("_BaseColor")) block.SetColor("_BaseColor", color);
+            if (material.HasProperty("_Color")) block.SetColor("_Color", color);
+            renderer.SetPropertyBlock(block, 0);
         }
 
         private void PresentBlast()

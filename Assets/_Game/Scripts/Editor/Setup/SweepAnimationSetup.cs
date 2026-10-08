@@ -58,6 +58,7 @@ namespace Emberfall.Editor.Setup
             EditorUtility.SetDirty(controller);
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
+            OfflineLocomotionSetup.Apply();
         }
 
         public static void ApplyAndAudit()

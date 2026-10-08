@@ -132,8 +132,28 @@ namespace Emberfall.Tests.PlayMode
                     InputSystem.QueueStateEvent(pad,state);yield return null;
                 }
                 Assert.That(player.Model.PerfectGuardCount,Is.GreaterThan(beforeSecond));
+                // All gym AI remain live. A successful melee parry does NOT protect
+                // against the priest's undefendable ground rune while waiting.
+                // Evade through the real input chain; keep the opportunity alive
+                // so the original deadline/ordinary-light assertions still test expiry.
+                Vector3 expiryStart=player.transform.position;
+                float expiryHealth=player.Model.Health.Current;
+                int beforeDodge=player.Model.DodgeAttemptCount;
+                var evade=new GamepadState { leftStick=FaceTargetInput(
+                    player.transform.position-enemy.transform.position,1f) }
+                    .WithButton(GamepadButton.LeftShoulder).WithButton(GamepadButton.East);
+                InputSystem.QueueStateEvent(pad,evade);yield return null;
+                Assert.That(player.Model.State,Is.EqualTo(CombatState.Dodge),
+                    "Expiry fixture must evade the parallel ground rune through normal input, not disable damage.");
+                Assert.That(player.Model.DodgeAttemptCount,Is.EqualTo(beforeDodge+1));
+                Assert.That(player.Model.GuardCounterWindowRemaining,Is.GreaterThan(0f),
+                    "Dodge must not cancel the opportunity and masquerade as natural expiry.");
                 InputSystem.QueueStateEvent(pad,new GamepadState().WithButton(GamepadButton.LeftShoulder));
                 yield return new WaitForSeconds(.65f);
+                Assert.That(Vector3.Distance(expiryStart,player.transform.position),Is.GreaterThan(1f),
+                    "Actual movement must evade the parallel threat; a synthetic state change is insufficient.");
+                Assert.That(player.Model.Health.Current,Is.EqualTo(expiryHealth),
+                    "Expiry observation was interrupted by a real parallel attack; this is not an input-contract failure.");
                 Assert.That(player.Model.CanUseGuardCounter,Is.False);
                 Assert.That(player.Model.GuardCounterWindowRemaining,Is.Zero);
                 InputSystem.QueueStateEvent(pad,new GamepadState());yield return null;yield return null;

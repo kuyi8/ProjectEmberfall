@@ -40,12 +40,32 @@ namespace Emberfall.AI.Unity
                 ? _actor.HorizontalSpeed : 0f, 0.08f, Time.deltaTime);
             if (desired == _presented) return;
             _presented = desired;
-            AnimatorSpeedCoordinator.SetBase(_animator, ResolvePlaybackSpeed(desired), desired == PresentationState.Dead);
-            _animator.CrossFadeInFixedTime(
-                ResolveStateName(desired),
-                desired == PresentationState.ChargeRecovery ? 0.12f : 0.06f,
-                0,
-                ResolveNormalizedOffset(desired));
+            CrossFadeState(desired, ResolvePlaybackSpeed(desired));
+        }
+
+        private void CrossFadeState(PresentationState state, float playbackSpeed)
+        {
+            AnimatorSpeedCoordinator.SetBase(_animator, playbackSpeed, state == PresentationState.Dead);
+            string name = ResolveStateName(state);
+            float blendSeconds = state == PresentationState.ChargeRecovery ? 0.12f : 0.06f;
+            float fraction = ResolveNormalizedOffset(state);
+            if (fraction == 0f)
+            {
+                _animator.CrossFadeInFixedTime(name, blendSeconds, 0, 0f);
+                return;
+            }
+
+            AnimationClip clip = _animationSet.GetEnemyClip(EnemyAnimationAction.WardenCharge);
+            // Unity 2022.3 measures fixed-time entry as offset * speed / clip.length.
+            // Preserve the existing fixed blend, but enter the intended source pose, not .24/.78 seconds.
+            if (_animator.speed > 0f)
+                _animator.CrossFadeInFixedTime(name, blendSeconds, 0, fraction * clip.length / _animator.speed);
+            else
+            {
+                // Local hit-stop keeps domain time running. A normalized entry also works at speed=0;
+                // scale its blend parameter to match the fixed-time path after the base speed resumes.
+                _animator.CrossFade(name, blendSeconds * playbackSpeed / clip.length, 0, fraction);
+            }
         }
 
         private void LateUpdate()

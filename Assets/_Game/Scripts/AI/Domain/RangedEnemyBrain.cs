@@ -10,10 +10,16 @@ namespace Emberfall.AI.Domain
         private readonly HealthModel _health;
         private float _groundRuneCooldownRemaining;
         private float _postureWindowRemaining;
+        private readonly float _retreatBlockedSeconds;
+        private float _retreatBlockedElapsed;
+        private bool _corneredWindup;
 
-        public RangedEnemyBrain(RangedEnemyDefinition definition)
+        public RangedEnemyBrain(RangedEnemyDefinition definition, float retreatBlockedSeconds = 2.5f)
         {
             _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+            if (retreatBlockedSeconds <= 0f || float.IsNaN(retreatBlockedSeconds) || float.IsInfinity(retreatBlockedSeconds))
+                throw new ArgumentOutOfRangeException(nameof(retreatBlockedSeconds));
+            _retreatBlockedSeconds = retreatBlockedSeconds;
             _health = new HealthModel(definition.MaximumHealth);
             Posture = new PostureModel(
                 definition.MaximumPosture,
@@ -27,6 +33,8 @@ namespace Emberfall.AI.Domain
         public RangedAttackKind CurrentAttack { get; private set; } = RangedAttackKind.Projectile;
         public HealthModel Health => _health;
         public PostureModel Posture { get; }
+        public float RetreatBlockedElapsed => _retreatBlockedElapsed;
+        public bool IsCorneredWindup => _corneredWindup && State == RangedEnemyState.Windup;
         public bool IsPostureExecutionWindow => !_health.IsDead && _postureWindowRemaining > 0f;
         public bool WantsTargetMovement => State == RangedEnemyState.Approach;
         public bool WantsRetreatMovement => State == RangedEnemyState.Retreat;
@@ -52,6 +60,8 @@ namespace Emberfall.AI.Domain
                 throw new ArgumentOutOfRangeException(nameof(deltaTime));
             }
 
+            bool abandonCorneredWindup = IsCorneredWindup && !CanAttemptCorneredAttack(perception);
+            UpdateRetreatConstraint(deltaTime, perception);
             StateElapsed += deltaTime;
             if (_postureWindowRemaining > 0f)
             {
@@ -62,6 +72,11 @@ namespace Emberfall.AI.Domain
             Posture.Tick(deltaTime,
                 !IsPostureExecutionWindow && (State == RangedEnemyState.Idle || State == RangedEnemyState.Approach ||
                 State == RangedEnemyState.Retreat || State == RangedEnemyState.Return));
+            if (abandonCorneredWindup)
+            {
+                TransitionTo(ShouldDisengage(perception) ? RangedEnemyState.Return : RangedEnemyState.Approach);
+                return;
+            }
             switch (State)
             {
                 case RangedEnemyState.Idle:
@@ -90,7 +105,7 @@ namespace Emberfall.AI.Domain
                     {
                         TransitionTo(RangedEnemyState.Approach);
                     }
-                    else if (perception.DistanceToTarget < _definition.PreferredMinimumRange * 0.65f)
+                    else if (perception.DistanceToTarget < _definition.PreferredMinimumRange * 0.65f && !IsCorneredWindup)
                     {
                         TransitionTo(RangedEnemyState.Retreat);
                     }
@@ -181,6 +196,7 @@ namespace Emberfall.AI.Domain
 
         public void Reset()
         {
+            ResetRetreatConstraint();
             _health.RestoreFull();
             Posture.RestoreFull();
             State = RangedEnemyState.Idle;
@@ -193,7 +209,8 @@ namespace Emberfall.AI.Domain
 
         private void SelectCombatState(RangedEnemyPerception perception)
         {
-            if (perception.DistanceToTarget < _definition.PreferredMinimumRange)
+            if (perception.DistanceToTarget < _definition.PreferredMinimumRange &&
+                !(_retreatBlockedElapsed >= _retreatBlockedSeconds && CanAttemptCorneredAttack(perception)))
             {
                 TransitionTo(RangedEnemyState.Retreat);
             }
@@ -203,9 +220,35 @@ namespace Emberfall.AI.Domain
             }
             else
             {
+                _corneredWindup = perception.DistanceToTarget < _definition.PreferredMinimumRange;
                 SelectAttack();
                 TransitionTo(RangedEnemyState.Windup);
             }
+        }
+
+        /// <summary>Clear a movement constraint on authority loss / execution hold; never changes combat state.</summary>
+        public void ResetRetreatConstraint()
+        {
+            _retreatBlockedElapsed = 0f;
+            _corneredWindup = false;
+        }
+
+        private bool CanAttemptCorneredAttack(RangedEnemyPerception perception) =>
+            perception.TargetAvailable && perception.CanSeeTarget &&
+            perception.DistanceToTarget <= _definition.PreferredMaximumRange &&
+            !ShouldDisengage(perception) && !IsPostureExecutionWindow;
+
+        private void UpdateRetreatConstraint(float deltaTime, RangedEnemyPerception perception)
+        {
+            if (!CanAttemptCorneredAttack(perception) || !perception.RetreatUnavailable ||
+                perception.DistanceToTarget >= _definition.PreferredMinimumRange ||
+                (State != RangedEnemyState.Retreat && !IsCorneredWindup))
+            {
+                ResetRetreatConstraint();
+                return;
+            }
+            if (State == RangedEnemyState.Retreat)
+                _retreatBlockedElapsed = Math.Min(_retreatBlockedSeconds, _retreatBlockedElapsed + deltaTime);
         }
 
         private void SelectAttack()
@@ -245,6 +288,8 @@ namespace Emberfall.AI.Domain
             }
 
             State = state;
+            if (state != RangedEnemyState.Retreat && state != RangedEnemyState.Windup)
+                ResetRetreatConstraint();
             if (state == RangedEnemyState.Dead) _postureWindowRemaining = 0f;
             StateElapsed = 0f;
             if (state == RangedEnemyState.Release)

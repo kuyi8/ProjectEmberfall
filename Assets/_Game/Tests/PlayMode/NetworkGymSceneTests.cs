@@ -104,6 +104,24 @@ namespace Emberfall.Tests.PlayMode
             Assert.That(routeHud, Is.Not.Null);
             Assert.That(routeHud.IsConfigured, Is.True);
             Assert.That(routeHud.IsLockOnConfigured, Is.True);
+            Assert.That(routeHud.ShouldShowCombatHud, Is.False,"An unspawned prefab is not an active Owner combat HUD.");
+            // Private runtime fields on a cached prefab can survive Editor hot reload.
+            // Verify the actual fresh-instance Awake contract, not that non-authoritative cache.
+            CursorLockMode guideCursorLock = Cursor.lockState;
+            bool guideCursorVisible = Cursor.visible;
+            GameObject guideInstance = Object.Instantiate(prefab);
+            try
+            {
+                Assert.That(guideInstance.GetComponent<NetworkRouteHud>().IsGuideVisible, Is.False,
+                    "A fresh co-op player explicitly starts with opt-in F1 guidance.");
+                Assert.That(guideInstance.GetComponent<NetworkRouteHud>().ShouldShowCombatHud, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(guideInstance);
+                Cursor.lockState = guideCursorLock;
+                Cursor.visible = guideCursorVisible;
+            }
             Assert.That(prefab.GetComponent<CharacterController>(), Is.Not.Null);
             Transform playerVisual = prefab.transform.Find("Ranger_Visual");
             Assert.That(playerVisual, Is.Not.Null);

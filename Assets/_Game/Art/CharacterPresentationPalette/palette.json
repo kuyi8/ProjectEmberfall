@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "entries": [
+    {"id":"Bone","baseColor":{"r":0.80,"g":0.78,"b":0.67,"a":1},"smoothness":0.10,"metallic":0,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"Steel","baseColor":{"r":0.34,"g":0.41,"b":0.46,"a":1},"smoothness":0.24,"metallic":0.35,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"Cloth","baseColor":{"r":0.18,"g":0.22,"b":0.24,"a":1},"smoothness":0.10,"metallic":0,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"Eyes","baseColor":{"r":0.38,"g":0.48,"b":0.56,"a":1},"smoothness":0.16,"metallic":0,"emissionColor":{"r":0.14,"g":0.21,"b":0.28,"a":1}},
+    {"id":"WardenMetal","baseColor":{"r":0.44,"g":0.50,"b":0.54,"a":1},"smoothness":0.32,"metallic":0.50,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"WardenCloth","baseColor":{"r":0.30,"g":0.17,"b":0.16,"a":1},"smoothness":0.12,"metallic":0,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"WardenRune","baseColor":{"r":0.28,"g":0.09,"b":0.045,"a":1},"smoothness":0.22,"metallic":0.12,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"RangerOutfit","baseColor":{"r":0.90,"g":0.97,"b":0.91,"a":1},"smoothness":0.15,"metallic":0,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"Priest","baseColor":{"r":0.82,"g":0.77,"b":0.91,"a":1},"smoothness":0.13,"metallic":0,"emissionColor":{"r":0,"g":0,"b":0,"a":1}},
+    {"id":"Scorched","baseColor":{"r":0.95,"g":0.85,"b":0.75,"a":1},"smoothness":0.24,"metallic":0.14,"emissionColor":{"r":0,"g":0,"b":0,"a":1}}
+  ]
+}

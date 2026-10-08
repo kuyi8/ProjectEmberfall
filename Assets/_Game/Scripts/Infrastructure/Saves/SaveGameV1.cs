@@ -133,6 +133,11 @@ namespace Emberfall.Infrastructure.Saves
         public int routeChoice;
         public bool preSanctumEncounterCleared;
         public bool riskRewardClaimed;
+        public bool ashApproachCleared;
+        public bool ashGuardPassCleared;
+        public bool ashReturnCleared;
+        public int reinforcementChoice;
+        public bool supplyCartClaimed;
 
         public static RouteEnrichmentProgressV1 FromSnapshot(RouteEnrichmentSnapshot snapshot)
         {
@@ -143,7 +148,12 @@ namespace Emberfall.Infrastructure.Saves
                 watchtowerDiscovered = snapshot.WatchtowerDiscovered,
                 routeChoice = (int)snapshot.RouteChoice,
                 preSanctumEncounterCleared = snapshot.PreSanctumEncounterCleared,
-                riskRewardClaimed = snapshot.RiskRewardClaimed
+                riskRewardClaimed = snapshot.RiskRewardClaimed,
+                ashApproachCleared = snapshot.AshApproachCleared,
+                ashGuardPassCleared = snapshot.AshGuardPassCleared,
+                ashReturnCleared = snapshot.AshReturnCleared,
+                reinforcementChoice = (int)snapshot.ReinforcementChoice,
+                supplyCartClaimed = snapshot.SupplyCartClaimed
             };
         }
 
@@ -154,7 +164,12 @@ namespace Emberfall.Infrastructure.Saves
                 watchtowerDiscovered,
                 (EmberValleyRouteChoice)routeChoice,
                 preSanctumEncounterCleared,
-                riskRewardClaimed);
+                riskRewardClaimed,
+                ashApproachCleared,
+                ashGuardPassCleared,
+                ashReturnCleared,
+                (AshReinforcementChoice)reinforcementChoice,
+                supplyCartClaimed);
         }
 
         public void Validate()
@@ -169,7 +184,12 @@ namespace Emberfall.Infrastructure.Saves
                 watchtowerDiscovered,
                 (EmberValleyRouteChoice)routeChoice,
                 preSanctumEncounterCleared,
-                riskRewardClaimed).Validate();
+                riskRewardClaimed,
+                ashApproachCleared,
+                ashGuardPassCleared,
+                ashReturnCleared,
+                (AshReinforcementChoice)reinforcementChoice,
+                supplyCartClaimed).Validate();
         }
     }
 

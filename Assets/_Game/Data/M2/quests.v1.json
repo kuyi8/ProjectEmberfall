@@ -4,7 +4,8 @@
     {
       "id": "quest:emberfall.main",
       "titleTextId": "text:quest.main.title",
-      "requiredSealCount": 3
+      "requiredSealCount": 3,
+      "supplyCartHeavyPostureMultiplier": 1.15
     },
     {
       "id": "quest:forest-seal",

@@ -60,6 +60,9 @@ namespace Emberfall.Gameplay.Combat.Unity
         public override bool HasSecondaryResource => true;
         public override float SecondaryResourceNormalized => _model?.Posture.Normalized ?? 0f;
         public CombatStateMachine Model => _model;
+        public float HeavyPostureMultiplier => _model?.HeavyPostureMultiplier ?? 1f;
+        public bool ApplySupplyCartHeavyPostureReward(float multiplier) =>
+            _model != null && _model.ApplySupplyCartHeavyPostureReward(multiplier);
         public Vector2 DodgeInput { get; private set; }
         public string LastCombatEvent { get; private set; } = "Ready";
         public ContentId ActiveCheckpointId => _activeCheckpointId;
@@ -85,6 +88,8 @@ namespace Emberfall.Gameplay.Combat.Unity
         public event Action<PlayerCombatActor> Respawned;
         public event Action<CombatImpactPresentationEvent> ImpactPresented;
         private ulong _impactSequence;
+        // Offline adapter fact only: each ordinary accepted HitReact reset, not attacker dedup or authority.
+        public ulong HitReactPresentationSequence { get; private set; }
         public event Action<RangedAttackRelease> RangedAttackReleased;
         public event Action<PlayerCombatActor, CombatProgressKind> CombatProgressed;
         public event Action<PerfectDefenseKind> PerfectDefensePresented;
@@ -260,6 +265,12 @@ namespace Emberfall.Gameplay.Combat.Unity
         public override DamageResult ReceiveDamage(DamageRequest request)
         {
             DamageResult result = _model?.ReceiveDamage(request, _armor) ?? DamageResult.Ignored;
+            if (result.Accepted && !result.Defended && !result.Invulnerable && !result.Killed &&
+                _model != null && _model.State == CombatState.HitReact)
+            {
+                // Capture before external progress callbacks can change the model again.
+                unchecked { HitReactPresentationSequence++; }
+            }
             if (result.PerfectGuard)
             {
                 if (RuneBlessingRules.ArmsGuardCounter(ActiveRuneBlessing, true))
@@ -595,10 +606,11 @@ namespace Emberfall.Gameplay.Combat.Unity
         {
             if (_model.CurrentAttackTag == AttackTag.Heavy)
             {
-                return 60f + _model.CurrentAttackPostureBonus +
+                float finalPosture = 60f + _model.CurrentAttackPostureBonus +
                     (ActiveRuneBlessing == RuneBlessing.Ember && _model.IsHeavyFullyCharged
                     ? RuneBlessingRules.EmberHeavyBonusPostureDamage
                     : 0f);
+                return _model.ResolveRewardedPostureDamage(AttackTag.Heavy, finalPosture);
             }
 
             if (_model.CurrentAttackTag == AttackTag.Sweep)
@@ -747,17 +759,9 @@ namespace Emberfall.Gameplay.Combat.Unity
             Debug.Log($"[M5C_FEEL] event={eventName} value={value:0.###} sequence={sequence}");
         }
 
-        private static void SpawnRuneImpact(Vector3 position, Color color)
+        private void SpawnRuneImpact(Vector3 position, Color color)
         {
-            GameObject impact = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            impact.name = "RuneBlessingImpact";
-            impact.layer = 2;
-            impact.transform.position = position;
-            impact.transform.localScale = Vector3.one * 0.22f;
-            Destroy(impact.GetComponent<Collider>());
-            Renderer renderer = impact.GetComponent<Renderer>();
-            renderer.material.color = color;
-            impact.AddComponent<RuneBlessingImpact>().Configure(renderer.material, color);
+            RuneBlessingImpact.Create(position, color, gameObject.scene, Camera.main);
         }
 
         private void Respawn()
@@ -839,41 +843,4 @@ namespace Emberfall.Gameplay.Combat.Unity
         Dodge = 1
     }
 
-    internal sealed class RuneBlessingImpact : MonoBehaviour
-    {
-        private Material _material;
-        private Color _color;
-        private float _elapsed;
-
-        public void Configure(Material material, Color color)
-        {
-            _material = material;
-            _color = color;
-        }
-
-        private void Update()
-        {
-            _elapsed += Time.deltaTime;
-            transform.localScale = Vector3.one * Mathf.Lerp(0.22f, 1.15f, _elapsed / 0.42f);
-            if (_material != null)
-            {
-                Color faded = _color;
-                faded.a = Mathf.Clamp01(1f - (_elapsed / 0.42f));
-                _material.color = faded;
-            }
-
-            if (_elapsed >= 0.42f)
-            {
-                Destroy(gameObject);
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (_material != null)
-            {
-                Destroy(_material);
-            }
-        }
-    }
 }

@@ -76,6 +76,7 @@ namespace Emberfall.Editor.Setup
                 var scene = EditorSceneManager.OpenScene("Assets/_Game/Scenes/" + name + ".unity");
                 string before = CapturePhysics(scene);
                 ApplyToScene(scene);
+                WorldPresentationSetup.ApplyToScene(scene);
                 string after = CapturePhysics(scene);
                 if (before != after) throw new InvalidOperationException("Boundary art changed physics/navigation: " + name);
                 // Keep the first, pre-art baseline, even when the setup is invoked again by a build.

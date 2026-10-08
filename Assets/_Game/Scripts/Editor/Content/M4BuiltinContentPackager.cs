@@ -36,11 +36,10 @@ namespace Emberfall.Editor.Content
             string projectRoot = Directory.GetParent(UnityEngine.Application.dataPath)?.FullName ??
                                  throw new InvalidOperationException("Project root could not be resolved.");
 
-            if (AssetDatabase.IsValidFolder(TargetAssetRoot) && !AssetDatabase.DeleteAsset(TargetAssetRoot))
-                throw new IOException($"Generated content folder '{TargetAssetRoot}' could not be replaced.");
-
             string targetRoot = Path.Combine(projectRoot, TargetAssetRoot.Replace('/', Path.DirectorySeparatorChar));
-            Directory.CreateDirectory(Path.Combine(targetRoot, "Data"));
+            // Read and validate ALL authored sources before replacing any selected bytes.
+            // Preserve existing Unity GUIDs and a recoverable previous package, not DeleteAsset(root).
+            var payloads = new byte[Sources.Length][];
             var entries = new List<ContentPackageFile>(Sources.Length);
 
             for (int i = 0; i < Sources.Length; i++)
@@ -50,9 +49,7 @@ namespace Emberfall.Editor.Content
                 if (!File.Exists(sourcePath)) throw new FileNotFoundException("Authored content source is missing.", sourcePath);
 
                 byte[] bytes = File.ReadAllBytes(sourcePath);
-                string destinationPath = Path.Combine(targetRoot, source.PackagePath.Replace('/', Path.DirectorySeparatorChar));
-                Directory.CreateDirectory(Path.GetDirectoryName(destinationPath) ?? targetRoot);
-                File.WriteAllBytes(destinationPath, bytes);
+                payloads[i] = bytes;
                 entries.Add(new ContentPackageFile(
                     source.PackagePath,
                     source.Kind,
@@ -63,12 +60,34 @@ namespace Emberfall.Editor.Content
             var manifest = new ContentPackageManifest(
                 ContentPackageValidator.SupportedSchemaVersion,
                 new ContentId("package:emberfall.builtin"),
-                new SemanticVersion(0, 8, 11),
+                new SemanticVersion(0, 8, 13),
                 new SemanticVersion(0, 5, 0),
                 new SemanticVersion(0, 9, 999),
                 "builtin",
                 "embedded-trusted-content",
                 entries);
+            var snapshotFiles = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+            for (int i = 0; i < Sources.Length; i++) snapshotFiles.Add(Sources[i].PackagePath, payloads[i]);
+            if (!new GameContentPackagePreflight().Validate(new ContentPackageSnapshot(manifest, snapshotFiles), out string failure))
+                throw new InvalidOperationException(failure);
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Content authoring refuses an active Player session.");
+            string backupRoot = Path.Combine(projectRoot, "Builds", "ContentBackups", DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff"));
+            if (Directory.Exists(targetRoot))
+            {
+                foreach (string old in Directory.GetFiles(targetRoot, "*", SearchOption.AllDirectories))
+                {
+                    string backup = Path.Combine(backupRoot, old.Substring(targetRoot.Length + 1));
+                    Directory.CreateDirectory(Path.GetDirectoryName(backup));
+                    File.Copy(old, backup, false);
+                }
+            }
+            for (int i = 0; i < Sources.Length; i++)
+            {
+                string destination = Path.Combine(targetRoot, Sources[i].PackagePath.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                File.WriteAllBytes(destination, payloads[i]);
+            }
             File.WriteAllText(
                 Path.Combine(targetRoot, "manifest.json"),
                 ContentPackageManifestJson.Serialize(manifest),

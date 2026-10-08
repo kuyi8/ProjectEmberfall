@@ -18,7 +18,7 @@ namespace Emberfall.Tests.EditMode
             var client = new Emberfall.Core.Content.SemanticVersion(0, 9, 0);
             Assert.That(manifest.MinClientVersion.CompareTo(client), Is.LessThanOrEqualTo(0));
             Assert.That(manifest.MaxClientVersion.CompareTo(client), Is.GreaterThanOrEqualTo(0));
-            Assert.That(manifest.ContentVersion.ToString(), Is.EqualTo("0.8.11"));
+            Assert.That(manifest.ContentVersion.ToString(), Is.EqualTo("0.8.13"));
             Assert.That(manifest.SchemaVersion, Is.EqualTo(1));
         }
 

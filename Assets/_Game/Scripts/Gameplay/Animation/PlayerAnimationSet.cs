@@ -7,6 +7,12 @@ namespace Emberfall.Gameplay.Animation
     public sealed class PlayerAnimationSet : ScriptableObject
     {
         [SerializeField] private RuntimeAnimatorController _controller;
+        [SerializeField] private RuntimeAnimatorController _offlineController;
+        [SerializeField, HideInInspector] private string _offlineControllerSourceHash;
+        [Header("Offline locomotion visual facing (degrees, not motor heading)")]
+        [SerializeField, Range(-45f, 45f)] private float _offlineWalkYaw;
+        [SerializeField, Range(-45f, 45f)] private float _offlineJogYaw;
+        [SerializeField, Range(-45f, 45f)] private float _offlineSprintYaw;
         [SerializeField] private AnimationClip _lightAttack1;
         [SerializeField] private AnimationClip _lightAttack1Recovery;
         [SerializeField] private AnimationClip _lightAttack2;
@@ -17,12 +23,18 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _offlineHeavyAttack;
         [SerializeField] private AnimationClip _offlineExecution;
         [SerializeField] private AnimationClip _offlineRangedAttack;
+        // Opt-in for owned offline clips authored on the domain's timeline. Legacy sets keep zero entry offset.
+        [SerializeField] private bool _offlineRangedDomainEntryTime;
+        // Independent presentation opt-in: never implicitly enabled by entry clock alignment.
+        [SerializeField] private bool _offlineRangedMotionContinuity;
         [SerializeField] private AnimationClip _sweep;
         [SerializeField] private AnimationClip _rangedAttack;
         [SerializeField] private AnimationClip _dodge;
         [SerializeField] private AnimationClip _guard;
         [SerializeField] private AnimationClip _guardBreak;
         [SerializeField] private AnimationClip _hitReact;
+        // Independent offline candidate; authored sets retain the legacy same-state behaviour by default.
+        [SerializeField] private bool _offlineHitReactReentry;
         [SerializeField] private AnimationClip _heal;
         [SerializeField] private AnimationClip _dead;
         [SerializeField] private AnimationClip _enemyMeleeCombo;
@@ -36,6 +48,34 @@ namespace Emberfall.Gameplay.Animation
         [SerializeField] private AnimationClip _priestProjectileRelease;
 
         public RuntimeAnimatorController Controller => _controller;
+        // Optional offline presentation only. Enemy and network adapters retain Controller.
+        public RuntimeAnimatorController OfflineController => _offlineController != null ? _offlineController : _controller;
+        public bool KeepOfflineRangedAnimationMoving => _offlineRangedMotionContinuity && _offlineRangedAttack != null;
+        public bool RestartOfflineHitReactOnAcceptedDamage => _offlineHitReactReentry && _hitReact != null;
+
+        // Same linear weights and damped Speed parameter as the owned 0/2.2/5.4/8.2 tree.
+        // Shared enemy/network adapters do not call this offline presentation policy.
+        public float GetOfflineLocomotionYaw(CombatState state, float speed)
+        {
+            if (_offlineController == null || state != CombatState.Locomotion ||
+                float.IsNaN(speed) || float.IsInfinity(speed) || speed <= 0f) return 0f;
+            if (speed <= 2.2f) return Mathf.Lerp(0f, _offlineWalkYaw, speed / 2.2f);
+            if (speed <= 5.4f) return Mathf.Lerp(_offlineWalkYaw, _offlineJogYaw, (speed - 2.2f) / 3.2f);
+            return Mathf.Lerp(_offlineJogYaw, _offlineSprintYaw, (speed - 5.4f) / 2.8f);
+        }
+
+        public float GetOfflineEntryTimeOffset(CombatState state, float stateElapsed, float playbackSpeed)
+        {
+            if (!_offlineRangedDomainEntryTime || state != CombatState.RangedAttack ||
+                _offlineRangedAttack == null || float.IsNaN(stateElapsed) || float.IsInfinity(stateElapsed) ||
+                float.IsNaN(playbackSpeed) || float.IsInfinity(playbackSpeed) || playbackSpeed <= 0f)
+            {
+                return 0f;
+            }
+
+            // CrossFadeInFixedTime takes state seconds, not normalized phase. No per-frame seeking/HitStop override.
+            return Mathf.Clamp(stateElapsed * playbackSpeed, 0f, _offlineRangedAttack.length);
+        }
 
         // Existing GetClip/state names remain the shared enemy/network contract.
         public AnimationClip GetOfflineClip(CombatState state) => state switch
@@ -122,7 +162,13 @@ namespace Emberfall.Gameplay.Animation
         }
 
 #if UNITY_EDITOR
+        public void ConfigureOfflineHitReactReentry(bool enabled) => _offlineHitReactReentry = enabled;
+
         public void ConfigureOfflineRangedAttack(AnimationClip clip) => _offlineRangedAttack = clip;
+
+        public void ConfigureOfflineRangedEntryTime(bool enabled) => _offlineRangedDomainEntryTime = enabled;
+
+        public void ConfigureOfflineRangedMotionContinuity(bool enabled) => _offlineRangedMotionContinuity = enabled;
 
         public void ConfigureOfflineStrikes(AnimationClip heavy, AnimationClip execution)
         {
@@ -136,6 +182,13 @@ namespace Emberfall.Gameplay.Animation
         {
             _priestProjectileWindup = windup;
             _priestProjectileRelease = release;
+        }
+
+        public string OfflineControllerSourceHash => _offlineControllerSourceHash;
+        public void ConfigureOfflineController(RuntimeAnimatorController controller, string sourceHash)
+        {
+            _offlineController = controller;
+            _offlineControllerSourceHash = sourceHash;
         }
 
         public void Configure(

@@ -42,6 +42,7 @@ namespace Emberfall.Editor.Setup
             }
             EditorUtility.SetDirty(state); EditorUtility.SetDirty(set); EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
+            OfflineLocomotionSetup.Apply();
         }
     }
 }

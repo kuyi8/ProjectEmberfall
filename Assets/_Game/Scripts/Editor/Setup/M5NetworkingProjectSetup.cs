@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Emberfall.AI.Unity;
 using Emberfall.Application.Flow;
 using Emberfall.Gameplay.Diagnostics;
@@ -82,6 +83,7 @@ namespace Emberfall.Editor.Setup
             M6CombatFeedbackSetup.Apply();
             M6BoundaryArtSetup.Apply();
             M6EnvironmentSetup.Apply();
+            WorldPresentationSetup.Apply();
             PlayerSettings.bundleVersion = Version;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -317,6 +319,7 @@ namespace Emberfall.Editor.Setup
             NetworkRouteHud hud = root.AddComponent<NetworkRouteHud>();
             hud.Configure(player, input, targeting);
             root.SetActive(true);
+            CharacterPresentationPaletteSetup.Apply(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
             Object.DestroyImmediate(root);
             if (prefab == null) throw new System.InvalidOperationException("Failed to create Network Gym player prefab.");
@@ -422,6 +425,7 @@ namespace Emberfall.Editor.Setup
             NetworkCombatTargetProxy targetProxy = root.AddComponent<NetworkCombatTargetProxy>();
             targetProxy.Configure(enemy, aimPoint, ResolveEnemyDisplayName(archetype));
             root.SetActive(true);
+            CharacterPresentationPaletteSetup.Apply(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             Object.DestroyImmediate(root);
             if (prefab == null) throw new System.InvalidOperationException("Failed to create Network Gym enemy prefab.");
@@ -497,7 +501,9 @@ namespace Emberfall.Editor.Setup
             NetworkCombatTargetProxy targetProxy = root.AddComponent<NetworkCombatTargetProxy>();
             targetProxy.Configure(warden, aimPoint, "余烬守望者");
 
+            WardenNetworkEquipmentSetup.Apply(root);
             root.SetActive(true);
+            CharacterPresentationPaletteSetup.Apply(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, WardenPrefabPath);
             Object.DestroyImmediate(root);
             if (prefab == null) throw new System.InvalidOperationException("Failed to create network Warden prefab.");
@@ -931,6 +937,8 @@ namespace Emberfall.Editor.Setup
                 offlineRoots.Add(actor.gameObject);
             foreach (RangedEnemyActor actor in Object.FindObjectsOfType<RangedEnemyActor>(true))
                 offlineRoots.Add(actor.gameObject);
+            foreach (SummonerEnemyActor actor in Object.FindObjectsOfType<SummonerEnemyActor>(true))
+                offlineRoots.Add(actor.gameObject);
             foreach (ShieldEnemyActor actor in Object.FindObjectsOfType<ShieldEnemyActor>(true))
                 offlineRoots.Add(actor.gameObject);
             foreach (WardenActor actor in Object.FindObjectsOfType<WardenActor>(true))
@@ -1050,8 +1058,44 @@ namespace Emberfall.Editor.Setup
                 material.EnableKeyword("_EMISSION");
                 material.SetColor("_EmissionColor", color * 1.2f);
             }
+            if (path == MaterialFolder + "/M_NetworkWarden.mat" ||
+                path == MaterialFolder + "/M_NetworkWardenAttack.mat" ||
+                path == MaterialFolder + "/M_NetworkWardenPhase.mat")
+                ConfigureWardenMarkerEmission(material);
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        /// <summary>
+        /// Makes only the three authored Warden markers a fixed point of URP Lit validation.
+        /// Does not change their colour/texture endpoints or save assets. Other generators and
+        /// runtime shared-material invariants deliberately remain outside this narrow repair.
+        /// </summary>
+        public static void ConfigureWardenMarkerEmission(Material material)
+        {
+            if (material == null) throw new System.ArgumentNullException(nameof(material));
+            if (material.name != "M_NetworkWarden" && material.name != "M_NetworkWardenAttack" &&
+                material.name != "M_NetworkWardenPhase")
+                throw new System.ArgumentException("Only the three exact Warden marker names are supported.", nameof(material));
+            if (material.shader == null || material.shader.name != "Universal Render Pipeline/Lit")
+                throw new System.ArgumentException("Warden markers require the installed URP Lit shader.", nameof(material));
+
+            // URP 14's LitShader is internal. Invoke its actual public instance entry without
+            // adding an Editor package reference or reproducing its keyword/alias rules.
+            System.Type type = System.Type.GetType(
+                "UnityEditor.Rendering.Universal.ShaderGUI.LitShader, Unity.RenderPipelines.Universal.Editor");
+            MethodInfo validate = type?.GetMethod("ValidateMaterial", BindingFlags.Public | BindingFlags.Instance,
+                null, new[] { typeof(Material) }, null);
+            if (validate == null || validate.ReturnType != typeof(void))
+                throw new System.InvalidOperationException("Installed URP LitShader.ValidateMaterial(Material) is unavailable.");
+            object shaderGui = System.Activator.CreateInstance(type, true);
+
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            material.EnableKeyword("_EMISSION");
+            validate.Invoke(shaderGui, new object[] { material });
+            if (material.globalIlluminationFlags != MaterialGlobalIlluminationFlags.None ||
+                !material.IsKeywordEnabled("_EMISSION"))
+                throw new System.InvalidOperationException("URP did not retain the Warden marker's non-baked emission state.");
         }
 
         private static string ResolveEnemyDisplayName(NetworkEnemyArchetype archetype) => archetype switch

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -61,12 +62,66 @@ namespace Emberfall.Tests.EditMode
             Assert.That(animator.avatar, Is.Not.Null, path);
             Assert.That(animator.avatar.isValid, Is.True, path);
 
-            foreach (Renderer renderer in prefab.GetComponentsInChildren<Renderer>(true))
+            if (path == "Assets/_Game/Prefabs/Characters/M3Art/P_Player_Ranger.prefab")
             {
+                AssertSelectedRangerMaterials(prefab, path);
+            }
+            else
+            {
+                // Peasant was not selected for the palette migration: retain its
+                // original project-material folder contract unchanged.
+                foreach (Renderer renderer in prefab.GetComponentsInChildren<Renderer>(true))
                 foreach (Material material in renderer.sharedMaterials)
                 {
                     Assert.That(AssetDatabase.GetAssetPath(material), Does.StartWith("Assets/_Game/Art/Materials/Character/M3Art/"));
                     Assert.That(material.shader.name, Does.StartWith("Universal Render Pipeline/"));
+                }
+            }
+        }
+
+        internal static void AssertSelectedRangerMaterials(GameObject prefab, string path)
+        {
+            const string outfit = "Assets/_Game/Art/CharacterPresentationPalette/Materials/M_CP_RangerOutfit.mat";
+            const string original = "Assets/_Game/Art/Materials/Character/M3Art/";
+            // M3 generator's nine imported outfit renderers + four authored head
+            // parts. Arms retains two identical outfit slots; skin/eyes/brows stay
+            // on their original assets. No alternative folder or legacy outfit.
+            AssertSelectedRendererMaterials(prefab, path, new Dictionary<string, string[]>(StringComparer.Ordinal)
+            {
+                { "Male_Ranger_Acc_Pauldron", new[] { outfit } },
+                { "Male_Ranger_Arms", new[] { outfit, outfit } },
+                { "Male_Ranger_Arms_Bracer", new[] { outfit } },
+                { "Male_Ranger_Body", new[] { outfit } },
+                { "Male_Ranger_Body_Belt_1", new[] { outfit } },
+                { "Male_Ranger_Body_Belt_2", new[] { outfit } },
+                { "Male_Ranger_Feet_Boots", new[] { outfit } },
+                { "Male_Ranger_Head_Hood", new[] { outfit } },
+                { "Male_Ranger_Legs", new[] { outfit } },
+                { "CompleteHead_Face", new[] { original + "M_Ranger_Face.mat" } },
+                { "CompleteHead_Eyes", new[] { original + "M_Character_Eyes.mat" } },
+                { "CompleteHead_Brows", new[] { original + "M_Character_Brows.mat" } },
+                { "CompleteHead_Neck", new[] { original + "M_Ranger_Neck.mat" } }
+            });
+        }
+
+        internal static void AssertSelectedRendererMaterials(GameObject prefab, string path,
+            IReadOnlyDictionary<string, string[]> expected)
+        {
+            Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+            Assert.That(renderers, Has.Length.EqualTo(expected.Count), path);
+            Assert.That(renderers.Select(renderer => renderer.name), Is.EquivalentTo(expected.Keys), path);
+            foreach (Renderer renderer in renderers)
+            {
+                string[] slots = expected[renderer.name];
+                Assert.That(renderer.sharedMaterials, Has.Length.EqualTo(slots.Length), path + "/" + renderer.name);
+                for (int slot = 0; slot < slots.Length; slot++)
+                {
+                    string context = path + "/" + renderer.name + "[" + slot + "]";
+                    Material material = renderer.sharedMaterials[slot];
+                    Assert.That(material, Is.Not.Null, context);
+                    Assert.That(AssetDatabase.GetAssetPath(material), Is.EqualTo(slots[slot]), context);
+                    Assert.That(material, Is.SameAs(AssetDatabase.LoadAssetAtPath<Material>(slots[slot])), context);
+                    Assert.That(material.shader.name, Does.StartWith("Universal Render Pipeline/"), context);
                 }
             }
         }

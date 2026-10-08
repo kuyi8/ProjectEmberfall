@@ -1,5 +1,7 @@
 using Emberfall.AI.Domain;
+using Emberfall.AI.Unity;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Emberfall.Networking
 {
@@ -12,6 +14,16 @@ namespace Emberfall.Networking
         private float _lifetime;
         private bool _groundRune;
         private Vector3 _baseScale;
+        private float _warningRadius;
+        private GroundRuneBoundaryMesh _boundaryMesh;
+        private GameObject _boundaryRoot;
+        private Renderer _boundaryRenderer;
+        private Renderer _groundRuneProgressRenderer;
+
+        public float WarningRadius => _warningRadius;
+        public Renderer WarningBoundaryRenderer => _boundaryRenderer;
+        public bool IsWarningBoundaryVisible => _boundaryRenderer != null && _boundaryRenderer.enabled &&
+            _boundaryRenderer.gameObject.activeInHierarchy;
 
         public static void Spawn(
             RangedAttackKind kind,
@@ -41,6 +53,10 @@ namespace Emberfall.Networking
                 component._baseScale = new Vector3(radius * 2f, 0.025f, radius * 2f);
                 visual.transform.localScale = component._baseScale * 0.25f;
                 component._remaining = component._lifetime = Mathf.Max(0.1f, runeFuse);
+                component._warningRadius = radius;
+                component._groundRuneProgressRenderer = renderer;
+                component.CreateBoundaryWarning(material);
+                component.SetWarningVisible(true);
             }
             else
             {
@@ -71,7 +87,54 @@ namespace Emberfall.Networking
             {
                 transform.position += _direction * (_speed * Time.deltaTime);
             }
-            if (_remaining <= 0f) Destroy(gameObject);
+            if (_remaining <= 0f)
+            {
+                // This is the existing client-local fuse, not a newly synchronized Server resolve signal.
+                if (_groundRune) SetWarningVisible(false);
+                Destroy(gameObject);
+            }
+        }
+
+        private void CreateBoundaryWarning(Material material)
+        {
+            // As in the offline adapter, invalid visual geometry must not introduce a new protocol exception.
+            if (_warningRadius <= 0 || float.IsNaN(_warningRadius) || float.IsInfinity(_warningRadius)) return;
+            _boundaryMesh = new GroundRuneBoundaryMesh();
+            _boundaryMesh.SetRadius(_warningRadius);
+            // A separate unit-scale root cannot inherit the legacy cylinder's expanding progress scale.
+            _boundaryRoot = new GameObject("NetworkHostileRuneBoundary", typeof(MeshFilter), typeof(MeshRenderer));
+            SceneManager.MoveGameObjectToScene(_boundaryRoot, gameObject.scene);
+            _boundaryRoot.layer = gameObject.layer;
+            _boundaryRoot.transform.position = transform.position + Vector3.up * .038f;
+            _boundaryRoot.GetComponent<MeshFilter>().sharedMesh = _boundaryMesh.Mesh;
+            _boundaryRenderer = _boundaryRoot.GetComponent<MeshRenderer>();
+            _boundaryRenderer.sharedMaterial = material;
+            _boundaryRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _boundaryRenderer.receiveShadows = false;
+            _boundaryRenderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+            _boundaryRenderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+        }
+
+        private void SetWarningVisible(bool visible)
+        {
+            if (_boundaryRenderer != null) _boundaryRenderer.enabled = visible;
+            if (_groundRuneProgressRenderer != null) _groundRuneProgressRenderer.enabled = visible;
+        }
+
+        private void OnEnable()
+        {
+            if (_groundRune) SetWarningVisible(_remaining > 0f);
+        }
+
+        private void OnDisable()
+        {
+            if (_groundRune) SetWarningVisible(false);
+        }
+
+        private void OnDestroy()
+        {
+            _boundaryMesh?.Dispose();
+            if (_boundaryRoot != null) Destroy(_boundaryRoot);
         }
     }
 }

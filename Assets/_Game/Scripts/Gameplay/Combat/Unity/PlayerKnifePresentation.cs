@@ -34,6 +34,7 @@ namespace Emberfall.Gameplay.Combat.Unity
         private int _blockedSequence = -1;
         private Slot[] _slots;
         private KnifeGripPose _pose;
+        private KnifeTrailStyle _trailStyle;
         private Transform[] _handJoints;
         private Quaternion[] _animatedRotations;
         private bool _poseApplied;
@@ -42,6 +43,42 @@ namespace Emberfall.Gameplay.Combat.Unity
         // A/B only: same model/pose/authority, with native trail generation and rendering off.
         public bool DiagnosticTrailEnabled { get; set; } = true;
 #endif
+
+
+        /// <summary>Opt-in copied-trail styling. Configuration never changes an active render lease.</summary>
+        public KnifeTrailStyle TrailStyle => _trailStyle;
+        public void ConfigureTrailStyle(KnifeTrailStyle style)
+        {
+            if (style != null) style.Validate();
+            if (_slots != null)
+            {
+                // Validate every destination before writing any, including restoration.
+                foreach (var slot in _slots)
+                {
+                    if (slot == null) throw new InvalidOperationException("Knife visual slot is missing.");
+                    if (slot.Leased) throw new InvalidOperationException("An active knife render lease cannot be restyled.");
+                    KnifeTrailStyle.ValidatePair(slot.Trail, slot.OriginalTrail);
+                    if (style != null) style.ValidateForVisual(slot.Trail, slot.OriginalTrail);
+                }
+                for (int i = 0; i < _slots.Length; i++)
+                    for (int j = 0; j < _slots.Length; j++)
+                    {
+                        if (_slots[i].Trail == _slots[j].OriginalTrail ||
+                            (i != j && _slots[i].Trail == _slots[j].Trail))
+                            throw new InvalidOperationException("Knife visual trails must be independent copies.");
+                    }
+                foreach (var slot in _slots) ApplyTrailStyle(slot, style);
+            }
+            _trailStyle = style;
+        }
+
+        private static void ApplyTrailStyle(Slot slot, KnifeTrailStyle style)
+        {
+            if (style != null) { style.ApplyToVisual(slot.Trail, slot.OriginalTrail); return; }
+            slot.Trail.time = slot.OriginalTrail.time;
+            slot.Trail.widthMultiplier = slot.OriginalTrail.widthMultiplier;
+            slot.Trail.colorGradient = slot.OriginalTrail.colorGradient;
+        }
 
         public void ConfigureGrip(KnifeGripPose pose)
         {
@@ -102,6 +139,7 @@ namespace Emberfall.Gameplay.Combat.Unity
             Transform grip, PlayerThrowingKnifeProjectile[] pool)
         {
             if (IsConfigured) throw new InvalidOperationException("Knife presentation is initialized once.");
+            if (_trailStyle != null) _trailStyle.Validate();
             _actor = actor; _launcher = launcher; _grip = grip;
             _sword = grip.GetComponentsInChildren<Renderer>(true);
             _swordHidden = new bool[_sword.Length];
@@ -130,6 +168,7 @@ namespace Emberfall.Gameplay.Combat.Unity
                 var renderers = projectile.GetComponentsInChildren<Renderer>(true);
                 _slots[i] = new Slot { Projectile = projectile, Visual = visual, Trail = trail,
                     OriginalTrail = originalTrail, Original = renderers, Hidden = new bool[renderers.Length] };
+                if (_trailStyle != null) ApplyTrailStyle(_slots[i], _trailStyle);
                 if (i == 0) _held = CopyModel(source, "KnifeHeldVisual");
             }
             if (isActiveAndEnabled) _actor.RangedAttackReleased += OnRelease;
@@ -153,7 +192,9 @@ namespace Emberfall.Gameplay.Combat.Unity
         private void OnEnable()
         {
             if (_actor == null) return;
-            _blockedSequence = _actor.Model.AttackSequence;
+            // A restored/editor-enabled presenter can precede the actor's nonserialized domain model.
+            // Initialization is still explicit; do not invent combat state or replay a release.
+            _blockedSequence = _actor.Model != null ? _actor.Model.AttackSequence : -1;
             _actor.RangedAttackReleased += OnRelease;
         }
 

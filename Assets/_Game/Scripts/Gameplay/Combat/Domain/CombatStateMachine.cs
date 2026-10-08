@@ -37,6 +37,8 @@ namespace Emberfall.Gameplay.Combat.Domain
         public StaminaModel Stamina { get; }
         public PostureModel Posture { get; }
         public HealingFlaskModel HealingFlasks { get; }
+        public float EnemyHitAwarenessSeconds => _tuning.EnemyHitAwarenessSeconds;
+        public float EnemyRetreatBlockedSeconds => _tuning.EnemyRetreatBlockedSeconds;
         public bool IsDead => State == CombatState.Dead;
         public bool IsGuarding => State == CombatState.Guard;
         public bool IsPerfectGuardWindow => IsGuarding && StateElapsed <= _tuning.PerfectGuardWindow;
@@ -88,6 +90,24 @@ namespace Emberfall.Gameplay.Combat.Domain
         public int PerfectGuardCount { get; private set; }
         public int ExecutionSequence { get; private set; }
         public int ExecutionResolveSequence { get; private set; }
+        public float HeavyPostureMultiplier { get; private set; } = 1f;
+
+        /// <summary>Permanent run reward, set rather than compounded. Encounter/health reset does not revoke it.</summary>
+        public bool ApplySupplyCartHeavyPostureReward(float multiplier)
+        {
+            if (float.IsNaN(multiplier) || float.IsInfinity(multiplier) || multiplier <= 1f || multiplier > 1.5f) return false;
+            if (HeavyPostureMultiplier != 1f) return HeavyPostureMultiplier == multiplier;
+            HeavyPostureMultiplier = multiplier;
+            return true;
+        }
+
+        /// <summary>The only reward multiplication point; final authored heavy posture, never health damage.</summary>
+        public float ResolveRewardedPostureDamage(AttackTag tag, float finalPostureDamage)
+        {
+            if (float.IsNaN(finalPostureDamage) || float.IsInfinity(finalPostureDamage) || finalPostureDamage < 0f)
+                throw new ArgumentOutOfRangeException(nameof(finalPostureDamage));
+            return tag == AttackTag.Heavy ? finalPostureDamage * HeavyPostureMultiplier : finalPostureDamage;
+        }
 
         public void SetSprintRequested(bool requested)
         {

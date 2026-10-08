@@ -34,6 +34,7 @@ namespace Emberfall.AI.Unity
         private readonly HitRegistry _hitRegistry = new HitRegistry();
         private ShieldEnemyDefinition _definition;
         private ShieldEnemyBrain _brain;
+        private readonly EnemyHitAwareness _hitAwareness = new EnemyHitAwareness();
         private EncounterLeash _leash;
         private MeleeEnemyPerception _perception;
         private Vector3 _spawnPosition;
@@ -58,6 +59,7 @@ namespace Emberfall.AI.Unity
         public override bool IsThreatening => State == ShieldEnemyState.Windup || State == ShieldEnemyState.Attack;
         public ShieldEnemyDefinition Definition => _definition;
         public ShieldEnemyBrain Brain => _brain;
+        public float HitAwarenessRemaining => _hitAwareness.Remaining;
         public ShieldEnemyState State => _brain?.State ?? ShieldEnemyState.Idle;
         public float HorizontalSpeed => _agent != null
             ? Vector3.ProjectOnPlane(_agent.velocity, Vector3.up).magnitude
@@ -113,6 +115,7 @@ namespace Emberfall.AI.Unity
         public void SetSimulationAuthority(bool hasAuthority)
         {
             HasSimulationAuthority = hasAuthority;
+            if (!hasAuthority) _hitAwareness.Clear();
             if (!hasAuthority) StopAgent();
         }
 
@@ -166,6 +169,10 @@ namespace Emberfall.AI.Unity
         {
             if (!HasSimulationAuthority || _brain == null) return;
 
+            _hitAwareness.Tick(Time.deltaTime);
+            if (_target == null || !_target.IsAvailable ||
+                (_leash != null && !_leash.AllowsTarget(_target.transform.position))) _hitAwareness.Clear();
+
             if (_executionHoldRemaining > 0f)
             {
                 _executionHoldRemaining = Mathf.Max(0f, _executionHoldRemaining - Time.deltaTime);
@@ -213,6 +220,12 @@ namespace Emberfall.AI.Unity
                 Vector3.Angle(transform.forward, toAttacker) <= _definition.FrontalBlockAngle * 0.5f;
             ShieldEnemyState previousState = _brain.State;
             DamageResult result = _brain.ReceiveDamage(request, isFrontal);
+            if (_hitAwareness.Record(request, result, _target == null ? 0 : _target.CombatantId,
+                _target != null && _target.IsAvailable,
+                _leash == null || (_target != null && _leash.AllowsTarget(_target.transform.position)),
+                _target == null || _target.Model == null ? 0f : _target.Model.EnemyHitAwarenessSeconds))
+                _perceptionRemaining = 0f;
+            if (result.Killed) _hitAwareness.Clear();
             _flashRemaining = 0.14f;
             LastAiEvent = result.GuardBroken ? "Guard broken" :
                 result.Blocked ? "Attack blocked" : result.Killed ? "Dead" : "Hit";
@@ -251,6 +264,7 @@ namespace Emberfall.AI.Unity
 
         public void ResetToSpawn()
         {
+            _hitAwareness.Clear();
             if (_brain == null) return;
             _brain.Reset();
             _executionClaimed = false;
@@ -286,24 +300,29 @@ namespace Emberfall.AI.Unity
                 Vector3.Distance(transform.position, _spawnPosition));
         }
 
+        private readonly RaycastHit[] _sightHits = new RaycastHit[16];
+
         private bool CanSeeTarget()
         {
             Vector3 direction = _target.AimPoint.position - AimPoint.position;
             Vector3 flatDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
-            if (flatDirection.sqrMagnitude > 0.001f &&
+            if (!_hitAwareness.IsAwareOf(_target.CombatantId) &&
+                !(_leash != null && _leash.Encounter != null && _leash.Encounter.HasCombatAlertFor(_target)) &&
+                flatDirection.sqrMagnitude > 0.001f &&
                 Vector3.Angle(transform.forward, flatDirection) > _definition.FieldOfView * 0.5f)
             {
                 return false;
             }
 
-            if (!Physics.Raycast(AimPoint.position, direction.normalized, out RaycastHit hit,
-                    direction.magnitude, ~0, QueryTriggerInteraction.Ignore))
-            {
-                return true;
-            }
-
-            return hit.collider.GetComponentInParent<PlayerCombatActor>() == _target;
+            return EnemyLineOfSight.HasContact(this, _target, _sightHits);
         }
+
+        internal bool HasDirectVisualContactWith(PlayerCombatActor player) =>
+            player != null && player == _target && player.IsAvailable && isActiveAndEnabled &&
+            HasSimulationAuthority && IsAvailable && _perception.TargetAvailable && _perception.CanSeeTarget &&
+            _perception.DistanceToTarget <= _definition.DetectionRange &&
+            Vector3.Angle(transform.forward, Vector3.ProjectOnPlane(player.AimPoint.position - AimPoint.position, Vector3.up))
+                <= _definition.FieldOfView * .5f;
 
         private void DriveMovement()
         {

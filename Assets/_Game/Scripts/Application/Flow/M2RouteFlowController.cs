@@ -37,6 +37,10 @@ namespace Emberfall.Application.Flow
         [SerializeField] private GameObject _wardenEntranceBarrier;
         private M2StageBarrier _wardenBarrierPresentation;
         [SerializeField] private ForestSealTemplateCoordinator _forestTemplate;
+        [SerializeField] private GameObject _ashReturnRoot;
+        [SerializeField] private RouteChoiceEncounterModifier _reinforcementModifier;
+        private Vector3[] _ashReturnSpawnPoints = Array.Empty<Vector3>();
+        private bool _ashReturnActivationPending;
         [SerializeField] private string _saveFileName = "emberfall-save-v1.json";
 
         private LocalizedTextCatalog _texts;
@@ -48,6 +52,7 @@ namespace Emberfall.Application.Flow
         private PacingTelemetryRecorder _pacing;
         private CombatEncounterCoordinator[] _encounterCoordinators = Array.Empty<CombatEncounterCoordinator>();
         private bool _encounterTelemetrySubscribed;
+        private SummonerEnemyActor[] _summoners = Array.Empty<SummonerEnemyActor>();
         private RouteEnrichmentState _routeEnrichment;
         private SealConditionState _sealConditions;
         private ShieldEnemyActor _courtyardElite;
@@ -58,12 +63,30 @@ namespace Emberfall.Application.Flow
         public int DeathCount { get; private set; }
         public float SessionElapsedSeconds { get; private set; }
         public bool IsInitialized { get; private set; }
+        public bool AshApproachCleared => _routeEnrichment?.AshApproachCleared == true;
+        public bool AshGuardPassCleared => _routeEnrichment?.AshGuardPassCleared == true;
+        public bool AshReturnCleared => _routeEnrichment?.AshReturnCleared == true;
+        public bool SupplyCartClaimed => _routeEnrichment?.SupplyCartClaimed == true;
+        public float SupplyCartHeavyPostureMultiplier => _definition?.SupplyCartHeavyPostureMultiplier ?? 1f;
+        public string SupplyCartRewardPercent => ((SupplyCartHeavyPostureMultiplier - 1f) * 100f).ToString("0.#", CultureInfo.InvariantCulture);
+        public string SupplyCartStatus => SupplyCartClaimed ? $"已取得（重击架势 +{SupplyCartRewardPercent}%）" : "未取得";
+        public bool AshReturnActivationPending => _ashReturnActivationPending;
+        public AshReinforcementChoice ReinforcementChoice => _routeEnrichment?.ReinforcementChoice ?? AshReinforcementChoice.None;
+        public string ReinforcementChoiceStatus => ReinforcementChoice switch
+        {
+            AshReinforcementChoice.Staged => "守住窄口 · 两人先出、后补一人",
+            AshReinforcementChoice.Together => "引到空地 · 三人同时在场",
+            _ => "未选择（原两人组合）"
+        };
         public bool IsComplete => _quest?.IsComplete == true;
         public bool IsSanctumOpen => Stage >= MainQuestStage.DefeatWarden;
         public string SavePath => _store?.SavePath ?? string.Empty;
         public string QuestTitle => Resolve(new ContentId("text:quest.main.title"));
         public string RouteTitle => Resolve(new ContentId("text:ui.route-title"));
-        public string LastMessage => _lastMessageTextId.IsEmpty ? string.Empty : Resolve(_lastMessageTextId);
+        public string LastMessage => _lastMessageTextId.IsEmpty ? string.Empty :
+            _lastMessageTextId.Value == "text:message.supply-cart-claimed"
+                ? string.Format(CultureInfo.CurrentCulture, Resolve(_lastMessageTextId), SupplyCartRewardPercent)
+                : Resolve(_lastMessageTextId);
         public ForestSealTemplateCoordinator ForestTemplate => _forestTemplate;
         public WardenActor Warden => _warden;
         public bool IsWardenEncounterActive { get; private set; }
@@ -215,6 +238,7 @@ namespace Emberfall.Application.Flow
 
         private void Update()
         {
+            if (IsInitialized && _ashReturnActivationPending) TryActivateReturnEncounter();
             if (IsInitialized && !IsComplete)
             {
                 SessionElapsedSeconds += Time.unscaledDeltaTime;
@@ -305,6 +329,21 @@ namespace Emberfall.Application.Flow
         public bool CanDiscoverWatchtower() =>
             IsInitialized && !IsComplete && Stage >= MainQuestStage.ActivateSeals && !WatchtowerDiscovered;
 
+        public bool CanClaimSupplyCart() => IsInitialized && !IsComplete && Stage >= MainQuestStage.ActivateSeals &&
+            !SupplyCartClaimed && SupplyCartHeavyPostureMultiplier > 1f && _player != null && _player.IsAvailable;
+
+        public bool TryClaimSupplyCart(PlayerCombatActor actor)
+        {
+            // Reject an invalid recipient before committing the permanent save fact.
+            if (actor != _player || !CanClaimSupplyCart() ||
+                !actor.ApplySupplyCartHeavyPostureReward(SupplyCartHeavyPostureMultiplier)) return false;
+            if (!_routeEnrichment.TryClaimSupplyCart()) return false;
+            _lastMessageTextId = new ContentId("text:message.supply-cart-claimed");
+            SaveProgress(false);
+            _pacing?.RecordMilestone("abandoned-supply-cart", "claimed", Stage, DeathCount);
+            return true;
+        }
+
         public bool CanChooseRoute() =>
             IsInitialized && !IsComplete && Stage >= MainQuestStage.ActivateSeals &&
             Stage < MainQuestStage.DefeatWarden && RouteChoice == EmberValleyRouteChoice.None;
@@ -346,6 +385,35 @@ namespace Emberfall.Application.Flow
             return true;
         }
 
+        public bool CanChooseReinforcement() => IsInitialized && !IsComplete &&
+            Stage >= MainQuestStage.ActivateSeals && Stage < MainQuestStage.DefeatWarden &&
+            ReinforcementChoice == AshReinforcementChoice.None && !AshGuardPassCleared &&
+            _reinforcementModifier != null && !_reinforcementModifier.ReinforcementChoiceClosed;
+
+        public bool TryChooseReinforcement(AshReinforcementChoice choice)
+        {
+            if (!CanChooseReinforcement() || !_routeEnrichment.TryChooseReinforcement(choice)) return false;
+            _reinforcementModifier.ApplyReinforcementChoice(choice);
+            _lastMessageTextId = new ContentId(choice == AshReinforcementChoice.Staged
+                ? "text:message.reinforcement-staged" : "text:message.reinforcement-together");
+            SaveProgress(false);
+            _pacing?.RecordMilestone(choice == AshReinforcementChoice.Staged
+                ? "reinforcement-choice:staged" : "reinforcement-choice:together", "selected", Stage, DeathCount);
+            return true;
+        }
+
+        public void NotifyReinforcementNavigationWaiting()
+        {
+            if (IsInitialized) _lastMessageTextId = new ContentId("text:message.reinforcement-nav-waiting");
+        }
+
+        public void NotifyReinforcementArrival(bool arrived)
+        {
+            if (!IsInitialized || ReinforcementChoice != AshReinforcementChoice.Staged) return;
+            _lastMessageTextId = new ContentId(arrived ? "text:message.reinforcement-arrived" : "text:message.reinforcement-incoming");
+            if (arrived) _pacing?.RecordMilestone("reinforcement-wave", "arrived", Stage, DeathCount);
+        }
+
         public bool TryTalkToScout()
         {
             MainQuestStage previousStage = Stage;
@@ -361,6 +429,7 @@ namespace Emberfall.Application.Flow
             }
             else if (previousStage == MainQuestStage.ReturnToScout)
             {
+                UpdateReturnEncounterForStage();
                 _pacing?.RecordMilestone("return-scout", "completed", Stage, DeathCount);
                 _pacing?.RecordMilestone("result", "published", Stage, DeathCount);
             }
@@ -508,6 +577,10 @@ namespace Emberfall.Application.Flow
                 throw new InvalidOperationException("Player rejected the restored risk-route flask upgrade.");
             }
 
+            if (_routeEnrichment.SupplyCartClaimed &&
+                !_player.ApplySupplyCartHeavyPostureReward(SupplyCartHeavyPostureMultiplier))
+                throw new InvalidOperationException("Claimed supply-cart reward is unavailable in the selected content; save preserved, no silent reward removal.");
+
             if (_forestTemplate != null)
             {
                 _forestTemplate.Initialize(
@@ -538,10 +611,26 @@ namespace Emberfall.Application.Flow
             SetWardenEncounterActive(false);
 
             IsInitialized = true;
-            _encounterCoordinators = FindObjectsOfType<CombatEncounterCoordinator>();
+            _encounterCoordinators = FindObjectsOfType<CombatEncounterCoordinator>(true);
+            if (_routeEnrichment.AshApproachCleared)
+                foreach (CombatEncounterCoordinator coordinator in _encounterCoordinators)
+                    if (coordinator.TelemetrySegment == "ash-approach-encounter") coordinator.RestoreClearedMembers();
+            if (_routeEnrichment.AshGuardPassCleared)
+                foreach (CombatEncounterCoordinator coordinator in _encounterCoordinators)
+                    if (coordinator.TelemetrySegment == "ash-guard-pass-encounter") coordinator.RestoreClearedMembers();
+            if (_routeEnrichment.AshReturnCleared)
+                foreach (CombatEncounterCoordinator coordinator in _encounterCoordinators)
+                    if (coordinator.TelemetrySegment == "ash-return-encounter") coordinator.RestoreClearedMembers();
+            if (_ashReturnRoot != null)
+            {
+                var members = _ashReturnRoot.GetComponentsInChildren<CombatTarget>(true);
+                _ashReturnSpawnPoints = new Vector3[members.Length];
+                for (int i = 0; i < members.Length; i++) _ashReturnSpawnPoints[i] = members[i].transform.position;
+            }
             _courtyardElite = FindCourtyardElite();
             SubscribeEncounterTelemetry();
             SubscribeCourtyardElite();
+            UpdateReturnEncounterForStage();
             _pacing.RecordMilestone(
                 launchMode == M2LaunchMode.NewGame ? "new-game" : "continue",
                 "enter",
@@ -704,6 +793,7 @@ namespace Emberfall.Application.Flow
             if (warden == _warden && _quest != null && _quest.DefeatWarden())
             {
                 SaveProgress();
+                UpdateReturnEncounterForStage();
             }
         }
 
@@ -735,10 +825,15 @@ namespace Emberfall.Application.Flow
             }
 
             _encounterTelemetrySubscribed = true;
+            _summoners = FindObjectsOfType<SummonerEnemyActor>(true);
+            foreach (SummonerEnemyActor summoner in _summoners) summoner.FirstSummonReleased += OnFirstSummon;
         }
 
         private void UnsubscribeEncounterTelemetry()
         {
+            foreach (SummonerEnemyActor summoner in _summoners)
+                if (summoner != null) summoner.FirstSummonReleased -= OnFirstSummon;
+            _summoners = Array.Empty<SummonerEnemyActor>();
             if (!_encounterTelemetrySubscribed)
             {
                 return;
@@ -755,20 +850,66 @@ namespace Emberfall.Application.Flow
             _encounterTelemetrySubscribed = false;
         }
 
+        private void UpdateReturnEncounterForStage()
+        {
+            if (_ashReturnRoot == null) return;
+            _ashReturnActivationPending = IsInitialized && Stage == MainQuestStage.ReturnToScout && !AshReturnCleared;
+            if (!_ashReturnActivationPending) { _ashReturnRoot.SetActive(false); return; }
+            TryActivateReturnEncounter();
+        }
+
+        private void TryActivateReturnEncounter()
+        {
+            if (_ashReturnRoot == null || !_ashReturnActivationPending || _player == null || !_player.IsAvailable) return;
+            // This pending-only fixed array check avoids discovery each Update and spawning on a player
+            // already beside an authored point when the quest advances or a checkpoint is continued.
+            foreach (Vector3 spawn in _ashReturnSpawnPoints)
+                if (Vector3.ProjectOnPlane(_player.transform.position - spawn, Vector3.up).sqrMagnitude < 4f)
+                {
+                    _lastMessageTextId = new ContentId("text:message.ash-return-waiting");
+                    return;
+                }
+            _ashReturnActivationPending = false;
+            _ashReturnRoot.SetActive(true);
+            _lastMessageTextId = new ContentId("text:message.ash-return-active");
+        }
+
         private void OnEncounterStarted(CombatEncounterCoordinator coordinator)
         {
             _pacing?.EnterEncounter(coordinator.TelemetrySegment, Stage, DeathCount);
         }
 
+        private void OnFirstSummon(SummonerEnemyActor summoner)
+        {
+            // One meaningful beat per authored encounter/session, not per entity or retry.
+            _pacing?.RecordMilestone(summoner.EncounterId, "first-summon", Stage, DeathCount);
+        }
+
         private void OnEncounterCleared(CombatEncounterCoordinator coordinator)
         {
             _pacing?.EndEncounter(coordinator.TelemetrySegment, "cleared", Stage, DeathCount);
+            if (coordinator.TelemetrySegment == "ash-approach-encounter" && _routeEnrichment.TryRecordAshApproachCleared())
+            {
+                _lastMessageTextId = new ContentId("text:message.ash-approach-cleared");
+                SaveProgress(false);
+            }
             if (coordinator.TelemetrySegment == "bridge-encounter" &&
                 _sealConditions.TryRecordBridgeEncounterCleared())
             {
                 _lastMessageTextId = new ContentId("text:message.bridge-encounter-cleared");
                 SaveProgress(false);
                 _pacing?.RecordMilestone("bridge-condition", "completed", Stage, DeathCount);
+            }
+            else if (coordinator.TelemetrySegment == "ash-guard-pass-encounter" && _routeEnrichment.TryRecordAshGuardPassCleared())
+            {
+                _lastMessageTextId = new ContentId("text:message.ash-guard-pass-cleared");
+                SaveProgress(false);
+            }
+            else if (coordinator.TelemetrySegment == "ash-return-encounter" && _routeEnrichment.TryRecordAshReturnCleared())
+            {
+                _lastMessageTextId = new ContentId("text:message.ash-return-cleared");
+                SaveProgress(false);
+                UpdateReturnEncounterForStage();
             }
             else if (coordinator.TelemetrySegment == "pre-sanctum-encounter" &&
                      _routeEnrichment.TryRecordPreSanctumCleared())

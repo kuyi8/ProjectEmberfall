@@ -15,7 +15,7 @@ namespace Emberfall.Tests.EditMode
         [TestCase("Charge", .24f)]
         [TestCase("ChargeRecovery", .78f)]
         [TestCase("Combo", 0f)]
-        public void CurrentBaselineStillPassesLiteralOffsets(string state, float fraction)
+        public void AuthoredPhaseFractionsRemainUnchanged(string state, float fraction)
         {
             var root = new GameObject("Warden offset fixture");
             try
@@ -27,16 +27,16 @@ namespace Emberfall.Tests.EditMode
                 Assert.That(method, Is.Not.Null);
                 var phase = Enum.Parse(method.GetParameters()[0].ParameterType, state);
                 float actual = (float)method.Invoke(presenter, new[] { phase });
-                Assert.That(actual, Is.EqualTo(fraction).Within(.000001f), "Baseline diagnostic only, not alignment acceptance.");
+                Assert.That(actual, Is.EqualTo(fraction).Within(.000001f), "Source phase contract only, not natural contact acceptance.");
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
         }
 
-        [Test] public void ChargeAuditUsesMeasuredSpeedScaledEntry()
+        [Test] public void ChargeAuditUsesActualSourcePhaseAndPreservesAuthoritativeWindow()
         {
             var map = AttackTimingAudit.ReadMappings().Find(m => m.id == "warden.charge");
-            float speed = Mathf.Clamp(map.clip.length * .54f / map.duration, .25f, 3f);
-            Assert.That(map.clipStart, Is.EqualTo(.24f * speed).Within(.000001f));
+            Assert.That(map.clipStart, Is.EqualTo(.24f * map.clip.length).Within(.000001f));
+            Assert.That(map.clipEnd, Is.EqualTo(.78f * map.clip.length).Within(.000001f));
             Assert.That(map.clipEnd - map.clipStart, Is.EqualTo(.54f * map.clip.length).Within(.000001f));
             Assert.That(map.duration, Is.EqualTo(.76f).Within(.000001f));
             Assert.That(map.windowStart, Is.EqualTo(.08f).Within(.000001f));

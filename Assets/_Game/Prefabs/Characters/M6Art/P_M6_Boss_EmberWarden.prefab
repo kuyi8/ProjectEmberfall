@@ -95,7 +95,11 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 51b0fe5b159692e4db78955cf5a6b4f6, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: c9111ed75e07ea94b87a57121b403031, type: 2}
+      objectReference: {fileID: 2100000, guid: 2bad5e954466bc545931780306d9ee08, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 51b0fe5b159692e4db78955cf5a6b4f6, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 142ab324c6b180948bfca7a243ec8683, type: 2}
     - target: {fileID: 919132149155446097, guid: 51b0fe5b159692e4db78955cf5a6b4f6, type: 3}
       propertyPath: m_Name
       value: Helmet_Closed
@@ -177,15 +181,15 @@ PrefabInstance:
     - target: {fileID: 3027896407205900740, guid: 798cf679265d9734097fb4830309eb42, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: c9111ed75e07ea94b87a57121b403031, type: 2}
+      objectReference: {fileID: 2100000, guid: 2bad5e954466bc545931780306d9ee08, type: 2}
     - target: {fileID: 3027896407205900740, guid: 798cf679265d9734097fb4830309eb42, type: 3}
       propertyPath: m_Materials.Array.data[1]
       value: 
-      objectReference: {fileID: 2100000, guid: fc000b45c933153499b83fdf714154a5, type: 2}
+      objectReference: {fileID: 2100000, guid: 2374e49e3af57c14ca3f108e7113f227, type: 2}
     - target: {fileID: 3027896407205900740, guid: 798cf679265d9734097fb4830309eb42, type: 3}
       propertyPath: m_Materials.Array.data[2]
       value: 
-      objectReference: {fileID: 2100000, guid: 27941543f803aa346a735e0e1fb3665e, type: 2}
+      objectReference: {fileID: 2100000, guid: 0983f376e2a9a0947912bd77d705346d, type: 2}
     - target: {fileID: 5866666021909216657, guid: 798cf679265d9734097fb4830309eb42, type: 3}
       propertyPath: m_Controller
       value: 
@@ -283,7 +287,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 7532f09339c00b1489c69ba4f60fc5a0, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: c9111ed75e07ea94b87a57121b403031, type: 2}
+      objectReference: {fileID: 2100000, guid: 2bad5e954466bc545931780306d9ee08, type: 2}
     - target: {fileID: 919132149155446097, guid: 7532f09339c00b1489c69ba4f60fc5a0, type: 3}
       propertyPath: m_Name
       value: ShoulderPads

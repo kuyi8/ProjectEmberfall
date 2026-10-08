@@ -9,7 +9,10 @@ namespace Emberfall.Application.Flow
     {
         Watchtower = 0,
         SupplyRoute = 1,
-        RiskRoute = 2
+        RiskRoute = 2,
+        StagedReinforcement = 3,
+        TogetherReinforcement = 4,
+        SupplyCart = 5
     }
 
     public sealed class RouteEnrichmentInteractable : InteractableBehaviour
@@ -31,13 +34,20 @@ namespace Emberfall.Application.Flow
         public override ContentId PromptTextId => _kind switch
         {
             RouteEnrichmentInteractionKind.Watchtower => new ContentId("text:interaction.examine-watchtower"),
+            RouteEnrichmentInteractionKind.SupplyCart => new ContentId("text:interaction.claim-supply-cart"),
             RouteEnrichmentInteractionKind.SupplyRoute => new ContentId("text:interaction.choose-supply-route"),
+            RouteEnrichmentInteractionKind.StagedReinforcement => new ContentId("text:interaction.reinforcement-staged"),
+            RouteEnrichmentInteractionKind.TogetherReinforcement => new ContentId("text:interaction.reinforcement-together"),
             _ => new ContentId("text:interaction.choose-risk-route")
         };
 
-        public override bool IsAvailable => _flow != null && (_kind == RouteEnrichmentInteractionKind.Watchtower
-            ? _flow.CanDiscoverWatchtower()
-            : _flow.CanChooseRoute());
+        public override bool IsAvailable => _flow != null && (_kind switch
+        {
+            RouteEnrichmentInteractionKind.Watchtower => _flow.CanDiscoverWatchtower(),
+            RouteEnrichmentInteractionKind.SupplyCart => _flow.CanClaimSupplyCart(),
+            RouteEnrichmentInteractionKind.StagedReinforcement or RouteEnrichmentInteractionKind.TogetherReinforcement => _flow.CanChooseReinforcement(),
+            _ => _flow.CanChooseRoute()
+        });
 
         public void Configure(
             M2RouteFlowController flow,
@@ -81,10 +91,13 @@ namespace Emberfall.Application.Flow
             return _kind switch
             {
                 RouteEnrichmentInteractionKind.Watchtower => _flow.TryDiscoverWatchtower(context.Actor),
+                RouteEnrichmentInteractionKind.SupplyCart => _flow.TryClaimSupplyCart(context.Actor),
                 RouteEnrichmentInteractionKind.SupplyRoute =>
                     _flow.TryChooseRoute(EmberValleyRouteChoice.Supply),
                 RouteEnrichmentInteractionKind.RiskRoute =>
                     _flow.TryChooseRoute(EmberValleyRouteChoice.Risk),
+                RouteEnrichmentInteractionKind.StagedReinforcement => _flow.TryChooseReinforcement(AshReinforcementChoice.Staged),
+                RouteEnrichmentInteractionKind.TogetherReinforcement => _flow.TryChooseReinforcement(AshReinforcementChoice.Together),
                 _ => false
             };
         }
@@ -94,6 +107,8 @@ namespace Emberfall.Application.Flow
                 _kind,
                 _flow?.WatchtowerDiscovered == true,
                 _flow?.RouteChoice ?? EmberValleyRouteChoice.None,
-                IsAvailable);
+                IsAvailable,
+                _flow?.ReinforcementChoice ?? AshReinforcementChoice.None,
+                _flow?.SupplyCartClaimed == true);
     }
 }

@@ -239,7 +239,9 @@ namespace Emberfall.Tests.PlayMode
                 {
                     var authored = set.Select(HitFeedbackGrade.Light, ImpactSurface.Metal, -1, (i + .1f) / 3, .5f);
                     if (authored.Clip != voice.clip) continue;
-                    Assert.That(voice.volume, Is.EqualTo(.6f * authored.Gain).Within(.00001f));
+                    Assert.That(voice.volume, Is.EqualTo(set.VoiceVolume(true) * authored.Gain).Within(.00001f));
+                    Assert.That(voice.spatialBlend, Is.EqualTo(set.VoiceSpatialBlend(true)));
+                    Assert.That(voice.minDistance, Is.EqualTo(set.VoiceMinDistance(true)));
                     matched = true;
                 }
                 Assert.That(matched, Is.True);

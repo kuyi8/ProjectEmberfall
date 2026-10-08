@@ -40,6 +40,7 @@ namespace Emberfall.Editor.Setup
             EditorUtility.SetDirty(set);
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
+            OfflineLocomotionSetup.Apply();
             Debug.Log($"[PRIEST_PHASES] windup={windup.length:R} release={release.length:R} sourceUnchanged={source.name}");
         }
 

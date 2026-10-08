@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Emberfall.AI.Unity;
 using Emberfall.Gameplay.Combat.Unity;
@@ -6,6 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Object = UnityEngine.Object;
 
 namespace Emberfall.Tests.EditMode
 {
@@ -13,12 +16,11 @@ namespace Emberfall.Tests.EditMode
     {
         private const string PrefabRoot = "Assets/_Game/Prefabs/Characters/M6Art";
 
-        [TestCase("P_M6_Enemy_FogwalkerSkeleton.prefab", "M_M6_FogwalkerBone")]
-        [TestCase("P_M6_Enemy_RunePriest.prefab", "M_M6_RunePriest")]
-        [TestCase("P_M6_Boss_EmberWarden.prefab", "M_M6_Warden")]
+        [TestCase("P_M6_Enemy_FogwalkerSkeleton.prefab")]
+        [TestCase("P_M6_Enemy_RunePriest.prefab")]
+        [TestCase("P_M6_Boss_EmberWarden.prefab")]
         public void SelectedCharacterPrefab_HasValidHumanoidAndProjectOwnedMaterials(
-            string fileName,
-            string expectedMaterialPrefix)
+            string fileName)
         {
             string path = $"{PrefabRoot}/{fileName}";
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -36,9 +38,7 @@ namespace Emberfall.Tests.EditMode
                 .Where(material => material != null)
                 .ToArray();
             Assert.That(materials, Is.Not.Empty, path);
-            Assert.That(materials.Any(material => material.name.StartsWith(expectedMaterialPrefix)), Is.True, path);
-            Assert.That(materials.All(material =>
-                AssetDatabase.GetAssetPath(material).StartsWith("Assets/_Game/Art/Materials/M6Art/")), Is.True, path);
+            M3ArtAssetTests.AssertSelectedRendererMaterials(prefab, path, SelectedCharacterMaterialSlots(fileName));
             Assert.That(materials.All(material =>
                 material.shader.name.StartsWith("Universal Render Pipeline/")), Is.True, path);
         }
@@ -64,8 +64,54 @@ namespace Emberfall.Tests.EditMode
                 .Where(material => material != null)
                 .ToArray();
             Assert.That(materials, Is.Not.Empty);
-            Assert.That(materials.All(material => AssetDatabase.GetAssetPath(material)
-                .StartsWith("Assets/_Game/Art/Materials/Character/M3Art/")), Is.True);
+            M3ArtAssetTests.AssertSelectedRangerMaterials(prefab, path);
+        }
+
+        private static IReadOnlyDictionary<string, string[]> SelectedCharacterMaterialSlots(string fileName)
+        {
+            const string palette = "Assets/_Game/Art/CharacterPresentationPalette/Materials/M_CP_";
+            // Independent selected-source contract: exact Renderer names and slot
+            // order, not a whitelist sampled from whichever prefab is loaded.
+            switch (fileName)
+            {
+                case "P_M6_Enemy_FogwalkerSkeleton.prefab":
+                    return new Dictionary<string, string[]>(StringComparer.Ordinal)
+                    {
+                        { "Skeleton_Warrior_ArmLeft", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_ArmRight", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_Body", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_Head", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_Jaw", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_LegLeft", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_LegRight", new[] { palette + "Bone.mat" } },
+                        { "Skeleton_Warrior_Helmet", new[] { palette + "Steel.mat" } },
+                        { "Skeleton_Warrior_Cloak", new[] { palette + "Cloth.mat" } },
+                        { "Skeleton_Warrior_Eyes", new[] { palette + "Eyes.mat" } }
+                    };
+                case "P_M6_Enemy_RunePriest.prefab":
+                    return new Dictionary<string, string[]>(StringComparer.Ordinal)
+                    {
+                        { "Pouch", new[] { palette + "Priest.mat" } },
+                        { "Face", new[] { palette + "Priest.mat" } },
+                        { "ShoulderPad.L", new[] { palette + "Priest.mat" } },
+                        { "Wizard_Staff", new[] { palette + "Priest.mat" } },
+                        { "ShoulderPad.R", new[] { palette + "Priest.mat" } },
+                        { "Wizard", new[] { palette + "Priest.mat" } },
+                        { "Wizard.001", new[] { palette + "Priest.mat" } }
+                    };
+                case "P_M6_Boss_EmberWarden.prefab":
+                    // The character prefab contains only body/helmet/shoulders.
+                    // Scene-attached sword and shield are separate source contracts,
+                    // not permission to accept their materials on this character.
+                    return new Dictionary<string, string[]>(StringComparer.Ordinal)
+                    {
+                        { "Helmet_Closed", new[] { palette + "WardenMetal.mat" } },
+                        { "ShoulderPads", new[] { palette + "WardenMetal.mat" } },
+                        { "Knight", new[] { palette + "WardenMetal.mat", palette + "WardenCloth.mat", palette + "WardenRune.mat" } }
+                    };
+                default:
+                    throw new ArgumentException("No selected character material contract: " + fileName);
+            }
         }
 
         [Test]

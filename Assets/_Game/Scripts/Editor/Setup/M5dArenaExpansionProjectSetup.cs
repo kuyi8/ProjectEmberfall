@@ -15,10 +15,6 @@ namespace Emberfall.Editor.Setup
     {
         private const string ScenePath = "Assets/_Game/Scenes/10_EmberValley.unity";
         private const string RootName = "[M5d] Arena Expansion 0.8.10";
-        private const string WallPath =
-            "Assets/_Game/Art/DownloadResources/UnityFreeAssets/07_Environment_Ruins/Updated_Modular_Dungeon/FBX/Wall_Modular.fbx";
-        private const string FencePath =
-            "Assets/_Game/Art/DownloadResources/UnityFreeAssets/07_Environment_Ruins/Updated_Modular_Dungeon/FBX/Fence_Straight_Modular.fbx";
 
         private readonly struct ArenaSpec
         {
@@ -63,7 +59,7 @@ namespace Emberfall.Editor.Setup
                 CombatEncounterCoordinator coordinator = coordinators.Single(item => item.TelemetrySegment == spec.Segment);
                 coordinator.ConfigureTelemetryArena(spec.Center, spec.HalfExtents, spec.Margin);
                 EditorUtility.SetDirty(coordinator);
-                CreateVisibleBoundaries(root.transform, spec);
+                // M6 owns the approved kit walls. Do not create proxy faces that it immediately destroys.
             }
 
             // Lift connector decks by 2 cm where they overlap the larger zone floors. The offset is
@@ -85,54 +81,7 @@ namespace Emberfall.Editor.Setup
             PlayerSettings.bundleVersion = M5NetworkingProjectSetup.Version;
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Debug.Log("EMBERFALL_M5D_ARENA_EXPANSION_COMPLETE version=0.8.10 areas=1.5x faces=16 sweep=offline");
-        }
-
-        private static void CreateVisibleBoundaries(Transform parent, ArenaSpec spec)
-        {
-            Transform arenaRoot = new GameObject($"Boundary_{spec.Segment}").transform;
-            arenaRoot.SetParent(parent);
-            CreateFace(arenaRoot, spec, EncounterBoundaryFace.North, WallPath);
-            CreateFace(arenaRoot, spec, EncounterBoundaryFace.South, WallPath);
-            CreateFace(arenaRoot, spec, EncounterBoundaryFace.East, FencePath);
-            CreateFace(arenaRoot, spec, EncounterBoundaryFace.West, FencePath);
-        }
-
-        private static void CreateFace(
-            Transform parent,
-            ArenaSpec spec,
-            EncounterBoundaryFace face,
-            string modelPath)
-        {
-            bool horizontal = face == EncounterBoundaryFace.North || face == EncounterBoundaryFace.South;
-            float edgeLength = horizontal ? spec.HalfExtents.x * 0.82f : spec.HalfExtents.y * 0.82f;
-            float side = face == EncounterBoundaryFace.North || face == EncounterBoundaryFace.East ? 1f : -1f;
-            Vector3 position = horizontal
-                ? spec.Center + new Vector3(-spec.HalfExtents.x * 0.48f, 0.42f, side * spec.HalfExtents.y)
-                : spec.Center + new Vector3(side * spec.HalfExtents.x, 0.42f, spec.HalfExtents.y * 0.48f);
-
-            var root = new GameObject($"{spec.Segment}_{face}_VisibleBoundary");
-            root.transform.SetParent(parent);
-            root.transform.position = position;
-            root.transform.rotation = horizontal ? Quaternion.identity : Quaternion.Euler(0f, 90f, 0f);
-            BoxCollider collider = root.AddComponent<BoxCollider>();
-            collider.size = new Vector3(edgeLength, 1.8f, 0.5f);
-            collider.center = new Vector3(0f, 0.45f, 0f);
-
-            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
-            if (model == null) throw new FileNotFoundException("Boundary model is missing.", modelPath);
-            GameObject visual = PrefabUtility.InstantiatePrefab(model, root.transform) as GameObject;
-            if (visual == null) throw new InvalidOperationException($"Could not instantiate boundary model: {modelPath}");
-            visual.name = "Visual_" + face;
-            visual.transform.localPosition = Vector3.zero;
-            visual.transform.localRotation = Quaternion.identity;
-            Renderer renderer = visual.GetComponentInChildren<Renderer>();
-            if (renderer == null) throw new InvalidDataException($"Boundary model has no renderer: {modelPath}");
-            Vector3 size = renderer.bounds.size;
-            float xScale = size.x > 0.001f ? edgeLength / size.x : 1f;
-            float yScale = size.y > 0.001f ? 1.8f / size.y : 1f;
-            visual.transform.localScale = new Vector3(xScale, yScale, Mathf.Min(xScale, yScale));
-            root.AddComponent<EncounterBoundaryVisualMarker>().Configure(spec.Segment, face, renderer);
+            Debug.Log("EMBERFALL_M5D_ARENA_EXPANSION_COMPLETE version=0.8.10 areas=1.5x boundaries=M6-kit sweep=offline");
         }
 
         private static void ResizeSurface(string name, Vector3 position, Vector3 scale)

@@ -60,6 +60,31 @@ namespace Emberfall.Tests.EditMode
         }
 
         [Test]
+        public void DodgeDuringOpportunity_DoesNotClearOrRestartItsDeadline()
+        {
+            var m=Parry();m.Tick(.1f);
+            Assert.That(m.Submit(CombatCommand.Dodge),Is.True);
+            Assert.That(m.GuardCounterWindowRemaining,Is.EqualTo(.5f).Within(.00001f));
+            m.Tick(.499f);
+            Assert.That(m.GuardCounterWindowRemaining,Is.GreaterThan(0f));
+            m.Tick(.002f);
+            Assert.That(m.GuardCounterWindowRemaining,Is.Zero);
+            Assert.That(m.CurrentAttackIsGuardCounter,Is.False);
+        }
+
+        [Test]
+        public void ExpiredOpportunity_DoesNotProtectAgainstUndefendableDamage()
+        {
+            var m=Parry();m.Tick(.601f);
+            var result=m.ReceiveDamage(new DamageRequest(8,1,20f,0f,AttackTag.Hazard,false,false));
+            Assert.That(result.Accepted,Is.True);
+            Assert.That(result.Defended,Is.False);
+            Assert.That(m.State,Is.EqualTo(CombatState.HitReact));
+            Assert.That(m.Health.Current,Is.EqualTo(100f));
+            Assert.That(m.GuardCounterWindowRemaining,Is.Zero);
+        }
+
+        [Test]
         public void FailedStaminaAttempt_DoesNotSpendOpportunityOrShowActionablePrompt()
         {
             var m=Parry();m.Stamina.Drain(m.Stamina.Current);

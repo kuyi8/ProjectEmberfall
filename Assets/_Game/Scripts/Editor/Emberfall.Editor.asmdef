@@ -14,7 +14,8 @@
         "Unity.AI.Navigation",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [
         "Editor"

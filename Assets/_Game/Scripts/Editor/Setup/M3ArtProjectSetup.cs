@@ -312,6 +312,10 @@ namespace Emberfall.Editor.Setup
             {
                 importer.SaveAndReimport();
             }
+            if (derivedPath == RangerDerived)
+            {
+                RangerHumanoidMappingSetup.ApplyToImporter(derivedPath);
+            }
         }
 
         private static GameObject EnsureCharacterPrefab(
@@ -368,6 +372,7 @@ namespace Emberfall.Editor.Setup
             animator.runtimeAnimatorController = animationSet.Controller;
             animator.applyRootMotion = false;
             AttachCompleteHead(animator, headMeshes, neckMaterial, faceMaterial, eyeMaterial, browMaterial);
+            CharacterPresentationPaletteSetup.Apply(root);
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             if (prefab == null)

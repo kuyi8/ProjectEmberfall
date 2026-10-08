@@ -136,6 +136,7 @@ namespace Emberfall.Application.Flow
                 FeedbackUntil = Time.time + 3f;
                 _audio.pitch = open ? 1.2f : 0.75f;
                 _audio.PlayOneShot(_tone, 0.65f);
+                CombatAudioVoiceBudget.Track(_audio, _tone, CombatAudioImportance.WorldConfirmation);
                 SoundSequence++;
                 FeedbackPresented?.Invoke(LastFeedbackTextId);
             }

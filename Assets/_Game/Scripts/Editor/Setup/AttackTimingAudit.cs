@@ -140,13 +140,11 @@ namespace Emberfall.Editor.Setup
             Boss("warden.blast", boss.DelayedBlast, set.GetEnemyClip(EnemyAnimationAction.RuneCast));
             var charge = Add("warden.charge", set.GetEnemyClip(EnemyAnimationAction.WardenCharge), boss.Charge.AttackDuration,
                 boss.Charge.FirstWindowStart, boss.Charge.FirstWindowEnd, EnemyPath);
-            // Travel owns 24-78% of the clip; convert both boundaries to clip seconds.
-            // Unity 2022.3 measured entry = fixedTimeOffset * Animator.speed / clip.length.
-            // Current literal offset is preserved pending Harness's ruling on speed compensation.
-            float chargeSpeed = Mathf.Clamp(charge.clip.length * (.78f - .24f) / charge.duration, .25f, 3f);
-            charge.clipStart = .24f * chargeSpeed;
-            charge.clipEnd = charge.clipStart + charge.clip.length * (.78f - .24f);
-            charge.note = "Intended domain travel phase 24-78%, but actual fixed-time entry is speed-scaled; engine probe pending Harness. Contact remains unconfirmed and spatially dependent.";
+            // The production Presenter compensates fixed-time entry for clip length and effective speed;
+            // at local hit-stop it uses the same normalized source pose, never dividing by zero.
+            charge.clipStart = .24f * charge.clip.length;
+            charge.clipEnd = .78f * charge.clip.length;
+            charge.note = "Travel uses actual 24-78% source poses. Correct phase entry is not natural contact/damage proof; contact remains unconfirmed and spatially dependent.";
             return rows;
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Emberfall.Core.Content;
 using Emberfall.Core.Identifiers;
 using Emberfall.Infrastructure.Scripting;
+using Emberfall.Quests.Domain;
 using UnityEngine;
 
 namespace Emberfall.Infrastructure.Content
@@ -21,6 +22,7 @@ namespace Emberfall.Infrastructure.Content
             "enemy:rune-priest",
             "enemy:ruin-guard",
             "enemy:ruin-guard-scorched",
+            "enemy:ash-caller",
             "boss:ember-warden"
         };
         private static readonly string[] RequiredQuestIds =
@@ -52,7 +54,16 @@ namespace Emberfall.Infrastructure.Content
                 ValidateRecords(enemies.rangedEnemies, "ranged enemy", enemyIds, textIds);
                 ValidateRecords(enemies.shieldEnemies, "shield enemy", enemyIds, textIds);
                 ValidateRecords(enemies.wardens, "warden", enemyIds, textIds);
+                ValidateRecords(enemies.summoners, "summoner", enemyIds, textIds);
                 RequireIds(enemyIds, RequiredEnemyIds, "enemy");
+                var meleeIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (EnemyRecord melee in enemies.enemies) meleeIds.Add(melee.id);
+                foreach (EnemyRecord summoner in enemies.summoners)
+                {
+                    ContentId minion = RequireId(summoner.minionId, "enemy", "Summoner minionId");
+                    if (!meleeIds.Contains(minion.Value))
+                        throw new FormatException($"Summoner '{summoner.id}' references missing melee minion ID '{minion}'.");
+                }
 
                 var questIds = new HashSet<string>(StringComparer.Ordinal);
                 if (quests.quests == null || quests.quests.Length == 0)
@@ -67,6 +78,7 @@ namespace Emberfall.Infrastructure.Content
                         throw new FormatException($"Quest '{id}' references missing text ID '{title}'.");
                     if (record.requiredSealCount <= 0)
                         throw new FormatException($"Quest '{id}' requires a positive seal count.");
+                    QuestDefinition.NormalizeSupplyCartMultiplier(record.supplyCartHeavyPostureMultiplier);
                 }
                 RequireIds(questIds, RequiredQuestIds, "quest");
 
@@ -206,6 +218,7 @@ namespace Emberfall.Infrastructure.Content
             public EnemyRecord[] rangedEnemies;
             public EnemyRecord[] shieldEnemies;
             public EnemyRecord[] wardens;
+            public EnemyRecord[] summoners;
         }
 
         [Serializable]
@@ -213,6 +226,7 @@ namespace Emberfall.Infrastructure.Content
         {
             public string id;
             public string displayNameTextId;
+            public string minionId;
         }
 
         [Serializable]
@@ -228,6 +242,7 @@ namespace Emberfall.Infrastructure.Content
             public string id;
             public string titleTextId;
             public int requiredSealCount;
+            public float supplyCartHeavyPostureMultiplier;
         }
 
         [Serializable]

@@ -15,6 +15,25 @@ namespace Emberfall.Gameplay.Combat.Unity
         [SerializeField, HideInInspector] private AudioClip _execution;
         [SerializeField] private Slot[] _slots = Array.Empty<Slot>();
 
+        [Header("Local strike readability (presentation only)")]
+        [SerializeField, Range(0f, 1f)] private float _ownerVoiceVolume = .7f;
+        [SerializeField, Range(0f, 1f)] private float _ownerSpatialBlend = .25f;
+        [SerializeField, Min(.1f)] private float _ownerMinDistance = 6f;
+        [SerializeField, Range(0f, 6f)] private float _ownerFleshPresenceDb;
+
+        public float VoiceVolume(bool owner) => owner ? Mathf.Clamp01(_ownerVoiceVolume) : .6f;
+        public float VoiceSpatialBlend(bool owner) => owner ? Mathf.Clamp01(_ownerSpatialBlend) : .65f;
+        public float VoiceMinDistance(bool owner) => owner ? Mathf.Max(.1f, _ownerMinDistance) : 2f;
+
+        public float PlaybackVolume(bool owner, HitFeedbackGrade grade, ImpactSurface surface, float variantGain)
+        {
+            bool boost = owner && surface == ImpactSurface.Flesh &&
+                (grade == HitFeedbackGrade.Light || grade == HitFeedbackGrade.Heavy || grade == HitFeedbackGrade.Sweep);
+            float presence = boost ? Mathf.Pow(10f, Mathf.Clamp(_ownerFleshPresenceDb, 0f, 6f) / 20f) : 1f;
+            // Bound the FINAL product, not the variant before the shared .7 voice gain.
+            return Mathf.Clamp01(VoiceVolume(owner) * Mathf.Clamp01(variantGain) * presence);
+        }
+
         public const int SlotCount = 6;
 
         public void Preload()

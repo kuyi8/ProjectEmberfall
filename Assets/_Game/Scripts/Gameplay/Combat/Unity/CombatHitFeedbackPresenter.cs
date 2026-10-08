@@ -84,9 +84,13 @@ namespace Emberfall.Gameplay.Combat.Unity
                 return;
             }
             if (!_batch.Take(out CombatImpactPresentationEvent impact)) return;
-            bool frozen = AnimatorSpeedCoordinator.For(_animator)?.Request(impact.Grade, impact.Sequence) == true;
+            bool allowOwnerFreeze = PlayerFreezePresentationPolicy.AllowOwnerFreeze(_actor, _animator);
+            bool frozen = allowOwnerFreeze && AnimatorSpeedCoordinator.For(_animator)?.Request(impact.Grade, impact.Sequence) == true;
             for (int i = 0; i < _targetCount; i++)
+            {
+                if (!allowOwnerFreeze && _targets[i] == _animator) continue;
                 AnimatorSpeedCoordinator.For(_targets[i])?.Request(impact.Grade, impact.Sequence);
+            }
             ClearTargets();
             if (_owner && _cameraImpulse != null) _cameraImpulse.Request(impact.Grade);
             LastFeedbackFrame = Time.frameCount;
@@ -99,9 +103,16 @@ namespace Emberfall.Gameplay.Combat.Unity
                 if (playback.Clip != null)
                 {
                     _audio.transform.position = impact.Position;
-                    _audio.Stop(); _audio.clip = playback.Clip; _audio.volume = 0.6f * playback.Gain;
+                    _audio.Stop(); _audio.clip = playback.Clip;
+                    float nominalVolume = _audioSet.PlaybackVolume(_owner, impact.Grade, impact.Surface, playback.Gain);
+                    _audio.volume = nominalVolume;
+                    _audio.spatialBlend = _audioSet.VoiceSpatialBlend(_owner);
+                    _audio.minDistance = _audioSet.VoiceMinDistance(_owner);
                     _audio.pitch = playback.Pitch;
-                    _audio.Play(); LastAudioFrame = Time.frameCount;
+                    _audio.Play();
+                    CombatAudioVoiceBudget.Track(_audio, playback.Clip, CombatAudioImportance.Strike, true,
+                        nominalVolume);
+                    LastAudioFrame = Time.frameCount;
                     _lastAudioIndices[slot] = playback.Index;
                     _nextAudioAt = Time.realtimeSinceStartupAsDouble + 0.05d;
                     _lastAudioGrade = impact.Grade;

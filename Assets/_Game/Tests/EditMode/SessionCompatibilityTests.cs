@@ -58,6 +58,20 @@ namespace Emberfall.Tests.EditMode
             Assert.That(service.Snapshot.ConnectedPlayers, Is.EqualTo(1));
         }
 
+        [Test]
+        public void FormalSummonerContent_RequiresBothPeersToUpdate()
+        {
+            var previous = new SessionCompatibility(2, new SemanticVersion(0, 9, 2), 1, new SemanticVersion(0, 8, 11));
+            var current = new SessionCompatibility(2, new SemanticVersion(0, 9, 2), 1, new SemanticVersion(0, 8, 12));
+            Assert.That(SessionCompatibilityCodec.IsCompatible(current, previous, out string oldReason), Is.False);
+            Assert.That(oldReason, Does.Contain("内容版本"));
+            Assert.That(SessionCompatibilityCodec.IsCompatible(previous, current, out string newReason), Is.False);
+            Assert.That(newReason, Does.Contain("内容版本"));
+            Assert.That(SessionCompatibilityCodec.IsCompatible(current, current, out string accepted), Is.True);
+            Assert.That(accepted, Is.Empty);
+        }
+
+        // Exact rejection assertions remain unchanged; new content adds a concrete version regression.
         private static void AssertRejected(SessionCompatibility candidate, string messageFragment)
         {
             Assert.That(SessionCompatibilityCodec.IsCompatible(Expected, candidate, out string reason), Is.False);

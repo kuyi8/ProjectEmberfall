@@ -101,6 +101,7 @@ namespace Emberfall.Editor.Setup
             var placeholder = new GameObject("[UI] M0 Main Menu Placeholder");
             placeholder.AddComponent<MainMenuPlaceholder>();
 
+            MenuDioramaSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, MainMenuPath);
         }
 

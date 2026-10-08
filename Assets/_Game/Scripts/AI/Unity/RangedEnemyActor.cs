@@ -28,6 +28,7 @@ namespace Emberfall.AI.Unity
 
         private RangedEnemyDefinition _definition;
         private RangedEnemyBrain _brain;
+        private readonly EnemyHitAwareness _hitAwareness = new EnemyHitAwareness();
         private EncounterLeash _leash;
         private RangedEnemyPerception _perception;
         private Vector3 _spawnPosition;
@@ -38,6 +39,14 @@ namespace Emberfall.AI.Unity
         private int _releasedAttackSequence;
         private bool _executionClaimed;
         private float _executionHoldRemaining;
+        private NavMeshPath _retreatPath;
+        private readonly Vector3[] _retreatCorners = new Vector3[64];
+        private Vector3 _retreatDestination;
+        private float _nextRetreatPlanTime;
+        private bool _hasRetreatDestination;
+        private Vector3 _retreatSamplePosition;
+        private bool _retreatSampleReady;
+        private bool _retreatUnavailable;
 
         public override int CombatantId => GetInstanceID();
         public override Transform AimPoint => _aimPoint != null ? _aimPoint : transform;
@@ -48,6 +57,10 @@ namespace Emberfall.AI.Unity
         public override bool IsThreatening => State == RangedEnemyState.Windup || State == RangedEnemyState.Release;
         public RangedEnemyDefinition Definition => _definition;
         public RangedEnemyBrain Brain => _brain;
+        public float HitAwarenessRemaining => _hitAwareness.Remaining;
+        public bool RetreatHasPreferredDestination { get; private set; }
+        public bool RetreatUnavailable => _retreatUnavailable;
+        public int ReleasedAttackSequence => _releasedAttackSequence;
         public RangedEnemyState State => _brain?.State ?? RangedEnemyState.Idle;
         public float HorizontalSpeed => _agent != null ? Vector3.ProjectOnPlane(_agent.velocity, Vector3.up).magnitude : 0f;
         public bool HasSimulationAuthority { get; private set; } = true;
@@ -89,8 +102,11 @@ namespace Emberfall.AI.Unity
         public void SetSimulationAuthority(bool hasAuthority)
         {
             HasSimulationAuthority = hasAuthority;
+            if (!hasAuthority) _hitAwareness.Clear();
             if (!hasAuthority)
             {
+                _brain?.ResetRetreatConstraint();
+                ResetRetreatNavigation();
                 StopAgent();
             }
         }
@@ -103,7 +119,7 @@ namespace Emberfall.AI.Unity
         private void Awake()
         {
             _leash = GetComponent<EncounterLeash>();
-            if (_target == null || _agent == null ||
+            if (_target == null || _target.Model == null || _agent == null ||
                 _castOrigin == null || _bodyCollider == null || _projectileMaterial == null ||
                 !ContentId.TryCreate(_enemyId, out ContentId enemyId))
             {
@@ -113,7 +129,8 @@ namespace Emberfall.AI.Unity
             }
 
             _definition = RangedEnemyDefinitionJsonLoader.Load(LoadDefinitionJson()).GetRequired(enemyId);
-            _brain = new RangedEnemyBrain(_definition);
+            _brain = new RangedEnemyBrain(_definition, _target.Model.EnemyRetreatBlockedSeconds);
+            _retreatPath = new NavMeshPath();
             _spawnPosition = transform.position;
             _spawnRotation = transform.rotation;
             _agent.speed = _definition.MoveSpeed;
@@ -152,8 +169,14 @@ namespace Emberfall.AI.Unity
                 return;
             }
 
+            _hitAwareness.Tick(Time.deltaTime);
+            if (_target == null || !_target.IsAvailable ||
+                (_leash != null && !_leash.AllowsTarget(_target.transform.position))) _hitAwareness.Clear();
+
             if (_executionHoldRemaining > 0f)
             {
+                _brain.ResetRetreatConstraint();
+                ResetRetreatNavigation();
                 _executionHoldRemaining = Mathf.Max(0f, _executionHoldRemaining - Time.deltaTime);
                 StopAgent();
                 UpdatePresentation();
@@ -201,6 +224,12 @@ namespace Emberfall.AI.Unity
 
             RangedEnemyState previousState = _brain.State;
             DamageResult result = _brain.ReceiveDamage(request);
+            if (_hitAwareness.Record(request, result, _target == null ? 0 : _target.CombatantId,
+                _target != null && _target.IsAvailable,
+                _leash == null || (_target != null && _leash.AllowsTarget(_target.transform.position)),
+                _target == null || _target.Model == null ? 0f : _target.Model.EnemyHitAwarenessSeconds))
+                _perceptionRemaining = 0f;
+            if (result.Killed) _hitAwareness.Clear();
             _flashRemaining = 0.12f;
             if (previousState != _brain.State)
             {
@@ -237,6 +266,8 @@ namespace Emberfall.AI.Unity
 
         public void ResetToSpawn()
         {
+            _hitAwareness.Clear();
+            ResetRetreatNavigation();
             if (_brain == null)
             {
                 return;
@@ -259,6 +290,8 @@ namespace Emberfall.AI.Unity
 
         public void HoldForExecution(float seconds)
         {
+            _brain?.ResetRetreatConstraint();
+            ResetRetreatNavigation();
             _executionHoldRemaining = Mathf.Max(_executionHoldRemaining, seconds);
             StopAgent();
         }
@@ -271,37 +304,48 @@ namespace Emberfall.AI.Unity
                 ? Vector3.Distance(transform.position, _target.transform.position)
                 : float.PositiveInfinity;
             float distanceToSpawn = Vector3.Distance(transform.position, _spawnPosition);
+            if (targetAvailable && distanceToTarget < _definition.PreferredMinimumRange &&
+                (_brain.WantsRetreatMovement || _brain.IsCorneredWindup))
+                AssessRetreatNavigation();
+            else ResetRetreatNavigation();
             _perception = new RangedEnemyPerception(
                 targetAvailable,
                 targetAvailable && CanSeeTarget(),
                 distanceToTarget,
-                distanceToSpawn);
+                distanceToSpawn,
+                _retreatUnavailable);
         }
+
+        private readonly RaycastHit[] _sightHits = new RaycastHit[16];
 
         private bool CanSeeTarget()
         {
             Vector3 origin = AimPoint.position;
             Vector3 direction = _target.AimPoint.position - origin;
             Vector3 flatDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
-            if (flatDirection.sqrMagnitude > 0.001f &&
+            if (!_hitAwareness.IsAwareOf(_target.CombatantId) &&
+                !(_leash != null && _leash.Encounter != null && _leash.Encounter.HasCombatAlertFor(_target)) &&
+                flatDirection.sqrMagnitude > 0.001f &&
                 Vector3.Angle(transform.forward, flatDirection) > _definition.FieldOfView * 0.5f)
             {
                 return false;
             }
 
-            if (!Physics.Raycast(origin, direction.normalized, out RaycastHit hit, direction.magnitude, ~0,
-                    QueryTriggerInteraction.Ignore))
-            {
-                return true;
-            }
-
-            return hit.collider.GetComponentInParent<PlayerCombatActor>() == _target;
+            return EnemyLineOfSight.HasContact(this, _target, _sightHits);
         }
+
+        internal bool HasDirectVisualContactWith(PlayerCombatActor player) =>
+            player != null && player == _target && player.IsAvailable && isActiveAndEnabled &&
+            HasSimulationAuthority && IsAvailable && _perception.TargetAvailable && _perception.CanSeeTarget &&
+            _perception.DistanceToTarget <= _definition.DetectionRange &&
+            Vector3.Angle(transform.forward, Vector3.ProjectOnPlane(player.AimPoint.position - AimPoint.position, Vector3.up))
+                <= _definition.FieldOfView * .5f;
 
         private void DriveMovement()
         {
             if (_brain.State == RangedEnemyState.Dead || _brain.State == RangedEnemyState.HitReact)
             {
+                ResetRetreatNavigation();
                 StopAgent();
                 return;
             }
@@ -314,17 +358,12 @@ namespace Emberfall.AI.Unity
             }
             else if (_agent.isOnNavMesh && _brain.WantsRetreatMovement && _target != null)
             {
-                Vector3 away = Vector3.ProjectOnPlane(transform.position - _target.transform.position, Vector3.up);
-                Vector3 desired = transform.position + (away.sqrMagnitude > 0.001f ? away.normalized : -transform.forward) * 3f;
                 _agent.stoppingDistance = 0.1f;
-                if (_leash != null)
-                {
-                    _leash.SetDestination(desired);
-                }
-                else if (NavMesh.SamplePosition(desired, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
+                AssessRetreatNavigation();
+                if (_hasRetreatDestination)
                 {
                     _agent.isStopped = false;
-                    _agent.SetDestination(hit.position);
+                    if (!SetDestination(_retreatDestination)) _retreatUnavailable = true;
                 }
                 else
                 {
@@ -342,7 +381,8 @@ namespace Emberfall.AI.Unity
                 StopAgent();
             }
 
-            Vector3 facing = _brain.WantsFaceTarget && _target != null
+            if (!_brain.WantsRetreatMovement && !_brain.IsCorneredWindup) ResetRetreatNavigation();
+            Vector3 facing = (_brain.WantsFaceTarget || _brain.WantsRetreatMovement) && _target != null
                 ? _target.transform.position - transform.position
                 : _agent.velocity;
             facing = Vector3.ProjectOnPlane(facing, Vector3.up);
@@ -354,6 +394,102 @@ namespace Emberfall.AI.Unity
                     desired,
                     _definition.RotationSpeed * Time.deltaTime);
             }
+        }
+
+        private void ResetRetreatNavigation()
+        {
+            _hasRetreatDestination = false;
+            _nextRetreatPlanTime = 0f;
+            _retreatSampleReady = false;
+            _retreatUnavailable = false;
+            RetreatHasPreferredDestination = false;
+        }
+
+        private void AssessRetreatNavigation()
+        {
+            if (Time.time < _nextRetreatPlanTime) return;
+            _nextRetreatPlanTime = Time.time + _perceptionInterval;
+            bool previouslyPreferred = _hasRetreatDestination && RetreatHasPreferredDestination;
+            bool progressing = Vector3.ProjectOnPlane(transform.position - _retreatSamplePosition, Vector3.up)
+                .sqrMagnitude > .0001f;
+            _hasRetreatDestination = _agent.enabled && _agent.isOnNavMesh && TryPlanRetreat(out _retreatDestination);
+            // A valid endpoint is not evidence of motion. Sustained lack of progress is fed
+            // to the Brain's bounded timer; a moving, complete band-restoring path resets it.
+            // A newly viable path gets a perception interval to start, including after a blocked windup.
+            _retreatUnavailable = !_hasRetreatDestination || !RetreatHasPreferredDestination ||
+                (_retreatSampleReady && previouslyPreferred && !progressing && !_agent.pathPending);
+            _retreatSampleReady = true;
+            _retreatSamplePosition = transform.position;
+        }
+
+        private bool TryPlanRetreat(out Vector3 destination)
+        {
+            destination = transform.position;
+            RetreatHasPreferredDestination = false;
+            Vector3 away = Vector3.ProjectOnPlane(transform.position - _target.transform.position, Vector3.up);
+            away = away.sqrMagnitude > 0.001f ? away.normalized : -transform.forward;
+            float bestDistance = Vector3.Distance(transform.position, _target.transform.position);
+            // Preserve the original short, straight retreat when it can restore the preferred band.
+            if (TryRetreatCandidate(transform.position + away * 3f, out Vector3 straight))
+            {
+                float distance = Vector3.Distance(straight, _target.transform.position);
+                if (distance >= _definition.PreferredMinimumRange)
+                {
+                    RetreatHasPreferredDestination = true;
+                    destination = straight;
+                    return true;
+                }
+                if (distance > bestDistance + .05f) { bestDistance = distance; destination = straight; }
+            }
+            // A bounded eight-point search, reusing the path/corner buffers. Never trial-write
+            // agent destinations: only the selected, fully-contained path goes through the leash.
+            var encounter = _leash == null ? null : _leash.Encounter;
+            float bestPreferredTravel = float.PositiveInfinity;
+            for (int i = 0; i < 8; i++)
+            {
+                Vector3 desired;
+                if (encounter != null)
+                {
+                    Vector2 half = encounter.ArenaHalfExtents;
+                    int x = i < 3 ? -1 : i < 5 ? 0 : 1;
+                    int z = i < 3 ? i - 1 : i < 5 ? (i == 3 ? -1 : 1) : i - 6;
+                    desired = encounter.ArenaCenter + new Vector3(x * half.x, 0, z * half.y);
+                    desired.y = transform.position.y;
+                }
+                else desired = transform.position + Quaternion.Euler(0, i * 45f, 0) * away * 3f;
+                if (!TryRetreatCandidate(desired, out Vector3 candidate)) continue;
+                float distance = Vector3.Distance(candidate, _target.transform.position);
+                if (distance >= _definition.PreferredMinimumRange)
+                {
+                    float travel = Vector3.SqrMagnitude(candidate - transform.position);
+                    if (travel >= bestPreferredTravel) continue;
+                    bestPreferredTravel = travel;
+                    RetreatHasPreferredDestination = true;
+                    destination = candidate;
+                }
+                else if (!RetreatHasPreferredDestination && distance > bestDistance + .05f)
+                {
+                    bestDistance = distance;
+                    destination = candidate;
+                }
+            }
+            return (destination - transform.position).sqrMagnitude > .01f;
+        }
+
+        private bool TryRetreatCandidate(Vector3 desired, out Vector3 candidate)
+        {
+            candidate = transform.position;
+            if (_leash != null) desired = _leash.ClampDestination(desired);
+            if (!NavMesh.SamplePosition(desired, out NavMeshHit hit, .8f, _agent.areaMask) ||
+                (_leash != null && !_leash.Contains(hit.position, _agent.radius)) ||
+                !_agent.CalculatePath(hit.position, _retreatPath) ||
+                _retreatPath.status != NavMeshPathStatus.PathComplete) return false;
+            int count = _retreatPath.GetCornersNonAlloc(_retreatCorners);
+            if (count == 0 || count >= _retreatCorners.Length) return false;
+            for (int i = 0; i < count; i++)
+                if (_leash != null && !_leash.Contains(_retreatCorners[i])) return false;
+            candidate = hit.position;
+            return true;
         }
 
         private void ReleaseAttack()
@@ -467,6 +603,7 @@ namespace Emberfall.AI.Unity
                 : current.ToString();
             if (current == RangedEnemyState.Dead)
             {
+                ResetRetreatNavigation();
                 StopAgent();
                 _bodyCollider.enabled = false;
                 Died?.Invoke(this);
@@ -507,10 +644,9 @@ namespace Emberfall.AI.Unity
             }
         }
 
-        private void SetDestination(Vector3 position)
+        private bool SetDestination(Vector3 position)
         {
-            if (_leash != null) _leash.SetDestination(position);
-            else _agent.SetDestination(position);
+            return _leash != null ? _leash.SetDestination(position) : _agent.SetDestination(position);
         }
 
         private void UpdatePresentation()

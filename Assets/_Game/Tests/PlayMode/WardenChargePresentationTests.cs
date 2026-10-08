@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
+using System.IO;
 using Emberfall.AI.Unity;
 using Emberfall.Application.Flow;
 using Emberfall.Gameplay.Animation;
+using Emberfall.Gameplay.Combat.Unity;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,6 +16,75 @@ namespace Emberfall.Tests.PlayMode
 {
     public sealed class WardenChargePresentationTests
     {
+        // Controlled Animator contract tests call the SAME production entry method, not a copied formula.
+        // Manual Animator.Update / disabled actor are intentional here; this is NOT natural contact evidence.
+        [UnityTest]
+        public IEnumerator ProductionPhaseEntryPreservesSourcePoseDuringNormalPlaybackAndHitStop()
+        {
+            yield return LoadFixture();
+            var actor = UnityEngine.Object.FindObjectsOfType<WardenActor>(true).Single();
+            var animator = Prepare(actor);
+            var presenter = actor.GetComponent<WardenAnimationPresenter>();
+            float length = ReadLength(actor);
+            var coordinator = AnimatorSpeedCoordinator.For(animator);
+            var method = typeof(WardenAnimationPresenter).GetMethod("CrossFadeState", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.That(method, Is.Not.Null);
+            foreach (bool frozen in new[] { false, true })
+            foreach (bool recovery in new[] { false, true })
+            {
+                coordinator.Cancel("contract-reset");
+                animator.Rebind();
+                AnimatorSpeedCoordinator.SetBase(animator, 1f);
+                animator.Play("WardenChargeWindup", 0, 0f);
+                animator.Update(0f);
+                float fraction = recovery ? .78f : .24f;
+                float speed = Mathf.Clamp(length * (recovery ? .22f : .54f) /
+                    (recovery ? actor.Definition.Charge.RecoveryDuration : actor.Definition.Charge.AttackDuration), .25f, 3f);
+                if (frozen) Assert.That(coordinator.Request(HitFeedbackGrade.Light), Is.True);
+                var phase = Enum.Parse(method.GetParameters()[0].ParameterType, recovery ? "ChargeRecovery" : "Charge");
+                method.Invoke(presenter, new object[] { phase, speed });
+                animator.Update(0f);
+                var next = animator.GetNextAnimatorStateInfo(0);
+                Assert.That(next.IsName(recovery ? "WardenChargeRecovery" : "WardenCharge"), Is.True);
+                Assert.That(next.normalizedTime, Is.EqualTo(fraction).Within(.0001f));
+                Assert.That(coordinator.BaseSpeed, Is.EqualTo(speed).Within(.0001f));
+                if (frozen)
+                {
+                    Assert.That(animator.speed, Is.Zero);
+                    animator.Update(.01f);
+                    Assert.That(animator.GetNextAnimatorStateInfo(0).normalizedTime, Is.EqualTo(fraction).Within(.0001f));
+                    coordinator.Cancel("contract-resume");
+                }
+                else Assert.That(animator.GetAnimatorTransitionInfo(0).durationUnit, Is.EqualTo(DurationUnit.Fixed));
+                animator.Update(.001f);
+                Assert.That(animator.GetNextAnimatorStateInfo(0).normalizedTime, Is.GreaterThan(fraction));
+                Debug.Log(FormattableString.Invariant($"[WARDEN_PRODUCTION_ENTRY] recovery={recovery} frozen={frozen} normalized={next.normalizedTime:R} target={fraction:R}"));
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ProductionPhaseEntryPreservesRecoveryPoseWhenTravelBlendIsInterrupted()
+        {
+            yield return LoadFixture();
+            var actor = UnityEngine.Object.FindObjectsOfType<WardenActor>(true).Single();
+            var animator = Prepare(actor);
+            var presenter = actor.GetComponent<WardenAnimationPresenter>();
+            float length = ReadLength(actor);
+            var method = typeof(WardenAnimationPresenter).GetMethod("CrossFadeState", BindingFlags.NonPublic | BindingFlags.Instance);
+            animator.Rebind();
+            animator.Play("WardenChargeWindup", 0, .2f);
+            animator.Update(0f);
+            var phaseType = method.GetParameters()[0].ParameterType;
+            method.Invoke(presenter, new object[] { Enum.Parse(phaseType, "Charge"), length * .54f / actor.Definition.Charge.AttackDuration });
+            animator.Update(.005f);
+            Assert.That(animator.IsInTransition(0), Is.True);
+            method.Invoke(presenter, new object[] { Enum.Parse(phaseType, "ChargeRecovery"), length * .22f / actor.Definition.Charge.RecoveryDuration });
+            animator.Update(0f);
+            var next = animator.GetNextAnimatorStateInfo(0);
+            Assert.That(next.IsName("WardenChargeRecovery"), Is.True);
+            Assert.That(next.normalizedTime, Is.EqualTo(.78f).Within(.0001f));
+        }
+
         [UnityTest]
         public IEnumerator NormalizedOffsetProbeAcrossSpeedsAndFreeze()
         {
@@ -107,6 +178,10 @@ namespace Emberfall.Tests.PlayMode
             M2LaunchIntent.RequestNewGame();
             yield return SceneManager.LoadSceneAsync("10_EmberValley", LoadSceneMode.Single);
             yield return null;
+            var flow = UnityEngine.Object.FindObjectOfType<M2RouteFlowController>();
+            Assert.That(M2RouteFlowController.EditorTestSavePath, Is.Not.Null.And.Not.Empty);
+            Assert.That(Path.GetFullPath(flow.SavePath), Is.EqualTo(Path.GetFullPath(M2RouteFlowController.EditorTestSavePath)));
+            Assert.That(flow.SavePath.Contains("IsolatedSaves"), Is.True);
         }
 
         private static Animator Prepare(WardenActor actor)

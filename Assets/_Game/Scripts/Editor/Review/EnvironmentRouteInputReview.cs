@@ -44,7 +44,8 @@ namespace Emberfall.Editor.Review
             EditorApplication.update += Tick;
         }
 
-        public static string Begin(bool throughBridge = false, bool throughEnd = false, bool inspectBridgeCamera = true)
+        public static string Begin(bool throughBridge = false, bool throughEnd = false, bool inspectBridgeCamera = true,
+            bool historicalGeometry = false)
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling ||
@@ -53,6 +54,19 @@ namespace Emberfall.Editor.Review
                 throw new InvalidOperationException("Saved Valley alone in idle Edit Mode required.");
             string folder = "Builds/RouteReview/0.9.6-r4-input/" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff");
             Directory.CreateDirectory(folder);
+            if (historicalGeometry)
+            {
+                byte[] original = File.ReadAllBytes(EnvironmentNavigationBaseline.Snapshot + "/10_EmberValley-before.unity");
+                if (!original.SequenceEqual(File.ReadAllBytes(EnvironmentNavigationBaseline.Fixture)))
+                    throw new InvalidOperationException("Historical geometry provenance mismatch.");
+                scene = EditorSceneManager.OpenScene(EnvironmentNavigationBaseline.Fixture);
+            }
+            File.WriteAllText(folder + "/geometry-source.json", JsonUtility.ToJson(new GeometrySource {
+                scene = scene.path, historicalGeometry = historicalGeometry,
+                scope = "Same currently loaded assemblies for both geometry runs; NOT historical code bisect.",
+                assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(a => a.GetName().Name.StartsWith("Emberfall.", StringComparison.Ordinal))
+                    .Select(a => a.GetName().Name + ":" + a.ManifestModule.ModuleVersionId).OrderBy(x => x).ToArray()
+            }, true));
             string temp = "Assets/_Game/Scenes/__R4InputReview_" + Guid.NewGuid().ToString("N") + ".unity";
             if (!EditorSceneManager.SaveScene(scene, temp, true)) throw new IOException("Cannot create isolated scene.");
             SessionState.SetString(Key + "temp", temp);
@@ -70,6 +84,9 @@ namespace Emberfall.Editor.Review
             EditorApplication.isPlaying = true;
             return folder;
         }
+
+        [Serializable] sealed class GeometrySource
+        { public string scene, scope; public bool historicalGeometry; public string[] assemblies; }
 
         static void OnMode(PlayModeStateChange mode)
         {
